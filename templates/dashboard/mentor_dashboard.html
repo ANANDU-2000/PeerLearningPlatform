@@ -79,11 +79,11 @@
                     
                     <a href="{% url 'profile_settings' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
                         <i data-feather="user" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
-                        <span>{% trans "Profile" %}</span>
+                        <span>{% trans "Profile Settings" %}</span>
                     </a>
-                    <a href="{% url 'profile_settings' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
-                        <i data-feather="settings" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
-                        <span>{% trans "Settings" %}</span>
+                    <a href="#" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                        <i data-feather="help-circle" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
+                        <span>{% trans "Help & Support" %}</span>
                     </a>
                 </nav>
             </div>
@@ -624,50 +624,125 @@
         // Initialize notifications WebSocket
         initializeNotifications();
         
+        // Sidebar toggle functionality (for mobile)
+        const sidebar = document.getElementById('sidebar');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebarClose = document.getElementById('sidebar-close');
+        const sidebarOverlay = document.getElementById('sidebar-overlay');
+        
+        function openSidebar() {
+            sidebar.classList.remove('-translate-x-full');
+            sidebarOverlay.classList.add('opacity-50');
+            sidebarOverlay.classList.remove('pointer-events-none');
+            sidebarOverlay.classList.add('pointer-events-auto');
+        }
+        
+        function closeSidebar() {
+            sidebar.classList.add('-translate-x-full');
+            sidebarOverlay.classList.remove('opacity-50');
+            sidebarOverlay.classList.add('pointer-events-none');
+            sidebarOverlay.classList.remove('pointer-events-auto');
+        }
+        
+        if (sidebarToggle) {
+            sidebarToggle.addEventListener('click', openSidebar);
+        }
+        
+        if (sidebarClose) {
+            sidebarClose.addEventListener('click', closeSidebar);
+        }
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+        
+        // Collapse sidebar on small screens when navigating
+        if (sidebar) {
+            const sidebarLinks = sidebar.querySelectorAll('a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth < 768) {  // Only on mobile
+                        closeSidebar();
+                    }
+                });
+            });
+        }
+        
+        // Theme toggle for consistent contrast
+        function applyHighContrastIfNeeded() {
+            if (document.body.classList.contains('dark-mode')) {
+                if (sidebar) {
+                    sidebar.classList.add('bg-gray-800');
+                    sidebar.classList.add('border-gray-700');
+                    sidebar.classList.add('text-white');
+                }
+            } else {
+                if (sidebar) {
+                    sidebar.classList.remove('bg-gray-800');
+                    sidebar.classList.remove('border-gray-700');
+                    sidebar.classList.remove('text-white');
+                }
+            }
+        }
+        
+        // Apply on load and when theme changes
+        applyHighContrastIfNeeded();
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', applyHighContrastIfNeeded);
+        }
+        
         // Handle create session modal
         const createSessionBtn = document.getElementById('create-session-btn');
         const createSessionModal = document.getElementById('create-session-modal');
         const closeModalBtn = document.getElementById('close-modal');
         const cancelCreateSessionBtn = document.getElementById('cancel-create-session');
         
-        createSessionBtn.addEventListener('click', function() {
-            createSessionModal.classList.remove('hidden');
-            document.body.classList.add('overflow-hidden');
+        if (createSessionBtn && createSessionModal) {
+            createSessionBtn.addEventListener('click', function() {
+                createSessionModal.classList.remove('hidden');
+                document.body.classList.add('overflow-hidden');
+                
+                // Set default start and end time
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                
+                // Format for datetime-local input (YYYY-MM-DDThh:mm)
+                const startTime = new Date(tomorrow);
+                startTime.setHours(10, 0, 0);
+                
+                const endTime = new Date(tomorrow);
+                endTime.setHours(11, 0, 0);
+                
+                const formatDateForInput = (date) => {
+                    return date.toISOString().slice(0, 16);
+                };
+                
+                document.getElementById('id_start_time').value = formatDateForInput(startTime);
+                document.getElementById('id_end_time').value = formatDateForInput(endTime);
+            });
             
-            // Set default start and end time
-            const now = new Date();
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
-            // Format for datetime-local input (YYYY-MM-DDThh:mm)
-            const startTime = new Date(tomorrow);
-            startTime.setHours(10, 0, 0);
-            
-            const endTime = new Date(tomorrow);
-            endTime.setHours(11, 0, 0);
-            
-            const formatDateForInput = (date) => {
-                return date.toISOString().slice(0, 16);
+            const closeModal = function() {
+                createSessionModal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
             };
             
-            document.getElementById('id_start_time').value = formatDateForInput(startTime);
-            document.getElementById('id_end_time').value = formatDateForInput(endTime);
-        });
-        
-        const closeModal = function() {
-            createSessionModal.classList.add('hidden');
-            document.body.classList.remove('overflow-hidden');
-        };
-        
-        closeModalBtn.addEventListener('click', closeModal);
-        cancelCreateSessionBtn.addEventListener('click', closeModal);
-        
-        // Close modal when clicking outside
-        createSessionModal.addEventListener('click', function(e) {
-            if (e.target === createSessionModal) {
-                closeModal();
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', closeModal);
             }
-        });
+            
+            if (cancelCreateSessionBtn) {
+                cancelCreateSessionBtn.addEventListener('click', closeModal);
+            }
+            
+            // Close modal when clicking outside
+            createSessionModal.addEventListener('click', function(e) {
+                if (e.target === createSessionModal) {
+                    closeModal();
+                }
+            });
+        }
         
         // Refresh feather icons
         feather.replace();

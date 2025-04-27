@@ -16,6 +16,13 @@ DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
+# CSRF settings
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.replit.dev',
+    'https://*.replit.app',
+    'https://*.riker.replit.dev',
+]
+
 # Application definition
 INSTALLED_APPS = [
     'daphne',

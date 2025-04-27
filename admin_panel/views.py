@@ -86,14 +86,33 @@ def admin_dashboard(request):
 def mentor_approval(request):
     """View for approving mentor applications."""
     # Get all pending mentors
-    pending_mentors = MentorProfile.objects.filter(is_approved=False).select_related('user')
+    pending_mentors = MentorProfile.objects.filter(is_approved=False).select_related('user').order_by('-created_at')
     
-    # Get approved mentors
-    approved_mentors = MentorProfile.objects.filter(is_approved=True).select_related('user')
+    # Get stats for dashboard
+    pending_count = pending_mentors.count()
+    approved_count = MentorProfile.objects.filter(is_approved=True).count()
+    rejected_count = 0  # This would be tracked in a real app
+    
+    # Count active sessions
+    now = timezone.now()
+    sessions_count = Session.objects.filter(
+        status='in_progress',
+        start_time__lte=now,
+        end_time__gte=now
+    ).count()
+    
+    # Get recently approved mentors (last 10)
+    recent_approved = MentorProfile.objects.filter(
+        is_approved=True
+    ).select_related('user').order_by('-approved_at')[:10]
     
     context = {
         'pending_mentors': pending_mentors,
-        'approved_mentors': approved_mentors,
+        'recent_approved': recent_approved,
+        'pending_count': pending_count,
+        'approved_count': approved_count,
+        'rejected_count': rejected_count,
+        'sessions_count': sessions_count,
     }
     
     return render(request, 'admin_panel/mentor_approval.html', context)
@@ -107,9 +126,10 @@ def approve_mentor(request, mentor_id):
     
     if request.method == 'POST':
         mentor.is_approved = True
+        mentor.approved_at = timezone.now()
         mentor.save()
         
-        # Send notification email (in real implementation)
+        # Send notification email to mentor (in real implementation)
         
         messages.success(request, _(f'Mentor {mentor.user.get_full_name()} has been approved.'))
     

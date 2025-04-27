@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Profile Settings" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen font-sans py-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">{% trans "Profile Settings" %}</h1>
+        
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="p-6 md:p-8">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <!-- Form Tabs -->
+                    <div class="border-b border-gray-200 mb-8">
+                        <div class="flex overflow-x-auto">
+                            <button type="button" class="tab-btn active py-4 px-6 border-b-2 border-blue-500 text-blue-600 font-medium" data-tab="personal">
+                                {% trans "Personal Information" %}
+                            </button>
+                            {% if user.role == 'mentor' %}
+                                <button type="button" class="tab-btn py-4 px-6 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium" data-tab="professional">
+                                    {% trans "Professional Profile" %}
+                                </button>
+                                <button type="button" class="tab-btn py-4 px-6 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium" data-tab="payment">
+                                    {% trans "Payment Information" %}
+                                </button>
+                            {% endif %}
+                            <button type="button" class="tab-btn py-4 px-6 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium" data-tab="account">
+                                {% trans "Account Settings" %}
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Personal Information Tab -->
+                    <div class="tab-content active" id="personal-tab">
+                        <div class="grid grid-cols-1 md:grid-cols-6 gap-6">
+                            <!-- Profile Picture -->
+                            <div class="md:col-span-2">
+                                <label class="block text-gray-700 font-medium mb-2">{% trans "Profile Picture" %}</label>
+                                <div class="flex flex-col items-center">
+                                    <div class="mb-4 relative">
+                                        {% if user.profile_picture %}
+                                            <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-32 w-32 rounded-full object-cover">
+                                        {% else %}
+                                            <div class="h-32 w-32 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-4xl">
+                                                {{ user.first_name|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <label for="{{ form.profile_picture.id_for_label }}" class="absolute bottom-0 right-0 bg-white rounded-full p-2 shadow-md cursor-pointer">
+                                            <i data-feather="edit-2" class="h-4 w-4 text-blue-600"></i>
+                                            <input type="file" id="{{ form.profile_picture.id_for_label }}" name="{{ form.profile_picture.html_name }}" class="sr-only" accept="image/*">
+                                        </label>
+                                    </div>
+                                    <p class="text-sm text-gray-500">{% trans "JPG, PNG or GIF, max 2MB" %}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="md:col-span-4 space-y-6">
+                                <!-- Name Fields -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <label for="{{ form.first_name.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "First Name" %}</label>
+                                        <input type="text" id="{{ form.first_name.id_for_label }}" name="{{ form.first_name.html_name }}" value="{{ form.first_name.value|default:'' }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        {% if form.first_name.errors %}
+                                            <p class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="{{ form.last_name.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Last Name" %}</label>
+                                        <input type="text" id="{{ form.last_name.id_for_label }}" name="{{ form.last_name.html_name }}" value="{{ form.last_name.value|default:'' }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                        {% if form.last_name.errors %}
+                                            <p class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Email -->
+                                <div>
+                                    <label for="{{ form.email.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Email Address" %}</label>
+                                    <input type="email" id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}" value="{{ form.email.value|default:'' }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    {% if form.email.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Phone -->
+                                <div>
+                                    <label for="{{ form.phone.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Phone Number" %}</label>
+                                    <input type="tel" id="{{ form.phone.id_for_label }}" name="{{ form.phone.html_name }}" value="{{ form.phone.value|default:'' }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="+91 1234567890">
+                                    {% if form.phone.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.phone.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if user.role == 'mentor' %}
+                        <!-- Professional Profile Tab -->
+                        <div class="tab-content hidden" id="professional-tab">
+                            <div class="space-y-6">
+                                <!-- Expertise -->
+                                <div>
+                                    <label for="{{ mentor_form.expertise.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Area of Expertise" %}</label>
+                                    <input type="text" id="{{ mentor_form.expertise.id_for_label }}" name="{{ mentor_form.expertise.html_name }}" value="{{ mentor_form.expertise.value|default:'' }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'e.g. Web Development, Data Science' %}">
+                                    {% if mentor_form.expertise.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ mentor_form.expertise.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Bio -->
+                                <div>
+                                    <label for="{{ mentor_form.bio.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Professional Bio" %}</label>
+                                    <textarea id="{{ mentor_form.bio.id_for_label }}" name="{{ mentor_form.bio.html_name }}" rows="4" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Tell learners about yourself...' %}">{{ mentor_form.bio.value|default:'' }}</textarea>
+                                    {% if mentor_form.bio.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ mentor_form.bio.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Experience -->
+                                <div>
+                                    <label for="{{ mentor_form.experience.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Experience & Qualifications" %}</label>
+                                    <textarea id="{{ mentor_form.experience.id_for_label }}" name="{{ mentor_form.experience.html_name }}" rows="4" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Share your relevant experience, qualifications, and achievements...' %}">{{ mentor_form.experience.value|default:'' }}</textarea>
+                                    {% if mentor_form.experience.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ mentor_form.experience.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Hourly Rate -->
+                                <div>
+                                    <label for="{{ mentor_form.hourly_rate.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Hourly Rate (₹)" %}</label>
+                                    <div class="relative">
+                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <span class="text-gray-500">₹</span>
+                                        </div>
+                                        <input type="number" id="{{ mentor_form.hourly_rate.id_for_label }}" name="{{ mentor_form.hourly_rate.html_name }}" value="{{ mentor_form.hourly_rate.value|default:'' }}" min="0" step="100" class="w-full pl-8 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    {% if mentor_form.hourly_rate.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ mentor_form.hourly_rate.errors.0 }}</p>
+                                    {% endif %}
+                                    <p class="text-gray-500 text-sm mt-1">{% trans "This is used as a default rate for new sessions. You can change this for individual sessions." %}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Payment Information Tab -->
+                        <div class="tab-content hidden" id="payment-tab">
+                            <div class="space-y-6">
+                                <!-- Bank Account Details -->
+                                <div>
+                                    <label for="{{ mentor_form.bank_account_details.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Bank Account Details" %}</label>
+                                    <textarea id="{{ mentor_form.bank_account_details.id_for_label }}" name="{{ mentor_form.bank_account_details.html_name }}" rows="4" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Account holder name, Account number, IFSC code, Bank name and branch' %}">{{ mentor_form.bank_account_details.value|default:'' }}</textarea>
+                                    {% if mentor_form.bank_account_details.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ mentor_form.bank_account_details.errors.0 }}</p>
+                                    {% endif %}
+                                    <p class="text-gray-500 text-sm mt-1">{% trans "This information is used for processing your withdrawal requests." %}</p>
+                                </div>
+                                
+                                <!-- PAN Card Details -->
+                                <div>
+                                    <label for="{{ mentor_form.pan_card.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "PAN Card Number" %}</label>
+                                    <input type="text" id="{{ mentor_form.pan_card.id_for_label }}" name="{{ mentor_form.pan_card.html_name }}" value="{{ mentor_form.pan_card.value|default:'' }}" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="ABCDE1234F">
+                                    {% if mentor_form.pan_card.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ mentor_form.pan_card.errors.0 }}</p>
+                                    {% endif %}
+                                    <p class="text-gray-500 text-sm mt-1">{% trans "Required for tax purposes and payments over ₹20,000." %}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Account Settings Tab -->
+                    <div class="tab-content hidden" id="account-tab">
+                        <div class="space-y-8">
+                            <!-- Change Password Section -->
+                            <div class="border-b border-gray-200 pb-8">
+                                <h3 class="text-lg font-bold mb-4">{% trans "Change Password" %}</h3>
+                                
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="current_password" class="block text-gray-700 font-medium mb-2">{% trans "Current Password" %}</label>
+                                        <input type="password" id="current_password" name="current_password" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="new_password" class="block text-gray-700 font-medium mb-2">{% trans "New Password" %}</label>
+                                        <input type="password" id="new_password" name="new_password" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    
+                                    <div>
+                                        <label for="confirm_password" class="block text-gray-700 font-medium mb-2">{% trans "Confirm New Password" %}</label>
+                                        <input type="password" id="confirm_password" name="confirm_password" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Notification Settings -->
+                            <div class="border-b border-gray-200 pb-8">
+                                <h3 class="text-lg font-bold mb-4">{% trans "Notification Settings" %}</h3>
+                                
+                                <div class="space-y-4">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="email_notifications" name="email_notifications" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4" {% if user.preferences.email_notifications %}checked{% endif %}>
+                                        <label for="email_notifications" class="ml-2 text-gray-700">{% trans "Receive email notifications" %}</label>
+                                    </div>
+                                    
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="session_reminders" name="session_reminders" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4" {% if user.preferences.session_reminders %}checked{% endif %}>
+                                        <label for="session_reminders" class="ml-2 text-gray-700">{% trans "Receive session reminders" %}</label>
+                                    </div>
+                                    
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="marketing_emails" name="marketing_emails" class="rounded text-blue-600 focus:ring-blue-500 h-4 w-4" {% if user.preferences.marketing_emails %}checked{% endif %}>
+                                        <label for="marketing_emails" class="ml-2 text-gray-700">{% trans "Receive marketing emails" %}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Account Deactivation -->
+                            <div>
+                                <h3 class="text-lg font-bold mb-4 text-red-600">{% trans "Account Deactivation" %}</h3>
+                                <p class="text-gray-600 mb-4">{% trans "Deactivating your account will hide your profile and all your content from other users. You can reactivate your account at any time by logging back in." %}</p>
+                                <button type="button" id="deactivate-account-btn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                                    {% trans "Deactivate Account" %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Form Submission Buttons -->
+                    <div class="mt-8 flex justify-end">
+                        <button type="submit" class="px-6 py-3 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition font-medium shadow-sm">
+                            {% trans "Save Changes" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivation Confirmation Modal -->
+<div id="deactivation-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-red-600">{% trans "Deactivate Account" %}</h2>
+                <button id="close-deactivation-modal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i data-feather="x" class="h-6 w-6"></i>
+                </button>
+            </div>
+            
+            <p class="text-gray-700 mb-6">{% trans "Are you sure you want to deactivate your account? This will hide your profile and all your content from other users." %}</p>
+            
+            <form method="post" action="{% url 'deactivate_account' %}">
+                {% csrf_token %}
+                <div class="mb-6">
+                    <label for="deactivation_reason" class="block text-gray-700 font-medium mb-2">{% trans "Reason for deactivation (optional)" %}</label>
+                    <textarea id="deactivation_reason" name="deactivation_reason" rows="3" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Tell us why you're leaving...' %}"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-4">
+                    <button type="button" id="cancel-deactivation" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition">
+                        {% trans "Cancel" %}
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition">
+                        {% trans "Deactivate" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize feather icons
+        feather.replace();
+        
+        // Initialize notifications
+        if (typeof initializeNotifications === 'function') {
+            initializeNotifications();
+        }
+        
+        // Tab switching functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Remove active class from all buttons and contents
+                tabBtns.forEach(b => b.classList.remove('active', 'border-blue-500', 'text-blue-600'));
+                tabBtns.forEach(b => b.classList.add('border-transparent', 'text-gray-500'));
+                tabContents.forEach(c => c.classList.add('hidden'));
+                
+                // Add active class to clicked button
+                this.classList.add('active', 'border-blue-500', 'text-blue-600');
+                this.classList.remove('border-transparent', 'text-gray-500');
+                
+                // Show corresponding content
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(`${tabId}-tab`).classList.remove('hidden');
+            });
+        });
+        
+        // Profile picture preview
+        const profilePictureInput = document.getElementById('{{ form.profile_picture.id_for_label }}');
+        
+        if (profilePictureInput) {
+            profilePictureInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const file = this.files[0];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const parent = profilePictureInput.closest('.relative');
+                        let img = parent.querySelector('img');
+                        
+                        if (!img) {
+                            // If there's no image, there must be a div with the initial
+                            const initialDiv = parent.querySelector('div');
+                            img = document.createElement('img');
+                            img.className = 'h-32 w-32 rounded-full object-cover';
+                            img.alt = '{{ user.get_full_name }}';
+                            parent.replaceChild(img, initialDiv);
+                        }
+                        
+                        img.src = e.target.result;
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Deactivation modal
+        const deactivateBtn = document.getElementById('deactivate-account-btn');
+        const deactivationModal = document.getElementById('deactivation-modal');
+        const closeModalBtn = document.getElementById('close-deactivation-modal');
+        const cancelDeactivationBtn = document.getElementById('cancel-deactivation');
+        
+        if (deactivateBtn && deactivationModal) {
+            deactivateBtn.addEventListener('click', function() {
+                deactivationModal.classList.remove('hidden');
+            });
+            
+            closeModalBtn.addEventListener('click', function() {
+                deactivationModal.classList.add('hidden');
+            });
+            
+            cancelDeactivationBtn.addEventListener('click', function() {
+                deactivationModal.classList.add('hidden');
+            });
+        }
+    });
+</script>
+{% endblock %}

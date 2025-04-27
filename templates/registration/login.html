@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Log In" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 py-12">
+    <div class="container mx-auto px-6">
+        <div class="max-w-md mx-auto">
+            <!-- Login Glass Card -->
+            <div class="glass-card rounded-xl overflow-hidden shadow-xl">
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        <h1 class="text-3xl font-bold text-white mb-3">{% trans "Welcome Back" %}</h1>
+                        <p class="text-blue-100">{% trans "Sign in to your PeerLearn account" %}</p>
+                    </div>
+                    
+                    <form method="post" id="login-form" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <!-- Error Messages -->
+                        {% if form.errors %}
+                            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative shake" role="alert">
+                                {% if form.non_field_errors %}
+                                    {% for error in form.non_field_errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>{% trans "Please correct the errors below." %}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Email Field -->
+                        <div>
+                            <label for="{{ form.username.id_for_label }}" class="block text-white mb-2">{% trans "Email Address" %}</label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <p class="text-red-300 text-sm mt-1">{{ form.username.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password Field -->
+                        <div>
+                            <div class="flex items-center justify-between">
+                                <label for="{{ form.password.id_for_label }}" class="block text-white mb-2">{% trans "Password" %}</label>
+                                <a href="{% url 'password_reset' %}" class="text-sm text-blue-200 hover:text-white">
+                                    {% trans "Forgot password?" %}
+                                </a>
+                            </div>
+                            {{ form.password }}
+                            {% if form.password.errors %}
+                                <p class="text-red-300 text-sm mt-1">{{ form.password.errors.0 }}</p>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Remember Me -->
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember" name="remember" class="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500">
+                            <label for="remember" class="ml-2 block text-sm text-blue-100">
+                                {% trans "Remember me for 30 days" %}
+                            </label>
+                        </div>
+                        
+                        <!-- Submit Button -->
+                        <div>
+                            <button type="submit" class="w-full bg-white text-blue-600 font-bold py-3 px-4 rounded-lg hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-blue-700 transition">
+                                {% trans "Sign In" %}
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Social Login Divider -->
+                    <div class="my-6 flex items-center">
+                        <div class="flex-grow border-t border-blue-300 opacity-30"></div>
+                        <span class="flex-shrink px-4 text-blue-100">{% trans "or continue with" %}</span>
+                        <div class="flex-grow border-t border-blue-300 opacity-30"></div>
+                    </div>
+                    
+                    <!-- Social Login Buttons -->
+                    <div class="flex space-x-4">
+                        <button class="flex-1 flex items-center justify-center bg-white text-gray-700 font-medium py-2 px-4 rounded-lg hover:bg-gray-50 focus:outline-none transition">
+                            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M22.56 12.25C22.56 11.47 22.49 10.72 22.36 10H12V14.26H17.92C17.66 15.63 16.88 16.78 15.71 17.55V20.29H19.28C21.36 18.34 22.56 15.56 22.56 12.25Z" fill="#4285F4"/>
+                                <path d="M12 23C14.97 23 17.46 22.02 19.28 20.29L15.71 17.55C14.74 18.19 13.48 18.58 12 18.58C9.12 18.58 6.69 16.64 5.81 14H2.15V16.82C3.97 20.47 7.7 23 12 23Z" fill="#34A853"/>
+                                <path d="M5.81 14C5.58 13.34 5.46 12.63 5.46 11.9C5.46 11.17 5.59 10.46 5.81 9.8V7H2.15C1.41 8.49 1 10.16 1 11.9C1 13.64 1.41 15.31 2.15 16.8L5.81 14Z" fill="#FBBC05"/>
+                                <path d="M12 5.22C13.62 5.22 15.06 5.77 16.21 6.88L19.36 3.73C17.46 1.94 14.97 0.959999 12 0.959999C7.7 0.959999 3.97 3.49 2.15 7.14L5.81 9.94C6.69 7.3 9.12 5.22 12 5.22Z" fill="#EA4335"/>
+                            </svg>
+                            <span>Google</span>
+                        </button>
+                        <button class="flex-1 flex items-center justify-center bg-blue-800 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-900 focus:outline-none transition">
+                            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M24 12.073C24 5.405 18.627 0 12 0C5.373 0 0 5.405 0 12.073C0 18.103 4.388 23.098 10.125 24V15.564H7.078V12.073H10.125V9.413C10.125 6.385 11.917 4.716 14.658 4.716C15.97 4.716 17.344 4.953 17.344 4.953V7.922H15.83C14.339 7.922 13.874 8.852 13.874 9.814V12.073H17.202L16.668 15.564H13.874V24C19.612 23.098 24 18.103 24 12.073Z"/>
+                            </svg>
+                            <span>Facebook</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Sign Up Link -->
+                    <div class="text-center mt-8">
+                        <p class="text-blue-100">
+                            {% trans "Don't have an account?" %}
+                            <a href="{% url 'role_selection' %}" class="text-white font-bold hover:underline">{% trans "Sign up" %}</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add focus effects to input fields
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('input-focus');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('input-focus');
+            });
+        });
+        
+        // Shake animation for error messages
+        const errorElement = document.querySelector('.shake');
+        if (errorElement) {
+            errorElement.classList.add('animate-shake');
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                errorElement.classList.remove('animate-shake');
+            }, 1000);
+        }
+    });
+</script>
+
+<style>
+    .input-focus {
+        transform: translateY(-2px);
+        transition: transform 0.3s;
+    }
+    
+    .animate-shake {
+        animation: shake 0.5s linear;
+    }
+    
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+        20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+</style>
+{% endblock %}

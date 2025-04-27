@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Learner Dashboard" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 min-h-screen">
+    <!-- Desktop Sidebar (hidden on mobile) -->
+    <div class="hidden md:block fixed left-0 top-16 bottom-0 w-64 bg-white shadow-md z-10">
+        <div class="p-6">
+            <div class="flex items-center mb-6">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-12 w-12 rounded-full object-cover mr-3">
+                {% else %}
+                    <div class="h-12 w-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                        {{ user.first_name|first|upper }}
+                    </div>
+                {% endif %}
+                <div>
+                    <h2 class="text-lg font-bold">{{ user.get_full_name }}</h2>
+                    <p class="text-gray-500 text-sm">{% trans "Learner" %}</p>
+                </div>
+            </div>
+            
+            <nav class="mt-8">
+                <a href="{% url 'learner_dashboard' %}" class="flex items-center py-3 px-4 text-blue-600 bg-blue-100 rounded-md mb-2">
+                    <i data-feather="grid" class="h-5 w-5 mr-3"></i>
+                    <span>{% trans "Dashboard" %}</span>
+                </a>
+                <a href="{% url 'session_list' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
+                    <i data-feather="search" class="h-5 w-5 mr-3"></i>
+                    <span>{% trans "Find Sessions" %}</span>
+                </a>
+                <a href="{% url 'cart' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
+                    <i data-feather="shopping-cart" class="h-5 w-5 mr-3"></i>
+                    <span>{% trans "My Cart" %}</span>
+                </a>
+                <a href="{% url 'transaction_history' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
+                    <i data-feather="credit-card" class="h-5 w-5 mr-3"></i>
+                    <span>{% trans "Payment History" %}</span>
+                </a>
+                <a href="{% url 'profile_settings' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
+                    <i data-feather="settings" class="h-5 w-5 mr-3"></i>
+                    <span>{% trans "Settings" %}</span>
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="md:ml-64 p-6">
+        <h1 class="text-3xl font-bold mb-8">{% trans "Welcome back" %}, {{ user.first_name }}!</h1>
+        
+        <div class="bg-white rounded-xl shadow-md p-6 mb-8 border-l-4 border-blue-500">
+            <h2 class="text-xl font-bold mb-4">{% trans "Your Learning Progress" %}</h2>
+            <div class="flex items-center">
+                <div class="progress-ring mr-4">
+                    <svg class="w-20 h-20">
+                        <circle 
+                            class="progress-ring__circle" 
+                            stroke="#e6e6e6" 
+                            stroke-width="8" 
+                            fill="transparent" 
+                            r="30" 
+                            cx="40" 
+                            cy="40"/>
+                        <circle 
+                            class="progress-ring__circle" 
+                            stroke="#007BFF" 
+                            stroke-width="8" 
+                            fill="transparent" 
+                            r="30" 
+                            cx="40" 
+                            cy="40"
+                            stroke-dasharray="188.5"
+                            stroke-dashoffset="85"/>
+                    </svg>
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-lg font-bold">
+                        55%
+                    </div>
+                </div>
+                <div>
+                    <p class="text-gray-700">{% trans "You've completed" %} <span class="font-bold">55%</span> {% trans "of your learning goals." %}</p>
+                    <p class="text-gray-500 text-sm">{% trans "Career goal:" %} {{ user.learner_profile.career_goals }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Upcoming Sessions -->
+        <h2 class="text-2xl font-bold mb-4">{% trans "Your Upcoming Sessions" %}</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {% if upcoming_bookings %}
+                {% for booking in upcoming_bookings %}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect border border-gray-200">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-bold">{{ booking.session.title }}</h3>
+                                <span class="text-sm py-1 px-2 bg-green-100 text-green-800 rounded-full">{{ booking.session.start_time|date:"M d" }}</span>
+                            </div>
+                            
+                            <div class="flex items-center mb-3">
+                                {% if booking.session.mentor.user.profile_picture %}
+                                    <img src="{{ booking.session.mentor.user.profile_picture.url }}" alt="{{ booking.session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                                        {{ booking.session.mentor.user.first_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <p class="font-medium">{{ booking.session.mentor.user.get_full_name }}</p>
+                                    <p class="text-gray-500 text-sm">{{ booking.session.mentor.expertise }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center text-gray-700 mb-4">
+                                <i data-feather="clock" class="h-4 w-4 mr-2"></i>
+                                <span>{{ booking.session.start_time|date:"g:i A" }} - {{ booking.session.end_time|date:"g:i A" }}</span>
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                {% if booking.session.is_ongoing %}
+                                    <a href="{% url 'session_room' session_id=booking.session.id %}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                                        {% trans "Join Session" %}
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'session_detail' session_id=booking.session.id %}" class="flex-1 border border-gray-300 text-gray-700 text-center py-2 px-4 rounded-md hover:bg-gray-100 transition">
+                                        {% trans "View Details" %}
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full bg-white rounded-lg shadow-md p-6 border border-gray-200 text-center">
+                    <div class="mb-4 text-blue-500">
+                        <i data-feather="calendar" class="h-12 w-12 mx-auto"></i>
+                    </div>
+                    <h3 class="text-lg font-medium mb-2">{% trans "No upcoming sessions" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "You don't have any upcoming sessions scheduled. Browse and book sessions with our expert mentors." %}</p>
+                    <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition">
+                        {% trans "Find Sessions" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Recommended Sessions -->
+        <h2 class="text-2xl font-bold mb-4">{% trans "Recommended for You" %}</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {% if recommended_sessions %}
+                {% for session in recommended_sessions %}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect border border-gray-200">
+                        <div class="p-6">
+                            <div class="flex justify-between items-start mb-4">
+                                <h3 class="text-lg font-bold">{{ session.title }}</h3>
+                                <span class="text-sm py-1 px-2 bg-blue-100 text-blue-800 rounded-full">{{ session.start_time|date:"M d" }}</span>
+                            </div>
+                            
+                            <div class="flex items-center mb-3">
+                                {% if session.mentor.user.profile_picture %}
+                                    <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                                        {{ session.mentor.user.first_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <p class="font-medium">{{ session.mentor.user.get_full_name }}</p>
+                                    <p class="text-gray-500 text-sm">{{ session.mentor.expertise }}</p>
+                                </div>
+                            </div>
+                            
+                            <p class="text-gray-700 mb-3 line-clamp-2">{{ session.description }}</p>
+                            
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center text-gray-700">
+                                    <i data-feather="clock" class="h-4 w-4 mr-2"></i>
+                                    <span>{{ session.duration_minutes }} mins</span>
+                                </div>
+                                <div class="font-bold text-blue-600">₹{{ session.price }}</div>
+                            </div>
+                            
+                            <a href="{% url 'session_detail' session_id=session.id %}" class="block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                                {% trans "View Details" %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full bg-white rounded-lg shadow-md p-6 border border-gray-200 text-center">
+                    <div class="mb-4 text-blue-500">
+                        <i data-feather="compass" class="h-12 w-12 mx-auto"></i>
+                    </div>
+                    <h3 class="text-lg font-medium mb-2">{% trans "Personalizing recommendations" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "We're working on personalizing session recommendations based on your learning goals." %}</p>
+                    <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition">
+                        {% trans "Browse All Sessions" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Top Mentors -->
+        <h2 class="text-2xl font-bold mb-4">{% trans "Top Mentors" %}</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% if top_mentors %}
+                {% for mentor in top_mentors %}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect border border-gray-200">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                {% if mentor.user.profile_picture %}
+                                    <img src="{{ mentor.user.profile_picture.url }}" alt="{{ mentor.user.get_full_name }}" class="h-16 w-16 rounded-full object-cover mr-4">
+                                {% else %}
+                                    <div class="h-16 w-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">
+                                        {{ mentor.user.first_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h3 class="text-lg font-bold">{{ mentor.user.get_full_name }}</h3>
+                                    <p class="text-blue-600">{{ mentor.expertise }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center mb-3">
+                                <div class="flex text-yellow-400 mr-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= mentor.average_rating %}
+                                            <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                        {% else %}
+                                            <i data-feather="star" class="h-4 w-4"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="text-sm text-gray-600">{{ mentor.total_reviews }} {% trans "reviews" %}</span>
+                            </div>
+                            
+                            <p class="text-gray-700 mb-4 line-clamp-3">{{ mentor.bio }}</p>
+                            
+                            <a href="{{ mentor.get_absolute_url }}" class="block w-full bg-white border border-blue-600 text-blue-600 text-center py-2 px-4 rounded-md hover:bg-blue-50 transition">
+                                {% trans "View Profile" %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="col-span-full bg-white rounded-lg shadow-md p-6 border border-gray-200 text-center">
+                    <div class="mb-4 text-blue-500">
+                        <i data-feather="users" class="h-12 w-12 mx-auto"></i>
+                    </div>
+                    <h3 class="text-lg font-medium mb-2">{% trans "Discover mentors" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "Explore our platform to find expert mentors who can help you achieve your learning goals." %}</p>
+                    <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition">
+                        {% trans "Find Mentors" %}
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Notification Toast Container -->
+<div id="notification-toast" class="fixed bottom-20 right-5 transform transition-transform duration-300 translate-x-full">
+    <!-- Will be populated by JS -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/notifications.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize notifications WebSocket
+        initializeNotifications();
+        
+        // Used for line clamping
+        function refreshFeatherIcons() {
+            feather.replace();
+        }
+        refreshFeatherIcons();
+    });
+</script>
+{% endblock %}

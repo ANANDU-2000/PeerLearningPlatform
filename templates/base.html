@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="{{ LANGUAGE_CODE|default:'en' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PeerLearn - Connect with Expert Mentors{% endblock %}</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts: Poppins and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    
+    <!-- Feather Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-color: #007BFF;
+            --secondary-color: #FF5733;
+            --bg-light: #F5F5F5;
+            --bg-dark: #121212;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-hover-effect {
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card-hover-effect:hover {
+            transform: translateY(-5px) scale(1.02);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .desktop-sidebar {
+            width: 250px;
+            transition: width 0.3s;
+        }
+        
+        .mobile-bottom-nav {
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Light/Dark mode classes */
+        .light-mode {
+            background-color: var(--bg-light);
+            color: #333;
+        }
+        
+        .dark-mode {
+            background-color: var(--bg-dark);
+            color: #fff;
+        }
+        
+        .dark-mode .glass-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* Animation for error states */
+        .shake {
+            animation: shake 0.5s linear;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        /* Progress rings */
+        .progress-ring {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+        
+        .progress-ring__circle {
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+            transition: stroke-dashoffset 0.3s;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+    
+    <!-- Internationalization support -->
+    {% load i18n %}
+</head>
+<body class="light-mode">
+    <!-- Top Navigation -->
+    <nav class="bg-white dark:bg-gray-900 shadow-md z-50 relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <!-- Logo -->
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="{% url 'landing_page' %}" class="font-bold text-xl text-blue-600">
+                            <span class="text-primary">Peer</span><span class="text-secondary">Learn</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Main Navigation (Desktop) -->
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="{% url 'landing_page' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            {% trans "Home" %}
+                        </a>
+                        <a href="{% url 'session_list' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            {% trans "Find Sessions" %}
+                        </a>
+                        {% if user.is_authenticated and user.role == 'mentor' %}
+                            <a href="{% url 'create_session' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                {% trans "Create Session" %}
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Right side -->
+                <div class="flex items-center">
+                    <!-- Language Selector -->
+                    <div class="relative mr-4">
+                        <form action="{% url 'set_language' %}" method="post" id="language-form">
+                            {% csrf_token %}
+                            <input name="next" type="hidden" value="{{ request.path }}">
+                            <select name="language" onchange="this.form.submit()" class="appearance-none bg-transparent border border-gray-300 rounded-md pl-3 pr-7 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                {% get_current_language as CURRENT_LANGUAGE %}
+                                {% get_available_languages as LANGUAGES %}
+                                {% for lang_code, lang_name in LANGUAGES %}
+                                    <option value="{{ lang_code }}" {% if lang_code == CURRENT_LANGUAGE %}selected{% endif %}>
+                                        {{ lang_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="absolute right-0 top-0 bottom-0 flex items-center pointer-events-none pr-2">
+                                <i data-feather="chevron-down" class="h-4 w-4 text-gray-500"></i>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Auth / User Menu -->
+                    <div class="ml-3 relative">
+                        {% if user.is_authenticated %}
+                            <div class="dropdown relative">
+                                <button class="flex items-center space-x-2 focus:outline-none">
+                                    {% if user.profile_picture %}
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 rounded-full object-cover">
+                                    {% else %}
+                                        <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                            {{ user.first_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <span class="hidden md:block">{{ user.get_full_name }}</span>
+                                    <i data-feather="chevron-down" class="h-4 w-4"></i>
+                                </button>
+                                <div class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
+                                    <a href="{{ user.get_dashboard_url }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        {% trans "Dashboard" %}
+                                    </a>
+                                    <a href="{% url 'profile_settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        {% trans "Profile Settings" %}
+                                    </a>
+                                    {% if user.role == 'learner' %}
+                                        <a href="{% url 'cart' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            {% trans "My Cart" %}
+                                        </a>
+                                    {% endif %}
+                                    {% if user.role == 'mentor' %}
+                                        <a href="{% url 'withdrawal_request' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            {% trans "Withdraw Earnings" %}
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'transaction_history' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        {% trans "Transaction History" %}
+                                    </a>
+                                    <div class="border-t border-gray-100 my-1"></div>
+                                    <a href="{% url 'logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                        {% trans "Sign out" %}
+                                    </a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="space-x-2">
+                                <a href="{% url 'login' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                    {% trans "Log in" %}
+                                </a>
+                                <a href="{% url 'role_selection' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                    {% trans "Sign up" %}
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Dark/Light Mode Toggle -->
+                    <button id="theme-toggle" class="ml-4 p-2 rounded-full hover:bg-gray-200 focus:outline-none">
+                        <i data-feather="moon" id="dark-icon" class="h-5 w-5"></i>
+                        <i data-feather="sun" id="light-icon" class="h-5 w-5 hidden"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Mobile Bottom Navigation -->
+    <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900">
+        <div class="flex justify-around py-2">
+            <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <i data-feather="home" class="h-5 w-5"></i>
+                <span class="text-xs mt-1">{% trans "Home" %}</span>
+            </a>
+            <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <i data-feather="search" class="h-5 w-5"></i>
+                <span class="text-xs mt-1">{% trans "Find" %}</span>
+            </a>
+            {% if user.is_authenticated %}
+                <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="grid" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Dashboard" %}</span>
+                </a>
+                {% if user.role == 'learner' %}
+                    <a href="{% url 'cart' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                        <i data-feather="shopping-cart" class="h-5 w-5"></i>
+                        <span class="text-xs mt-1">{% trans "Cart" %}</span>
+                    </a>
+                {% endif %}
+                {% if user.role == 'mentor' %}
+                    <a href="{% url 'create_session' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                        <i data-feather="plus-circle" class="h-5 w-5"></i>
+                        <span class="text-xs mt-1">{% trans "Create" %}</span>
+                    </a>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'login' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="log-in" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Login" %}</span>
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Flash Messages -->
+    {% if messages %}
+        <div class="messages fixed top-5 right-5 z-50 max-w-md">
+            {% for message in messages %}
+                <div class="alert px-4 py-3 rounded-lg shadow-lg mb-3 {% if message.tags == 'error' %}bg-red-500 text-white{% elif message.tags == 'success' %}bg-green-500 text-white{% elif message.tags == 'warning' %}bg-yellow-500 text-white{% else %}bg-blue-500 text-white{% endif %} flex items-center justify-between">
+                    <span>{{ message }}</span>
+                    <button class="close-alert ml-3 focus:outline-none">
+                        <i data-feather="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main class="pb-16 sm:pb-0">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="text-lg font-bold mb-4">PeerLearn</h3>
+                    <p class="text-gray-300 text-sm mb-4">{% trans "Connect with expert mentors around the world for personalized learning experiences." %}</p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i data-feather="facebook" class="h-5 w-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i data-feather="twitter" class="h-5 w-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i data-feather="instagram" class="h-5 w-5"></i>
+                        </a>
+                        <a href="#" class="text-gray-400 hover:text-white">
+                            <i data-feather="linkedin" class="h-5 w-5"></i>
+                        </a>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">{% trans "Quick Links" %}</h3>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><a href="{% url 'landing_page' %}" class="hover:text-white">{% trans "Home" %}</a></li>
+                        <li><a href="{% url 'session_list' %}" class="hover:text-white">{% trans "Browse Sessions" %}</a></li>
+                        <li><a href="{% url 'role_selection' %}" class="hover:text-white">{% trans "Become a Mentor" %}</a></li>
+                        <li><a href="#" class="hover:text-white">{% trans "About Us" %}</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">{% trans "Support" %}</h3>
+                    <ul class="space-y-2 text-sm text-gray-300">
+                        <li><a href="#" class="hover:text-white">{% trans "Help Center" %}</a></li>
+                        <li><a href="#" class="hover:text-white">{% trans "Contact Us" %}</a></li>
+                        <li><a href="#" class="hover:text-white">{% trans "Privacy Policy" %}</a></li>
+                        <li><a href="#" class="hover:text-white">{% trans "Terms of Service" %}</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold mb-4">{% trans "Subscribe" %}</h3>
+                    <p class="text-gray-300 text-sm mb-4">{% trans "Get the latest updates about new mentors and sessions." %}</p>
+                    <form class="flex">
+                        <input type="email" placeholder="{% trans 'Your email' %}" class="px-4 py-2 w-full rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-r-md">
+                            <i data-feather="send" class="h-4 w-4"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400 text-sm">
+                <p>© {% now "Y" %} PeerLearn. {% trans "All rights reserved." %}</p>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Notification Container -->
+    <div id="notification-container" class="fixed bottom-20 right-5 z-50 max-w-xs"></div>
+    
+    <!-- Core JavaScript -->
+    <script>
+        // Initialize Feather Icons
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // Dropdown toggle
+            document.querySelectorAll('.dropdown button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    content.classList.toggle('hidden');
+                });
+            });
+            
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.closest('.dropdown')) {
+                    document.querySelectorAll('.dropdown-content').forEach(content => {
+                        content.classList.add('hidden');
+                    });
+                }
+            });
+            
+            // Close alert messages
+            document.querySelectorAll('.close-alert').forEach(button => {
+                button.addEventListener('click', function() {
+                    this.closest('.alert').remove();
+                });
+            });
+            
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                document.querySelectorAll('.alert').forEach(alert => {
+                    alert.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+                    setTimeout(() => alert.remove(), 500);
+                });
+            }, 5000);
+            
+            // Dark mode toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const body = document.body;
+            const darkIcon = document.getElementById('dark-icon');
+            const lightIcon = document.getElementById('light-icon');
+            
+            // Check for saved theme preference
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                darkIcon.classList.add('hidden');
+                lightIcon.classList.remove('hidden');
+            }
+            
+            themeToggle.addEventListener('click', function() {
+                if (body.classList.contains('light-mode')) {
+                    body.classList.remove('light-mode');
+                    body.classList.add('dark-mode');
+                    darkIcon.classList.add('hidden');
+                    lightIcon.classList.remove('hidden');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    body.classList.remove('dark-mode');
+                    body.classList.add('light-mode');
+                    lightIcon.classList.add('hidden');
+                    darkIcon.classList.remove('hidden');
+                    localStorage.setItem('theme', 'light');
+                }
+                feather.replace();
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

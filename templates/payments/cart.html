@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Shopping Cart" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-100 py-10 min-h-screen">
+    <div class="container mx-auto px-6">
+        <h1 class="text-3xl font-bold mb-8">{% trans "Your Cart" %}</h1>
+        
+        <!-- Cart Contents and Checkout -->
+        <div class="flex flex-col lg:flex-row lg:space-x-8">
+            <!-- Cart Items -->
+            <div class="w-full lg:w-2/3 mb-6 lg:mb-0">
+                {% if cart_items %}
+                    <!-- Cart Items Grid -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-6">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-xl font-bold">{% trans "Items in Cart" %}</h2>
+                        </div>
+                        
+                        <div class="divide-y divide-gray-200">
+                            {% for item in cart_items %}
+                                <div class="p-6 flex flex-col md:flex-row md:items-center">
+                                    <div class="flex-grow mb-4 md:mb-0 md:mr-6">
+                                        <h3 class="text-lg font-bold mb-1">{{ item.session.title }}</h3>
+                                        <div class="flex items-center text-gray-600 mb-2">
+                                            <i data-feather="calendar" class="h-4 w-4 mr-2"></i>
+                                            <span>{{ item.session.start_time|date:"F j, Y" }}</span>
+                                        </div>
+                                        <div class="flex items-center text-gray-600 mb-4">
+                                            <i data-feather="clock" class="h-4 w-4 mr-2"></i>
+                                            <span>{{ item.session.start_time|date:"g:i A" }} - {{ item.session.end_time|date:"g:i A" }}</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center">
+                                            {% if item.session.mentor.user.profile_picture %}
+                                                <img src="{{ item.session.mentor.user.profile_picture.url }}" alt="{{ item.session.mentor.user.get_full_name }}" class="h-8 w-8 rounded-full object-cover mr-3">
+                                            {% else %}
+                                                <div class="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm mr-3">
+                                                    {{ item.session.mentor.user.first_name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <span class="text-sm">{{ item.session.mentor.user.get_full_name }}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex flex-col items-end">
+                                        <div class="mb-3">
+                                            {% if item.discount_amount > 0 %}
+                                                <div class="text-xs text-gray-500 line-through">₹{{ item.session.price }}</div>
+                                                <div class="text-lg font-bold text-blue-600">₹{{ item.get_final_price }}</div>
+                                                <div class="text-xs text-green-600">{% trans "Coupon applied:" %} {{ item.coupon_applied }}</div>
+                                            {% else %}
+                                                <div class="text-lg font-bold text-blue-600">₹{{ item.session.price }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <div class="flex space-x-2">
+                                            <a href="{% url 'session_detail' session_id=item.session.id %}" class="text-sm text-blue-600 hover:text-blue-800">
+                                                {% trans "View Details" %}
+                                            </a>
+                                            <a href="{% url 'remove_from_cart' booking_id=item.id %}" class="text-sm text-red-600 hover:text-red-800">
+                                                {% trans "Remove" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Apply Coupon Section -->
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <div class="p-6">
+                            <h2 class="text-lg font-bold mb-4">{% trans "Apply Coupon" %}</h2>
+                            
+                            <form id="coupon-form" class="flex">
+                                <input type="text" id="cart-coupon-code" class="flex-grow px-4 py-2 rounded-l-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Enter coupon code' %}">
+                                <button type="submit" id="apply-cart-coupon" class="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-700 transition">
+                                    {% trans "Apply" %}
+                                </button>
+                            </form>
+                            
+                            <div id="coupon-message" class="mt-2 text-sm hidden"></div>
+                            
+                            <!-- Example Coupon Suggestion -->
+                            <div class="mt-4 bg-blue-50 p-3 rounded-lg flex items-start">
+                                <div class="flex-shrink-0 text-blue-600 mr-3">
+                                    <i data-feather="gift" class="h-5 w-5"></i>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-600">{% trans "Try coupon code:" %} WELCOME10</p>
+                                    <p class="text-xs text-blue-500">{% trans "Get 10% off on your first booking!" %}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <!-- Empty Cart State -->
+                    <div class="bg-white rounded-xl shadow-md p-10 text-center">
+                        <div class="mb-6 text-blue-500">
+                            <i data-feather="shopping-cart" class="h-16 w-16 mx-auto"></i>
+                        </div>
+                        <h2 class="text-2xl font-bold mb-3">{% trans "Your cart is empty" %}</h2>
+                        <p class="text-gray-600 mb-6 max-w-md mx-auto">{% trans "Looks like you haven't added any sessions to your cart yet. Explore our wide range of mentors and sessions." %}</p>
+                        <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition">
+                            {% trans "Browse Sessions" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Order Summary and Checkout -->
+            {% if cart_items %}
+                <div class="w-full lg:w-1/3">
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden sticky top-24">
+                        <div class="p-6 border-b border-gray-200">
+                            <h2 class="text-xl font-bold">{% trans "Order Summary" %}</h2>
+                        </div>
+                        
+                        <div class="p-6">
+                            <!-- Order Progress -->
+                            <div class="flex justify-between mb-6">
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">1</div>
+                                    <span class="text-xs mt-1">{% trans "Cart" %}</span>
+                                </div>
+                                <div class="flex-1 border-t border-gray-300 self-center mx-2"></div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">2</div>
+                                    <span class="text-xs mt-1">{% trans "Payment" %}</span>
+                                </div>
+                                <div class="flex-1 border-t border-gray-300 self-center mx-2"></div>
+                                <div class="flex flex-col items-center">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm">3</div>
+                                    <span class="text-xs mt-1">{% trans "Confirmed" %}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Price Summary -->
+                            <div class="mb-6">
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-gray-600">{% trans "Subtotal" %}</span>
+                                    <span>₹{{ subtotal }}</span>
+                                </div>
+                                
+                                {% if total_discount > 0 %}
+                                    <div class="flex justify-between mb-2 text-green-600">
+                                        <span>{% trans "Discount" %}</span>
+                                        <span>-₹{{ total_discount }}</span>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="flex justify-between font-bold text-lg pt-2 border-t border-gray-200 mt-2">
+                                    <span>{% trans "Total" %}</span>
+                                    <span>₹{{ total }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Checkout Button -->
+                            <button id="checkout-button" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition">
+                                {% trans "Proceed to Payment" %}
+                            </button>
+                            
+                            <!-- Payment Security Note -->
+                            <div class="mt-4 flex items-center justify-center text-gray-500 text-sm">
+                                <i data-feather="lock" class="h-4 w-4 mr-2"></i>
+                                {% trans "Secure checkout powered by Razorpay" %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay Payment Modal -->
+<div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">{% trans "Complete Your Payment" %}</h2>
+                <button id="close-payment-modal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                    <i data-feather="x" class="h-6 w-6"></i>
+                </button>
+            </div>
+            
+            <div id="razorpay-container" class="mb-6 min-h-[300px] flex items-center justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Success Modal -->
+<div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6 text-center">
+            <div class="mb-4 text-green-500">
+                <!-- Success Animation (would be Lottie in production) -->
+                <div class="mx-auto w-24 h-24 rounded-full bg-green-100 flex items-center justify-center">
+                    <i data-feather="check" class="h-12 w-12 text-green-500"></i>
+                </div>
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-3">{% trans "Payment Successful!" %}</h2>
+            <p class="text-gray-600 mb-6">{% trans "Your booking has been confirmed. You can now join the session at the scheduled time." %}</p>
+            
+            <div class="flex flex-col space-y-3">
+                <a href="{% url 'learner_dashboard' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                    {% trans "Go to Dashboard" %}
+                </a>
+                <button id="close-success-modal" class="text-gray-600 hover:text-gray-800">
+                    {% trans "Close" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Failed Modal -->
+<div id="failed-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6 text-center">
+            <div class="mb-4 text-red-500">
+                <!-- Error Animation (would be Lottie in production) -->
+                <div class="mx-auto w-24 h-24 rounded-full bg-red-100 flex items-center justify-center">
+                    <i data-feather="alert-triangle" class="h-12 w-12 text-red-500"></i>
+                </div>
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-3">{% trans "Payment Failed" %}</h2>
+            <p class="text-gray-600 mb-6" id="payment-error-message">{% trans "There was an error processing your payment. Please try again." %}</p>
+            
+            <div class="flex flex-col space-y-3">
+                <button id="retry-payment" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition">
+                    {% trans "Try Again" %}
+                </button>
+                <button id="close-failed-modal" class="text-gray-600 hover:text-gray-800">
+                    {% trans "Cancel" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Razorpay Settings -->
+<script>
+    window.RAZORPAY_CONFIG = {
+        key_id: "{{ razorpay_key_id }}",
+        order_id: "{{ razorpay_order_id }}",
+        currency: "{{ razorpay_currency }}",
+        amount: {{ total|floatformat:"0" }} * 100, // In paisa
+        name: "PeerLearn",
+        description: "Session Booking",
+        prefill: {
+            name: "{{ user_name }}",
+            email: "{{ user_email }}"
+        }
+    };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="{% static 'js/payment.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply cart coupon
+        const couponForm = document.getElementById('coupon-form');
+        const couponInput = document.getElementById('cart-coupon-code');
+        const couponMessage = document.getElementById('coupon-message');
+        
+        if (couponForm) {
+            couponForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const couponCode = couponInput.value.trim();
+                
+                if (!couponCode) {
+                    showCouponMessage('Please enter a coupon code', 'error');
+                    return;
+                }
+                
+                // Make API request to apply coupon
+                fetch('{% url "apply_coupon" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: `coupon_code=${couponCode}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showCouponMessage(data.message, 'success');
+                        // Reload the page to update the cart totals
+                        window.location.reload();
+                    } else {
+                        showCouponMessage(data.error, 'error');
+                    }
+                })
+                .catch(error => {
+                    showCouponMessage('An error occurred. Please try again.', 'error');
+                    console.error('Error:', error);
+                });
+            });
+        }
+        
+        function showCouponMessage(message, type) {
+            couponMessage.textContent = message;
+            couponMessage.classList.remove('hidden', 'text-green-600', 'text-red-600');
+            couponMessage.classList.add(type === 'success' ? 'text-green-600' : 'text-red-600');
+        }
+    });
+</script>
+{% endblock %}

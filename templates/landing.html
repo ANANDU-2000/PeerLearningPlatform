@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}PeerLearn - Connect with Expert Mentors{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Glassmorphism -->
+<section class="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+    <!-- Parallax Background Elements -->
+    <div class="absolute inset-0 w-full h-full overflow-hidden">
+        <div class="parallax-bg absolute -top-20 -left-20 w-96 h-96 rounded-full bg-blue-300 opacity-20 blur-3xl transform translate-y-0" data-speed="0.05"></div>
+        <div class="parallax-bg absolute top-40 right-20 w-64 h-64 rounded-full bg-purple-500 opacity-20 blur-3xl transform translate-y-0" data-speed="0.1"></div>
+        <div class="parallax-bg absolute bottom-20 left-1/4 w-80 h-80 rounded-full bg-pink-400 opacity-20 blur-3xl transform translate-y-0" data-speed="0.08"></div>
+    </div>
+    
+    <div class="container mx-auto px-6 z-10 py-12 lg:py-24">
+        <div class="flex flex-col lg:flex-row items-center">
+            <div class="lg:w-1/2 lg:pr-12 mb-10 lg:mb-0">
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+                    {% trans "Learn Directly from" %}<br>
+                    <span class="text-yellow-300">{% trans "Industry Experts" %}</span>
+                </h1>
+                <p class="text-xl mb-8 text-blue-100">
+                    {% trans "Connect with accomplished mentors for personalized 1-on-1 sessions. Advance your skills and achieve your career goals faster." %}
+                </p>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <a href="{% url 'session_list' %}" class="btn-primary px-8 py-4 rounded-lg font-bold text-center transform transition hover:scale-105">
+                        {% trans "Browse Sessions" %}
+                    </a>
+                    <a href="{% url 'role_selection' %}" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-center transform transition hover:scale-105">
+                        {% trans "Become a Mentor" %}
+                    </a>
+                </div>
+                
+                <!-- Key Stats -->
+                <div class="flex flex-wrap mt-12">
+                    <div class="mr-12 mb-6">
+                        <p class="text-3xl font-bold">1000+</p>
+                        <p class="text-blue-200">{% trans "Expert Mentors" %}</p>
+                    </div>
+                    <div class="mr-12 mb-6">
+                        <p class="text-3xl font-bold">50,000+</p>
+                        <p class="text-blue-200">{% trans "Live Sessions" %}</p>
+                    </div>
+                    <div class="mb-6">
+                        <p class="text-3xl font-bold">4.8/5</p>
+                        <p class="text-blue-200">{% trans "Satisfaction Score" %}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Glassmorphism Hero Card -->
+            <div class="lg:w-1/2 glass-card p-6 rounded-xl overflow-hidden relative">
+                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-white/5 pointer-events-none"></div>
+                <img src="https://cdn.jsdelivr.net/gh/mockingbot/MockingBot/public/images/illustration/online-learning.svg" alt="Online Learning Illustration" class="w-full">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800">{% trans "How PeerLearn Works" %}</h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">{% trans "Three simple steps to start learning from the best in the industry" %}</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Step 1 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                <div class="p-6">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <i data-feather="search" class="h-8 w-8 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">{% trans "1. Find Your Perfect Mentor" %}</h3>
+                    <p class="text-gray-600">{% trans "Browse through our curated list of industry experts and find someone who aligns with your learning goals." %}</p>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                <div class="p-6">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <i data-feather="calendar" class="h-8 w-8 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">{% trans "2. Book a Live Session" %}</h3>
+                    <p class="text-gray-600">{% trans "Choose a convenient time slot and book a personalized one-on-one session with your selected mentor." %}</p>
+                </div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                <div class="p-6">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <i data-feather="video" class="h-8 w-8 text-blue-600"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3 text-gray-800">{% trans "3. Learn & Grow Together" %}</h3>
+                    <p class="text-gray-600">{% trans "Join the live video session, collaborate on the interactive whiteboard, and accelerate your learning journey." %}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Sessions Carousel (Netflix-style) -->
+<section class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Trending Sessions" %}</h2>
+        
+        <div class="relative featured-carousel">
+            <button class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 focus:outline-none" id="prev-button">
+                <i data-feather="chevron-left" class="h-6 w-6 text-gray-600"></i>
+            </button>
+            
+            <div class="carousel-container overflow-x-auto hide-scrollbar">
+                <div class="carousel-track flex space-x-6 transition-transform duration-500 ease-out">
+                    <!-- Will be populated with sessions from the database -->
+                    <!-- Example Session Cards -->
+                    <div class="carousel-item flex-none w-72">
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
+                            <div class="h-40 bg-blue-100 relative">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i data-feather="code" class="h-12 w-12 text-blue-500"></i>
+                                </div>
+                                <div class="absolute bottom-0 left-0 bg-blue-600 text-white px-3 py-1 text-sm font-bold">
+                                    {% trans "Programming" %}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Advanced React Patterns" %}</h3>
+                                <div class="flex items-center mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+                                    <span class="text-sm text-gray-600">Sarah Johnson</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-4">
+                                    <span class="text-blue-600 font-bold">₹1,200</span>
+                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- More example cards... -->
+                    <div class="carousel-item flex-none w-72">
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
+                            <div class="h-40 bg-green-100 relative">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i data-feather="bar-chart-2" class="h-12 w-12 text-green-500"></i>
+                                </div>
+                                <div class="absolute bottom-0 left-0 bg-green-600 text-white px-3 py-1 text-sm font-bold">
+                                    {% trans "Finance" %}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Investment Strategies 101" %}</h3>
+                                <div class="flex items-center mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+                                    <span class="text-sm text-gray-600">Michael Chen</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-4">
+                                    <span class="text-blue-600 font-bold">₹1,500</span>
+                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-item flex-none w-72">
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
+                            <div class="h-40 bg-red-100 relative">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i data-feather="camera" class="h-12 w-12 text-red-500"></i>
+                                </div>
+                                <div class="absolute bottom-0 left-0 bg-red-600 text-white px-3 py-1 text-sm font-bold">
+                                    {% trans "Photography" %}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Portrait Photography Masterclass" %}</h3>
+                                <div class="flex items-center mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+                                    <span class="text-sm text-gray-600">Emma Wilson</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-4">
+                                    <span class="text-blue-600 font-bold">₹900</span>
+                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-item flex-none w-72">
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
+                            <div class="h-40 bg-purple-100 relative">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i data-feather="trending-up" class="h-12 w-12 text-purple-500"></i>
+                                </div>
+                                <div class="absolute bottom-0 left-0 bg-purple-600 text-white px-3 py-1 text-sm font-bold">
+                                    {% trans "Marketing" %}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Digital Marketing Strategy" %}</h3>
+                                <div class="flex items-center mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+                                    <span class="text-sm text-gray-600">David Lopez</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-4">
+                                    <span class="text-blue-600 font-bold">₹1,800</span>
+                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="carousel-item flex-none w-72">
+                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
+                            <div class="h-40 bg-yellow-100 relative">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <i data-feather="edit-3" class="h-12 w-12 text-yellow-500"></i>
+                                </div>
+                                <div class="absolute bottom-0 left-0 bg-yellow-600 text-white px-3 py-1 text-sm font-bold">
+                                    {% trans "Writing" %}
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Creative Writing Workshop" %}</h3>
+                                <div class="flex items-center mb-2">
+                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+                                    <span class="text-sm text-gray-600">Priya Singh</span>
+                                </div>
+                                <div class="flex justify-between items-center mt-4">
+                                    <span class="text-blue-600 font-bold">₹1,000</span>
+                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 focus:outline-none" id="next-button">
+                <i data-feather="chevron-right" class="h-6 w-6 text-gray-600"></i>
+            </button>
+        </div>
+        
+        <div class="text-center mt-8">
+            <a href="{% url 'session_list' %}" class="inline-flex items-center text-blue-600 font-bold hover:text-blue-800">
+                {% trans "View All Sessions" %}
+                <i data-feather="arrow-right" class="ml-2 h-4 w-4"></i>
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Mentors -->
+<section class="py-20 bg-gray-50">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Meet Our Top Mentors" %}</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {% if featured_mentors %}
+                {% for mentor in featured_mentors %}
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                        <div class="p-6">
+                            <div class="flex items-center mb-4">
+                                {% if mentor.user.profile_picture %}
+                                    <img src="{{ mentor.user.profile_picture.url }}" alt="{{ mentor.user.get_full_name }}" class="w-16 h-16 rounded-full object-cover mr-4">
+                                {% else %}
+                                    <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">
+                                        {{ mentor.user.first_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-800">{{ mentor.user.get_full_name }}</h3>
+                                    <p class="text-blue-600">{{ mentor.expertise }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center mb-3">
+                                <div class="flex text-yellow-400">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= mentor.average_rating %}
+                                            <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                        {% else %}
+                                            <i data-feather="star" class="h-4 w-4"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <span class="ml-2 text-sm text-gray-600">{{ mentor.total_reviews }} {% trans "reviews" %}</span>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4 line-clamp-3">{{ mentor.bio }}</p>
+                            
+                            <div class="mt-4">
+                                <a href="{{ mentor.get_absolute_url }}" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
+                                    {% trans "View Profile" %}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <!-- Example Mentors (if no featured mentors in database) -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">A</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Ankit Patel</h3>
+                                <p class="text-blue-600">{% trans "Full Stack Developer" %}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center mb-3">
+                            <div class="flex text-yellow-400">
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-600">42 {% trans "reviews" %}</span>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-4 line-clamp-3">{% trans "Senior developer with 8+ years of experience in React, Node.js, and Python. Previously worked at Google and Amazon." %}</p>
+                        
+                        <div class="mt-4">
+                            <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
+                                {% trans "View Profile" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-16 h-16 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xl mr-4">M</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Meera Singh</h3>
+                                <p class="text-blue-600">{% trans "Data Scientist" %}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center mb-3">
+                            <div class="flex text-yellow-400">
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4"></i>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-600">36 {% trans "reviews" %}</span>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-4 line-clamp-3">{% trans "ML expert specialized in NLP and computer vision. PhD from Stanford University." %}</p>
+                        
+                        <div class="mt-4">
+                            <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
+                                {% trans "View Profile" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
+                    <div class="p-6">
+                        <div class="flex items-center mb-4">
+                            <div class="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl mr-4">R</div>
+                            <div>
+                                <h3 class="text-xl font-bold text-gray-800">Raj Malhotra</h3>
+                                <p class="text-blue-600">{% trans "Product Designer" %}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center mb-3">
+                            <div class="flex text-yellow-400">
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                            </div>
+                            <span class="ml-2 text-sm text-gray-600">28 {% trans "reviews" %}</span>
+                        </div>
+                        
+                        <p class="text-gray-600 mb-4 line-clamp-3">{% trans "UI/UX designer with a passion for creating intuitive, accessible digital experiences. Works as Design Lead at Flipkart." %}</p>
+                        
+                        <div class="mt-4">
+                            <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
+                                {% trans "View Profile" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section class="py-20 bg-white">
+    <div class="container mx-auto px-6">
+        <div class="text-center mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800">{% trans "What Our Learners Say" %}</h2>
+            <p class="text-xl text-gray-600 max-w-2xl mx-auto">{% trans "Hear from people who have accelerated their learning journey with PeerLearn" %}</p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <!-- Testimonial 1 -->
+            <div class="glass-card p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">S</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800">Sanjay Gupta</h3>
+                        <p class="text-gray-600 text-sm">{% trans "Software Engineer" %}</p>
+                    </div>
+                </div>
+                <div class="flex text-yellow-400 mb-3">
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                </div>
+                <p class="text-gray-700">{% trans "The 1-on-1 mentoring sessions were game-changing for my career. My mentor provided practical insights that no online course could offer. Within 3 months, I managed to land my dream job." %}</p>
+            </div>
+            
+            <!-- Testimonial 2 -->
+            <div class="glass-card p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xl mr-4">N</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800">Neha Sharma</h3>
+                        <p class="text-gray-600 text-sm">{% trans "UX Designer" %}</p>
+                    </div>
+                </div>
+                <div class="flex text-yellow-400 mb-3">
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4"></i>
+                </div>
+                <p class="text-gray-700">{% trans "The whiteboard feature was amazing for collaborative design reviews. My mentor helped me improve my portfolio significantly, and I received great feedback in my interviews." %}</p>
+            </div>
+            
+            <!-- Testimonial 3 -->
+            <div class="glass-card p-6 rounded-xl">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl mr-4">V</div>
+                    <div>
+                        <h3 class="font-bold text-gray-800">Vikram Desai</h3>
+                        <p class="text-gray-600 text-sm">{% trans "Data Analyst" %}</p>
+                    </div>
+                </div>
+                <div class="flex text-yellow-400 mb-3">
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                </div>
+                <p class="text-gray-700">{% trans "I was struggling with complex SQL queries and data visualization. After just 5 sessions with my mentor, I gained the confidence to tackle challenging projects at work. Worth every rupee!" %}</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+    <div class="container mx-auto px-6 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold mb-6">{% trans "Ready to Accelerate Your Learning?" %}</h2>
+        <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">{% trans "Join thousands of learners who are achieving their goals faster with personalized mentorship." %}</p>
+        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
+            <a href="{% url 'session_list' %}" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold transform transition hover:scale-105">
+                {% trans "Find a Mentor" %}
+            </a>
+            <a href="{% url 'role_selection' %}" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold transform transition hover:scale-105">
+                {% trans "Become a Mentor" %}
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Parallax effect for background elements
+    document.addEventListener('DOMContentLoaded', function() {
+        const parallaxElements = document.querySelectorAll('.parallax-bg');
+        
+        window.addEventListener('mousemove', function(e) {
+            const mouseX = e.clientX / window.innerWidth;
+            const mouseY = e.clientY / window.innerHeight;
+            
+            parallaxElements.forEach(element => {
+                const speed = parseFloat(element.getAttribute('data-speed'));
+                const x = (mouseX - 0.5) * speed * 100;
+                const y = (mouseY - 0.5) * speed * 100;
+                
+                element.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+        
+        // Carousel Logic
+        const track = document.querySelector('.carousel-track');
+        const items = document.querySelectorAll('.carousel-item');
+        const prevBtn = document.getElementById('prev-button');
+        const nextBtn = document.getElementById('next-button');
+        
+        let currentIndex = 0;
+        const itemWidth = 288; // width + margin
+        const visibleItems = Math.floor(track.clientWidth / itemWidth);
+        const maxIndex = items.length - visibleItems;
+        
+        function updateCarousel() {
+            track.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
+        }
+        
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateCarousel();
+            }
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < maxIndex) {
+                currentIndex++;
+                updateCarousel();
+            }
+        });
+        
+        // Update feather icons after DOM modification
+        feather.replace();
+    });
+</script>
+
+<style>
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
+{% endblock %}

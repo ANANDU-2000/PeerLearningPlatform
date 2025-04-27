@@ -1,0 +1,493 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Register" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 py-12">
+    <div class="container mx-auto px-6">
+        <div class="max-w-2xl mx-auto">
+            <!-- Registration Glass Card -->
+            <div class="glass-card rounded-xl overflow-hidden shadow-xl">
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        {% if role == 'learner' %}
+                            <h1 class="text-3xl font-bold text-white mb-3">{% trans "Join as a Learner" %}</h1>
+                            <p class="text-blue-100">{% trans "Create your account to start your learning journey" %}</p>
+                        {% else %}
+                            <h1 class="text-3xl font-bold text-white mb-3">{% trans "Join as a Mentor" %}</h1>
+                            <p class="text-blue-100">{% trans "Create your account to start mentoring others" %}</p>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Registration Progress Steps -->
+                    <div class="flex justify-between mb-8 relative">
+                        <div class="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-gray-300 bg-opacity-30"></div>
+                        
+                        <div class="step-item z-10 relative flex flex-col items-center active">
+                            <div class="w-8 h-8 rounded-full bg-white text-blue-600 flex items-center justify-center font-bold step-circle">1</div>
+                            <span class="mt-2 text-sm text-white">{% trans "Account" %}</span>
+                        </div>
+                        
+                        <div class="step-item z-10 relative flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-white bg-opacity-30 text-white flex items-center justify-center font-bold step-circle">2</div>
+                            <span class="mt-2 text-sm text-white">
+                                {% if role == 'learner' %}
+                                    {% trans "Goals" %}
+                                {% else %}
+                                    {% trans "Expertise" %}
+                                {% endif %}
+                            </span>
+                        </div>
+                        
+                        <div class="step-item z-10 relative flex flex-col items-center">
+                            <div class="w-8 h-8 rounded-full bg-white bg-opacity-30 text-white flex items-center justify-center font-bold step-circle">3</div>
+                            <span class="mt-2 text-sm text-white">{% trans "Profile" %}</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Registration Form -->
+                    <form method="post" id="registration-form" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <!-- Step 1: Basic Account Information -->
+                        <div id="step-1" class="step-content active">
+                            <!-- Email Field -->
+                            <div class="mb-4">
+                                <label for="{{ user_form.email.id_for_label }}" class="block text-white mb-2">{% trans "Email Address" %}*</label>
+                                {{ user_form.email }}
+                                {% if user_form.email.errors %}
+                                    <p class="text-red-300 text-sm mt-1">{{ user_form.email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Name Fields -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label for="{{ user_form.first_name.id_for_label }}" class="block text-white mb-2">{% trans "First Name" %}*</label>
+                                    {{ user_form.first_name }}
+                                    {% if user_form.first_name.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ user_form.first_name.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ user_form.last_name.id_for_label }}" class="block text-white mb-2">{% trans "Last Name" %}*</label>
+                                    {{ user_form.last_name }}
+                                    {% if user_form.last_name.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ user_form.last_name.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Password Fields -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                <div>
+                                    <label for="{{ user_form.password1.id_for_label }}" class="block text-white mb-2">{% trans "Password" %}*</label>
+                                    {{ user_form.password1 }}
+                                    {% if user_form.password1.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ user_form.password1.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ user_form.password2.id_for_label }}" class="block text-white mb-2">{% trans "Confirm Password" %}*</label>
+                                    {{ user_form.password2 }}
+                                    {% if user_form.password2.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ user_form.password2.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button type="button" class="next-step bg-white text-blue-600 font-bold py-3 px-6 rounded-lg hover:bg-blue-50 focus:outline-none transition">
+                                    {% trans "Next" %} <i data-feather="arrow-right" class="inline-block ml-1 h-4 w-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Goals or Expertise -->
+                        <div id="step-2" class="step-content hidden">
+                            {% if role == 'learner' %}
+                                <!-- Learner Profile Fields -->
+                                <div class="mb-6">
+                                    <label for="{{ profile_form.career_goals.id_for_label }}" class="block text-white mb-2">{% trans "What are your career goals?" %}*</label>
+                                    {{ profile_form.career_goals }}
+                                    <p class="text-blue-100 text-sm mt-1">{% trans "Type to see suggestions based on popular career paths" %}</p>
+                                    {% if profile_form.career_goals.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ profile_form.career_goals.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-6">
+                                    <label for="{{ profile_form.bio.id_for_label }}" class="block text-white mb-2">{% trans "Tell us a bit about yourself" %}</label>
+                                    {{ profile_form.bio }}
+                                    {% if profile_form.bio.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ profile_form.bio.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <!-- Mentor Profile Fields -->
+                                <div class="mb-6">
+                                    <label for="{{ profile_form.expertise.id_for_label }}" class="block text-white mb-2">{% trans "What is your area of expertise?" %}*</label>
+                                    {{ profile_form.expertise }}
+                                    <p class="text-blue-100 text-sm mt-1">{% trans "Type to see suggestions based on in-demand skills" %}</p>
+                                    {% if profile_form.expertise.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ profile_form.expertise.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-6">
+                                    <label for="{{ profile_form.bio.id_for_label }}" class="block text-white mb-2">{% trans "Professional Bio" %}*</label>
+                                    {{ profile_form.bio }}
+                                    <p class="text-blue-100 text-sm mt-1">{% trans "Share your experience, credentials, and what makes you a great mentor" %}</p>
+                                    {% if profile_form.bio.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ profile_form.bio.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mb-6">
+                                    <label for="{{ profile_form.hourly_rate.id_for_label }}" class="block text-white mb-2">{% trans "Your hourly rate (INR)" %}*</label>
+                                    {{ profile_form.hourly_rate }}
+                                    <p class="text-blue-100 text-sm mt-1">{% trans "This is your base rate. You can set different prices for individual sessions later." %}</p>
+                                    {% if profile_form.hourly_rate.errors %}
+                                        <p class="text-red-300 text-sm mt-1">{{ profile_form.hourly_rate.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="flex justify-between">
+                                <button type="button" class="prev-step bg-transparent text-white border border-white font-bold py-3 px-6 rounded-lg hover:bg-white hover:bg-opacity-10 focus:outline-none transition">
+                                    <i data-feather="arrow-left" class="inline-block mr-1 h-4 w-4"></i> {% trans "Back" %}
+                                </button>
+                                <button type="button" class="next-step bg-white text-blue-600 font-bold py-3 px-6 rounded-lg hover:bg-blue-50 focus:outline-none transition">
+                                    {% trans "Next" %} <i data-feather="arrow-right" class="inline-block ml-1 h-4 w-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 3: Profile Completion -->
+                        <div id="step-3" class="step-content hidden">
+                            <div class="mb-6">
+                                <label class="block text-white mb-2">{% trans "Profile Picture" %}</label>
+                                <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-white border-dashed rounded-lg">
+                                    <div class="space-y-1 text-center">
+                                        <div class="flex text-sm text-blue-100">
+                                            <label for="profile_picture" class="relative cursor-pointer bg-transparent rounded-md font-medium text-white hover:text-blue-300 focus-within:outline-none">
+                                                <svg class="mx-auto h-12 w-12 text-white" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                                </svg>
+                                                <span class="block text-white">{% trans "Choose a file" %}</span>
+                                                <input id="profile_picture" name="profile_picture" type="file" class="sr-only" accept="image/*">
+                                            </label>
+                                        </div>
+                                        <p class="text-xs text-blue-100">
+                                            PNG, JPG, GIF up to 5MB
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if role == 'mentor' %}
+                                <div class="mb-6">
+                                    <label class="block text-white mb-2">{% trans "Introduction Video (Optional)" %}</label>
+                                    <input type="text" name="intro_video" class="w-full px-4 py-2 rounded-lg bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg border border-gray-300" placeholder="{% trans 'YouTube or Vimeo URL' %}">
+                                    <p class="text-blue-100 text-sm mt-1">{% trans "A short intro video can significantly increase your bookings" %}</p>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="flex items-center mb-6">
+                                <input type="checkbox" id="terms" name="terms" class="h-4 w-4 border-gray-300 rounded text-blue-600 focus:ring-blue-500">
+                                <label for="terms" class="ml-2 block text-sm text-blue-100">
+                                    {% trans "I agree to the" %} <a href="#" class="text-white hover:underline">{% trans "Terms of Service" %}</a> {% trans "and" %} <a href="#" class="text-white hover:underline">{% trans "Privacy Policy" %}</a>
+                                </label>
+                            </div>
+                            
+                            <div class="flex justify-between">
+                                <button type="button" class="prev-step bg-transparent text-white border border-white font-bold py-3 px-6 rounded-lg hover:bg-white hover:bg-opacity-10 focus:outline-none transition">
+                                    <i data-feather="arrow-left" class="inline-block mr-1 h-4 w-4"></i> {% trans "Back" %}
+                                </button>
+                                <button type="submit" class="bg-white text-blue-600 font-bold py-3 px-6 rounded-lg hover:bg-blue-50 focus:outline-none transition">
+                                    {% trans "Complete Registration" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    <!-- Sign In Link -->
+                    <div class="text-center mt-8">
+                        <p class="text-blue-100">
+                            {% trans "Already have an account?" %}
+                            <a href="{% url 'login' %}" class="text-white font-bold hover:underline">{% trans "Sign in" %}</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const steps = document.querySelectorAll('.step-content');
+        const stepCircles = document.querySelectorAll('.step-item');
+        const nextButtons = document.querySelectorAll('.next-step');
+        const prevButtons = document.querySelectorAll('.prev-step');
+        
+        // Autocomplete suggestions
+        const autocompleteField = document.querySelector('[data-autocomplete]');
+        if (autocompleteField) {
+            const autocompleteType = autocompleteField.getAttribute('data-autocomplete');
+            
+            // Example suggestions based on type
+            const suggestions = {
+                'career': [
+                    'Software Engineer', 'Data Scientist', 'Product Manager', 
+                    'UX Designer', 'Digital Marketing Specialist', 'Full Stack Developer',
+                    'Machine Learning Engineer', 'Cloud Architect', 'DevOps Engineer',
+                    'Cybersecurity Analyst', 'Business Analyst', 'Project Manager'
+                ],
+                'expertise': [
+                    'Web Development', 'Data Science', 'Mobile App Development',
+                    'UI/UX Design', 'Digital Marketing', 'Cloud Computing',
+                    'Artificial Intelligence', 'Cybersecurity', 'Blockchain',
+                    'Product Management', 'Project Management', 'Business Strategy'
+                ]
+            };
+            
+            // Create suggestions container
+            const suggestionsContainer = document.createElement('div');
+            suggestionsContainer.className = 'suggestions-container hidden absolute z-10 bg-white rounded-md shadow-lg max-h-60 overflow-auto w-full';
+            autocompleteField.parentNode.style.position = 'relative';
+            autocompleteField.parentNode.appendChild(suggestionsContainer);
+            
+            // Handle input for autocomplete
+            autocompleteField.addEventListener('input', function() {
+                const value = this.value.toLowerCase();
+                
+                if (value.length < 2) {
+                    suggestionsContainer.classList.add('hidden');
+                    return;
+                }
+                
+                // Filter suggestions based on input
+                const matchedSuggestions = suggestions[autocompleteType].filter(
+                    suggestion => suggestion.toLowerCase().includes(value)
+                );
+                
+                // Display suggestions
+                if (matchedSuggestions.length > 0) {
+                    suggestionsContainer.innerHTML = '';
+                    matchedSuggestions.forEach(suggestion => {
+                        const item = document.createElement('div');
+                        item.className = 'suggestion-item px-4 py-2 hover:bg-blue-100 cursor-pointer';
+                        item.textContent = suggestion;
+                        item.addEventListener('click', function() {
+                            autocompleteField.value = suggestion;
+                            suggestionsContainer.classList.add('hidden');
+                        });
+                        suggestionsContainer.appendChild(item);
+                    });
+                    suggestionsContainer.classList.remove('hidden');
+                } else {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+            
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!autocompleteField.contains(event.target) && !suggestionsContainer.contains(event.target)) {
+                    suggestionsContainer.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Handle profile picture preview
+        const profilePictureInput = document.getElementById('profile_picture');
+        if (profilePictureInput) {
+            profilePictureInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('{% trans "File is too large. Maximum size is 5MB." %}');
+                    this.value = '';
+                    return;
+                }
+                
+                // Create preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const container = profilePictureInput.closest('div').querySelector('svg').parentNode;
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'mx-auto h-24 w-24 rounded-full object-cover';
+                    container.innerHTML = '';
+                    container.appendChild(img);
+                    
+                    // Add a remove button
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'bg-red-600 text-white text-xs rounded-full px-2 py-1 mt-2';
+                    removeBtn.textContent = '{% trans "Remove" %}';
+                    removeBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        profilePictureInput.value = '';
+                        container.innerHTML = `
+                            <svg class="mx-auto h-12 w-12 text-white" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                            <span class="block text-white">{% trans "Choose a file" %}</span>
+                        `;
+                    });
+                    container.appendChild(removeBtn);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Next step button
+        nextButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const currentStep = this.closest('.step-content');
+                const currentIndex = Array.from(steps).indexOf(currentStep);
+                const nextIndex = currentIndex + 1;
+                
+                // Basic validation for current step
+                let isValid = true;
+                const requiredFields = currentStep.querySelectorAll('input[required], textarea[required]');
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        field.classList.add('border-red-500');
+                        isValid = false;
+                    } else {
+                        field.classList.remove('border-red-500');
+                    }
+                });
+                
+                if (!isValid) {
+                    return;
+                }
+                
+                if (nextIndex < steps.length) {
+                    // Hide current step
+                    currentStep.classList.add('hidden');
+                    currentStep.classList.remove('active');
+                    
+                    // Show next step
+                    steps[nextIndex].classList.remove('hidden');
+                    steps[nextIndex].classList.add('active');
+                    
+                    // Update progress indicator
+                    stepCircles[currentIndex].classList.add('completed');
+                    stepCircles[nextIndex].classList.add('active');
+                    stepCircles[nextIndex].querySelector('.step-circle').classList.remove('bg-opacity-30');
+                    stepCircles[nextIndex].querySelector('.step-circle').classList.add('bg-white');
+                    stepCircles[nextIndex].querySelector('.step-circle').classList.add('text-blue-600');
+                    stepCircles[nextIndex].querySelector('.step-circle').classList.remove('text-white');
+                    
+                    // If it's the last step, potentially show a confetti effect
+                    if (nextIndex === steps.length - 1) {
+                        // Confetti effect for final step
+                        renderConfetti();
+                    }
+                }
+            });
+        });
+        
+        // Previous step button
+        prevButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const currentStep = this.closest('.step-content');
+                const currentIndex = Array.from(steps).indexOf(currentStep);
+                const prevIndex = currentIndex - 1;
+                
+                if (prevIndex >= 0) {
+                    // Hide current step
+                    currentStep.classList.add('hidden');
+                    currentStep.classList.remove('active');
+                    
+                    // Show previous step
+                    steps[prevIndex].classList.remove('hidden');
+                    steps[prevIndex].classList.add('active');
+                    
+                    // Update progress indicator
+                    stepCircles[currentIndex].classList.remove('active');
+                    stepCircles[currentIndex].querySelector('.step-circle').classList.add('bg-opacity-30');
+                    stepCircles[currentIndex].querySelector('.step-circle').classList.remove('bg-white', 'text-blue-600');
+                    stepCircles[currentIndex].querySelector('.step-circle').classList.add('text-white');
+                }
+            });
+        });
+        
+        // Form submission
+        const form = document.getElementById('registration-form');
+        form.addEventListener('submit', function(e) {
+            // Check terms checkbox
+            const termsCheckbox = document.getElementById('terms');
+            if (!termsCheckbox.checked) {
+                e.preventDefault();
+                alert('{% trans "Please agree to the Terms of Service and Privacy Policy" %}');
+                return;
+            }
+        });
+        
+        // Simple confetti effect
+        function renderConfetti() {
+            const confettiCount = 100;
+            const container = document.createElement('div');
+            container.style.position = 'fixed';
+            container.style.top = 0;
+            container.style.left = 0;
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.pointerEvents = 'none';
+            container.style.zIndex = 9999;
+            document.body.appendChild(container);
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.style.position = 'absolute';
+                confetti.style.width = `${Math.random() * 10 + 5}px`;
+                confetti.style.height = `${Math.random() * 5 + 5}px`;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = '-20px';
+                confetti.style.opacity = Math.random();
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                confetti.style.animation = `confetti-fall ${Math.random() * 3 + 2}s linear forwards`;
+                container.appendChild(confetti);
+            }
+            
+            // Remove confetti after animation completes
+            setTimeout(() => {
+                container.remove();
+            }, 5000);
+        }
+    });
+</script>
+
+<style>
+    /* Step indicator styling */
+    .step-item.active .step-circle {
+        background-color: white;
+        color: var(--primary-color);
+    }
+    
+    .step-item.completed .step-circle {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    /* Confetti animation */
+    @keyframes confetti-fall {
+        0% {
+            transform: translateY(0) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(100vh) rotate(720deg);
+            opacity: 0;
+        }
+    }
+</style>
+{% endblock %}

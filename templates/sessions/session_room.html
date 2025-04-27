@@ -1,0 +1,554 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{{ session.title }} | Live Session | PeerLearn{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Full-screen layout for session room */
+    body {
+        overflow: hidden;
+    }
+    
+    .session-room {
+        height: calc(100vh - 64px); /* Full height minus navbar */
+    }
+    
+    /* Video containers */
+    .video-container {
+        background-color: #1a1a1a;
+        border-radius: 8px;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .video-container.mentor {
+        min-height: 400px;
+    }
+    
+    .video-container.learner {
+        min-height: 180px;
+    }
+    
+    .video-container video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .video-container .label {
+        position: absolute;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+    
+    .video-container .controls {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        display: flex;
+        gap: 8px;
+    }
+    
+    .video-container .controls button {
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    /* Sidebar tabs */
+    .tab {
+        cursor: pointer;
+        padding: 10px 16px;
+        font-weight: 500;
+        border-bottom: 2px solid transparent;
+    }
+    
+    .tab.active {
+        border-bottom-color: #007BFF;
+        color: #007BFF;
+    }
+    
+    /* Chat area */
+    .chat-messages {
+        height: calc(100% - 60px);
+        overflow-y: auto;
+    }
+    
+    .message {
+        margin-bottom: 12px;
+        max-width: 85%;
+    }
+    
+    .message.sent {
+        margin-left: auto;
+        background-color: #E3F2FD;
+    }
+    
+    .message.received {
+        margin-right: auto;
+        background-color: #F1F1F1;
+    }
+    
+    /* Whiteboard */
+    #whiteboard-container {
+        width: 100%;
+        height: 100%;
+        background-color: white;
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        overflow: hidden;
+    }
+    
+    #whiteboard {
+        width: 100%;
+        height: 100%;
+    }
+    
+    .whiteboard-tools {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        background: white;
+        border-radius: 8px;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    .whiteboard-tools button {
+        background: #f3f4f6;
+        border: none;
+        border-radius: 4px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    
+    .whiteboard-tools button.active {
+        background: #007BFF;
+        color: white;
+    }
+    
+    /* Participants list */
+    .participant {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border-radius: 8px;
+    }
+    
+    .participant:hover {
+        background-color: #f9fafb;
+    }
+    
+    .participant .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background-color: #007BFF;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    
+    .participant .name {
+        flex-grow: 1;
+    }
+    
+    .participant .role-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        margin-left: 8px;
+    }
+    
+    /* Hand raised animation */
+    .hand-raised-icon {
+        animation: wave 1s infinite;
+        transform-origin: bottom right;
+    }
+    
+    @keyframes wave {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-15deg); }
+        75% { transform: rotate(15deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="session-room bg-gray-100 flex flex-col md:flex-row">
+    <!-- Main Content Area (Video + Whiteboard) -->
+    <div class="flex-grow flex flex-col p-4">
+        <!-- Session Info Banner -->
+        <div class="bg-white rounded-lg shadow-sm p-3 mb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold">{{ session.title }}</h1>
+                <p class="text-sm text-gray-600">{{ session.start_time|date:"F j, Y" }} | {{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</p>
+            </div>
+            <div class="flex items-center">
+                <div class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-4">
+                    {% trans "Live" %}
+                </div>
+                <div class="hidden md:flex items-center border-l border-gray-300 pl-4">
+                    <button id="leave-session" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition">
+                        {% trans "Leave Session" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Display Area (Video/Whiteboard) -->
+        <div class="flex-grow relative">
+            <!-- Video Grid -->
+            <div id="video-grid" class="h-full">
+                <!-- Mentor Video -->
+                <div class="video-container mentor mb-4">
+                    <video id="mentor-video" autoplay muted playsinline></video>
+                    <div class="label">{{ session.mentor.user.get_full_name }} ({% trans "Mentor" %})</div>
+                    <div class="controls">
+                        <button id="toggle-audio" title="Mute/Unmute">
+                            <i data-feather="mic" id="mic-icon"></i>
+                        </button>
+                        <button id="toggle-video" title="Enable/Disable Video">
+                            <i data-feather="video" id="video-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Learner Videos (will be populated by JS) -->
+                <div id="learner-videos" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <!-- Your video will appear here -->
+                    <div class="video-container learner">
+                        <video id="local-video" autoplay muted playsinline></video>
+                        <div class="label">{% trans "You" %}</div>
+                    </div>
+                    
+                    <!-- Other participants' videos will be added here dynamically -->
+                </div>
+            </div>
+            
+            <!-- Whiteboard (Initially Hidden) -->
+            <div id="whiteboard-area" class="h-full hidden">
+                <div id="whiteboard-container" class="relative">
+                    <canvas id="whiteboard"></canvas>
+                    
+                    <div class="whiteboard-tools">
+                        <button id="tool-pen" class="active" title="{% trans 'Pen' %}">
+                            <i data-feather="edit-2" class="h-4 w-4"></i>
+                        </button>
+                        <button id="tool-eraser" title="{% trans 'Eraser' %}">
+                            <i data-feather="delete" class="h-4 w-4"></i>
+                        </button>
+                        <button id="tool-text" title="{% trans 'Text' %}">
+                            <i data-feather="type" class="h-4 w-4"></i>
+                        </button>
+                        <button id="tool-shape" title="{% trans 'Shape' %}">
+                            <i data-feather="square" class="h-4 w-4"></i>
+                        </button>
+                        <button id="tool-clear" title="{% trans 'Clear All' %}">
+                            <i data-feather="trash-2" class="h-4 w-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mode Switcher and Mobile Controls -->
+        <div class="bg-white rounded-lg shadow-sm p-3 mt-4 flex justify-between items-center">
+            <div class="flex space-x-4">
+                <button id="view-video" class="flex items-center text-blue-600 font-medium">
+                    <i data-feather="video" class="h-4 w-4 mr-2"></i>
+                    {% trans "Video" %}
+                </button>
+                <button id="view-whiteboard" class="flex items-center text-gray-600 font-medium">
+                    <i data-feather="edit-3" class="h-4 w-4 mr-2"></i>
+                    {% trans "Whiteboard" %}
+                </button>
+            </div>
+            
+            <div class="md:hidden flex items-center">
+                <button id="leave-session-mobile" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition">
+                    <i data-feather="log-out" class="h-4 w-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar (Chat, Participants, etc.) -->
+    <div class="w-full md:w-80 bg-white border-l border-gray-200 flex flex-col">
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200">
+            <div id="tab-chat" class="tab active flex-1 text-center">
+                {% trans "Chat" %}
+            </div>
+            <div id="tab-participants" class="tab flex-1 text-center">
+                {% trans "Participants" %}
+            </div>
+            <div id="tab-info" class="tab flex-1 text-center">
+                {% trans "Info" %}
+            </div>
+        </div>
+        
+        <!-- Chat Panel -->
+        <div id="panel-chat" class="flex-grow flex flex-col p-4">
+            <div class="chat-messages" id="chat-messages">
+                <!-- System message -->
+                <div class="message system bg-gray-100 text-gray-700 p-3 rounded-lg text-center text-sm">
+                    {% trans "Welcome to the session! You can chat with the mentor and other participants here." %}
+                </div>
+                
+                <!-- Messages will be added here by JS -->
+            </div>
+            
+            <div class="mt-auto pt-3 border-t border-gray-200">
+                <form id="chat-form" class="flex">
+                    <input type="text" id="chat-input" class="flex-grow px-4 py-2 rounded-l-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="{% trans 'Type a message...' %}">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition">
+                        <i data-feather="send" class="h-4 w-4"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Participants Panel -->
+        <div id="panel-participants" class="flex-grow p-4 overflow-y-auto hidden">
+            <div class="mb-4">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-bold">{% trans "In This Session" %}</h3>
+                    <span class="bg-gray-100 text-gray-700 text-xs font-medium px-2.5 py-0.5 rounded-full" id="participant-count">1</span>
+                </div>
+                
+                <!-- Raise Hand Button -->
+                <button id="raise-hand" class="mt-2 w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
+                    <i data-feather="hand" class="h-4 w-4 mr-2"></i>
+                    {% trans "Raise Hand" %}
+                </button>
+            </div>
+            
+            <div id="participants-list">
+                <!-- Participants will be added here by JS -->
+                <div class="participant">
+                    <div class="avatar bg-blue-600">
+                        {{ session.mentor.user.first_name|first|upper }}
+                    </div>
+                    <div class="name">{{ session.mentor.user.get_full_name }}</div>
+                    <span class="role-badge bg-blue-100 text-blue-800">{% trans "Mentor" %}</span>
+                </div>
+                
+                <div class="participant">
+                    <div class="avatar">
+                        {{ user.first_name|first|upper }}
+                    </div>
+                    <div class="name">{{ user.get_full_name }} ({% trans "You" %})</div>
+                    <span class="role-badge bg-gray-100 text-gray-800">{% trans "Learner" %}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div id="panel-info" class="flex-grow p-4 overflow-y-auto hidden">
+            <h3 class="font-bold mb-3">{{ session.title }}</h3>
+            
+            <div class="mb-4">
+                <div class="flex items-center mb-2">
+                    <i data-feather="clock" class="h-4 w-4 text-gray-500 mr-2"></i>
+                    <span>{{ session.start_time|date:"F j, Y" }} | {{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</span>
+                </div>
+                
+                <div class="flex items-center mb-4">
+                    <i data-feather="user" class="h-4 w-4 text-gray-500 mr-2"></i>
+                    <span>{{ session.mentor.user.get_full_name }}</span>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h4 class="font-medium mb-2">{% trans "About This Session" %}</h4>
+                <p class="text-gray-700 text-sm">{{ session.description }}</p>
+            </div>
+            
+            <div class="mb-4">
+                <h4 class="font-medium mb-2">{% trans "Technical Support" %}</h4>
+                <p class="text-gray-700 text-sm">{% trans "If you're experiencing technical issues:" %}</p>
+                <ul class="list-disc text-gray-700 text-sm ml-4 mt-1">
+                    <li>{% trans "Refresh the page" %}</li>
+                    <li>{% trans "Check your internet connection" %}</li>
+                    <li>{% trans "Make sure your camera and microphone are properly connected" %}</li>
+                    <li>{% trans "Try a different browser" %}</li>
+                </ul>
+            </div>
+            
+            <div class="mt-auto">
+                <button class="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
+                    <i data-feather="refresh-cw" class="h-4 w-4 mr-2"></i>
+                    {% trans "Refresh Connection" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leave Session Confirmation Modal -->
+<div id="leave-session-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+        <div class="p-6">
+            <h2 class="text-xl font-bold mb-4">{% trans "Leave Session?" %}</h2>
+            <p class="text-gray-700 mb-6">{% trans "Are you sure you want to leave this session? You might not be able to rejoin if it becomes full." %}</p>
+            
+            <div class="flex justify-end space-x-4">
+                <button id="cancel-leave" class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
+                    {% trans "Cancel" %}
+                </button>
+                <a href="{% if is_mentor %}{% url 'mentor_dashboard' %}{% else %}{% url 'learner_dashboard' %}{% endif %}" class="px-4 py-2 bg-red-600 rounded-md text-white hover:bg-red-700 transition">
+                    {% trans "Leave Session" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- WebRTC configuration data from server -->
+<script>
+    window.PEER_CONFIG = {
+        stun_servers: {{ stun_servers|safe }},
+        turn_servers: {{ turn_servers|safe }},
+        turn_username: "{{ turn_username }}",
+        turn_credential: "{{ turn_credential }}",
+        session_id: "{{ session.id }}",
+        user_id: "{{ user.id }}",
+        user_name: "{{ user.get_full_name }}",
+        is_mentor: {% if is_mentor %}true{% else %}false{% endif %},
+    };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/video_room.js' %}"></script>
+<script src="{% static 'js/whiteboard.js' %}"></script>
+<script src="{% static 'js/chat.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const panels = document.querySelectorAll('[id^="panel-"]');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Deactivate all tabs
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // Hide all panels
+                panels.forEach(panel => panel.classList.add('hidden'));
+                
+                // Activate clicked tab
+                this.classList.add('active');
+                
+                // Show corresponding panel
+                const panelId = this.id.replace('tab-', 'panel-');
+                document.getElementById(panelId).classList.remove('hidden');
+            });
+        });
+        
+        // View switching (Video/Whiteboard)
+        const viewVideo = document.getElementById('view-video');
+        const viewWhiteboard = document.getElementById('view-whiteboard');
+        const videoGrid = document.getElementById('video-grid');
+        const whiteboardArea = document.getElementById('whiteboard-area');
+        
+        viewVideo.addEventListener('click', function() {
+            videoGrid.classList.remove('hidden');
+            whiteboardArea.classList.add('hidden');
+            viewVideo.classList.remove('text-gray-600');
+            viewVideo.classList.add('text-blue-600');
+            viewWhiteboard.classList.remove('text-blue-600');
+            viewWhiteboard.classList.add('text-gray-600');
+        });
+        
+        viewWhiteboard.addEventListener('click', function() {
+            videoGrid.classList.add('hidden');
+            whiteboardArea.classList.remove('hidden');
+            viewVideo.classList.remove('text-blue-600');
+            viewVideo.classList.add('text-gray-600');
+            viewWhiteboard.classList.remove('text-gray-600');
+            viewWhiteboard.classList.add('text-blue-600');
+            
+            // Initialize whiteboard if not already
+            if (!window.whiteboardInitialized) {
+                initializeWhiteboard();
+            }
+        });
+        
+        // Leave session modal
+        const leaveButtons = document.querySelectorAll('#leave-session, #leave-session-mobile');
+        const leaveModal = document.getElementById('leave-session-modal');
+        const cancelLeave = document.getElementById('cancel-leave');
+        
+        leaveButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                leaveModal.classList.remove('hidden');
+            });
+        });
+        
+        cancelLeave.addEventListener('click', function() {
+            leaveModal.classList.add('hidden');
+        });
+        
+        // Close modal when clicking outside
+        leaveModal.addEventListener('click', function(e) {
+            if (e.target === leaveModal) {
+                leaveModal.classList.add('hidden');
+            }
+        });
+        
+        // Raise hand functionality
+        const raiseHandBtn = document.getElementById('raise-hand');
+        
+        raiseHandBtn.addEventListener('click', function() {
+            this.innerHTML = '<i data-feather="hand" class="h-4 w-4 mr-2 hand-raised-icon"></i> Hand Raised';
+            this.classList.add('bg-blue-100', 'text-blue-700');
+            this.classList.remove('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+            
+            // Send raise hand event via WebSocket
+            if (window.chatSocket && window.chatSocket.readyState === WebSocket.OPEN) {
+                window.chatSocket.send(JSON.stringify({
+                    type: 'raise_hand'
+                }));
+            }
+            
+            // Reset after 10 seconds
+            setTimeout(() => {
+                this.innerHTML = '<i data-feather="hand" class="h-4 w-4 mr-2"></i> Raise Hand';
+                this.classList.remove('bg-blue-100', 'text-blue-700');
+                this.classList.add('border-gray-300', 'text-gray-700', 'hover:bg-gray-50');
+                feather.replace();
+            }, 10000);
+            
+            feather.replace();
+        });
+        
+        // Initialize feather icons
+        feather.replace();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Two-Factor Authentication" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 py-12">
+    <div class="container mx-auto px-6">
+        <div class="max-w-md mx-auto">
+            <!-- 2FA Verification Glass Card -->
+            <div class="glass-card rounded-xl overflow-hidden shadow-xl">
+                <div class="p-8">
+                    <div class="text-center mb-8">
+                        <h1 class="text-3xl font-bold text-white mb-3">{% trans "Two-Factor Authentication" %}</h1>
+                        <p class="text-blue-100">{% trans "Enter the 6-digit code sent to your email" %}</p>
+                    </div>
+                    
+                    <form method="post" class="space-y-6">
+                        {% csrf_token %}
+                        
+                        <!-- Error Messages -->
+                        {% if form.errors %}
+                            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative shake" role="alert">
+                                {% if form.non_field_errors %}
+                                    {% for error in form.non_field_errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                {% else %}
+                                    <p>{% trans "Please enter a valid verification code." %}</p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded relative" role="alert">
+                                    <p>{{ message }}</p>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                        
+                        <!-- Verification Code Field -->
+                        <div class="flex flex-col items-center">
+                            <div class="mb-4 w-full">
+                                <label for="{{ form.code.id_for_label }}" class="block text-white mb-2">{% trans "Verification Code" %}</label>
+                                {{ form.code }}
+                            </div>
+                            
+                            <div class="verification-timer flex items-center justify-center mb-4">
+                                <span class="text-white">{% trans "Code expires in:" %} </span>
+                                <span class="ml-2 text-white font-mono" id="countdown">10:00</span>
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-white text-blue-600 font-bold py-3 px-4 rounded-lg hover:bg-blue-50 focus:outline-none transition">
+                                {% trans "Verify & Login" %}
+                            </button>
+                        </div>
+                        
+                        <!-- Resend Code -->
+                        <div class="text-center mt-4">
+                            <p class="text-blue-100">
+                                {% trans "Didn't receive the code?" %}
+                                <a href="#" id="resend-code" class="text-white hover:underline">{% trans "Resend Code" %}</a>
+                            </p>
+                        </div>
+                    </form>
+                    
+                    <!-- Back to Login -->
+                    <div class="text-center mt-8">
+                        <a href="{% url 'login' %}" class="text-blue-100 hover:text-white">
+                            <i data-feather="arrow-left" class="inline-block h-4 w-4 mr-1"></i>
+                            {% trans "Back to login" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Focus on the first code input
+        const codeInput = document.getElementById('{{ form.code.id_for_label }}');
+        if (codeInput) {
+            codeInput.focus();
+        }
+        
+        // Add input mask for verification code
+        codeInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').substring(0, 6);
+        });
+        
+        // Countdown timer
+        const countdownEl = document.getElementById('countdown');
+        let timeLeft = 10 * 60; // 10 minutes in seconds
+        
+        function updateCountdown() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            countdownEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                countdownEl.textContent = '00:00';
+                countdownEl.classList.add('text-red-500');
+                
+                // Display expired message
+                const timerEl = document.querySelector('.verification-timer');
+                const expiredMsg = document.createElement('div');
+                expiredMsg.className = 'text-red-300 text-sm mt-1';
+                expiredMsg.textContent = '{% trans "Verification code has expired. Please request a new one." %}';
+                timerEl.parentNode.insertBefore(expiredMsg, timerEl.nextSibling);
+                
+                // Disable the verify button
+                const verifyBtn = document.querySelector('button[type="submit"]');
+                verifyBtn.disabled = true;
+                verifyBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+            
+            timeLeft -= 1;
+        }
+        
+        updateCountdown(); // Initialize immediately
+        const countdownInterval = setInterval(updateCountdown, 1000);
+        
+        // Handle resend code
+        const resendBtn = document.getElementById('resend-code');
+        resendBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // In a real implementation, this would make an AJAX request to resend the code
+            // For demo, we'll just reset the timer
+            timeLeft = 10 * 60;
+            countdownEl.classList.remove('text-red-500');
+            
+            // Remove any expired messages
+            const expiredMsg = document.querySelector('.text-red-300.text-sm');
+            if (expiredMsg) {
+                expiredMsg.remove();
+            }
+            
+            // Re-enable the verify button
+            const verifyBtn = document.querySelector('button[type="submit"]');
+            verifyBtn.disabled = false;
+            verifyBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            // Show confirmation message
+            const resendMsg = document.createElement('div');
+            resendMsg.className = 'bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mt-4';
+            resendMsg.textContent = '{% trans "A new verification code has been sent to your email." %}';
+            this.parentNode.parentNode.appendChild(resendMsg);
+            
+            // Remove confirmation message after 5 seconds
+            setTimeout(() => {
+                resendMsg.remove();
+            }, 5000);
+        });
+    });
+</script>
+{% endblock %}

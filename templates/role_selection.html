@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Choose Your Role" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600 py-12">
+    <div class="container mx-auto px-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-white mb-4">{% trans "How would you like to join PeerLearn?" %}</h1>
+                <p class="text-xl text-blue-100">{% trans "Choose your journey with us" %}</p>
+            </div>
+            
+            <!-- Role Selection Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Learner Card -->
+                <div class="role-card glass-card p-8 rounded-xl cursor-pointer transform transition duration-300 hover:scale-105" data-role="learner">
+                    <div class="flex justify-center mb-6">
+                        <div class="w-24 h-24 bg-blue-200 rounded-full flex items-center justify-center">
+                            <i data-feather="book-open" class="h-12 w-12 text-blue-600"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">{% trans "Join as a Learner" %}</h2>
+                    <div class="text-center text-blue-100 mb-6">
+                        <p class="mb-4">{% trans "Find expert mentors to help you advance your skills and career goals through personalized 1-on-1 sessions." %}</p>
+                        <ul class="space-y-2 text-left">
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Book sessions with industry experts" %}</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Get personalized guidance and feedback" %}</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Learn at your own pace and schedule" %}</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Access live interactive sessions with video and whiteboard" %}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="text-center">
+                        <a href="{% url 'register_learner' %}" class="inline-block bg-white text-blue-600 font-bold px-8 py-3 rounded-lg shadow-lg hover:bg-blue-50 transition">
+                            {% trans "Continue as Learner" %}
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Mentor Card -->
+                <div class="role-card glass-card p-8 rounded-xl cursor-pointer transform transition duration-300 hover:scale-105" data-role="mentor">
+                    <div class="flex justify-center mb-6">
+                        <div class="w-24 h-24 bg-purple-200 rounded-full flex items-center justify-center">
+                            <i data-feather="award" class="h-12 w-12 text-purple-600"></i>
+                        </div>
+                    </div>
+                    <h2 class="text-2xl font-bold text-center text-white mb-4">{% trans "Join as a Mentor" %}</h2>
+                    <div class="text-center text-blue-100 mb-6">
+                        <p class="mb-4">{% trans "Share your expertise, help others grow, and earn by offering 1-on-1 mentoring sessions on your own schedule." %}</p>
+                        <ul class="space-y-2 text-left">
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Create and host educational sessions" %}</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Set your own rates and availability" %}</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Build your professional reputation and network" %}</span>
+                            </li>
+                            <li class="flex items-start">
+                                <i data-feather="check-circle" class="h-5 w-5 text-green-400 mr-2 mt-1 flex-shrink-0"></i>
+                                <span>{% trans "Get paid directly to your account" %}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="text-center">
+                        <a href="{% url 'register_mentor' %}" class="inline-block bg-white text-purple-600 font-bold px-8 py-3 rounded-lg shadow-lg hover:bg-purple-50 transition">
+                            {% trans "Continue as Mentor" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Role Toggle (for mobile) -->
+            <div class="mt-8 max-w-xs mx-auto md:hidden">
+                <div class="role-toggle bg-white bg-opacity-20 p-1 rounded-full flex">
+                    <button class="toggle-btn w-1/2 py-2 rounded-full text-white font-medium text-center active" data-role="learner">
+                        {% trans "Learner" %}
+                    </button>
+                    <button class="toggle-btn w-1/2 py-2 rounded-full text-white font-medium text-center" data-role="mentor">
+                        {% trans "Mentor" %}
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Already Have an Account -->
+            <div class="text-center mt-10">
+                <p class="text-blue-100">
+                    {% trans "Already have an account?" %}
+                    <a href="{% url 'login' %}" class="text-white font-bold hover:underline">{% trans "Sign in" %}</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle functionality for mobile view
+        const toggleBtns = document.querySelectorAll('.toggle-btn');
+        const roleCards = document.querySelectorAll('.role-card');
+        
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const role = this.getAttribute('data-role');
+                
+                // Update toggle buttons
+                toggleBtns.forEach(b => b.classList.remove('active', 'bg-white', 'text-blue-600'));
+                this.classList.add('active', 'bg-white');
+                this.classList.add(role === 'learner' ? 'text-blue-600' : 'text-purple-600');
+                
+                // Show only the selected role card on mobile
+                roleCards.forEach(card => {
+                    if (card.getAttribute('data-role') === role) {
+                        card.classList.remove('hidden');
+                    } else {
+                        card.classList.add('hidden');
+                    }
+                });
+            });
+        });
+        
+        // Initialize: hide mentor card on mobile if using toggle
+        if (window.innerWidth < 768) {
+            const mentorCard = document.querySelector('.role-card[data-role="mentor"]');
+            mentorCard.classList.add('hidden');
+        }
+        
+        // Card highlighting effect
+        roleCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                const role = this.getAttribute('data-role');
+                const otherCards = document.querySelectorAll(`.role-card:not([data-role="${role}"])`);
+                
+                otherCards.forEach(other => {
+                    other.classList.add('opacity-70');
+                });
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                roleCards.forEach(c => {
+                    c.classList.remove('opacity-70');
+                });
+            });
+        });
+    });
+</script>
+
+<style>
+    .toggle-btn.active {
+        background-color: white;
+        color: var(--primary-color);
+    }
+</style>
+{% endblock %}

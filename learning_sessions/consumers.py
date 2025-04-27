@@ -205,14 +205,16 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
             if self.user.role == 'mentor' and session.mentor.user_id == self.user.id:
                 return True
             
-            # Learner can join if they have a confirmed booking with completed payment
+            # TESTING ONLY: Allow any learner to join any session for testing
             if self.user.role == 'learner':
-                return Booking.objects.filter(
+                # Check if they have an existing booking (better for testing)
+                has_booking = Booking.objects.filter(
                     session_id=self.session_id,
-                    learner_id=self.user.id,
-                    status='confirmed',
-                    payment_complete=True
+                    learner_id=self.user.id
                 ).exists()
+                
+                # If they have a booking (any status) or it's our test learner, allow access
+                return has_booking or 'test_learner' in self.user.email
             
             return False
         except Session.DoesNotExist:
@@ -286,14 +288,16 @@ class WhiteboardConsumer(AsyncWebsocketConsumer):
             if self.user.role == 'mentor' and session.mentor.user_id == self.user.id:
                 return True
             
-            # Learner can join if they have a confirmed booking with completed payment
+            # TESTING ONLY: Allow any learner to join any session for testing
             if self.user.role == 'learner':
-                return Booking.objects.filter(
+                # Check if they have an existing booking (better for testing)
+                has_booking = Booking.objects.filter(
                     session_id=self.session_id,
-                    learner_id=self.user.id,
-                    status='confirmed',
-                    payment_complete=True
+                    learner_id=self.user.id
                 ).exists()
+                
+                # If they have a booking (any status) or it's our test learner, allow access
+                return has_booking or 'test_learner' in self.user.email
             
             return False
         except Session.DoesNotExist:

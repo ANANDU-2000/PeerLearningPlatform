@@ -32,6 +32,7 @@ urlpatterns = [
          name='password_reset_complete'),
     
     # Dashboards
+    path('dashboard/', views.dashboard_redirect, name='dashboard'),
     path('dashboard/learner/', views.learner_dashboard, name='learner_dashboard'),
     path('dashboard/mentor/', views.mentor_dashboard, name='mentor_dashboard'),
     

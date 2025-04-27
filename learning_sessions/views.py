@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.views.decorators.http import require_POST
 from django.conf import settings
 
@@ -327,7 +327,7 @@ def submit_feedback(request, booking_id):
         # Update mentor's average rating
         mentor = booking.session.mentor
         total_ratings = Feedback.objects.filter(booking__session__mentor=mentor).count()
-        avg_rating = Feedback.objects.filter(booking__session__mentor=mentor).aggregate(avg=models.Avg('rating'))['avg']
+        avg_rating = Feedback.objects.filter(booking__session__mentor=mentor).aggregate(avg=Avg('rating'))['avg']
         
         mentor.total_reviews = total_ratings
         mentor.average_rating = avg_rating

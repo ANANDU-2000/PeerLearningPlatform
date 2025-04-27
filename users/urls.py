@@ -10,7 +10,7 @@ from . import views
 urlpatterns = [
     # Authentication
     path('login/', views.login_view, name='login'),
-    path('logout/', auth_views.LogoutView.as_view(), name='logout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='landing_page'), name='logout'),
     path('verify-2fa/', views.verify_2fa_view, name='verify_2fa'),
     
     # Registration

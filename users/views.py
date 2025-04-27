@@ -259,9 +259,19 @@ def mentor_dashboard(request):
     # Import here to avoid circular imports
     from learning_sessions.models import Session, Booking
     from payments.models import Transaction
+    from .models import MentorProfile
     
-    # Get mentor profile
-    mentor_profile = request.user.mentor_profile
+    # Get or create mentor profile
+    try:
+        mentor_profile = request.user.mentor_profile
+    except MentorProfile.DoesNotExist:
+        # If profile doesn't exist, create it with default values
+        mentor_profile = MentorProfile.objects.create(
+            user=request.user,
+            expertise="",
+            bio="",
+            hourly_rate=0
+        )
     
     # Get upcoming sessions
     upcoming_sessions = Session.objects.filter(

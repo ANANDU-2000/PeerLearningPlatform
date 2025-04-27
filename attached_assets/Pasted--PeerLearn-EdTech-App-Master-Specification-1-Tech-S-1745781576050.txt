@@ -1,0 +1,111 @@
+
+PeerLearn EdTech App - Master Specification
+============================================
+
+1. Tech Stack & Setup
+---------------------
+- Framework: Django 4.2 (Django Templates only)
+- Database: SQLite3 (upgrade-ready for PostgreSQL)
+- Styling: Tailwind CSS via CDN
+- Real-Time: Django Channels (WebSocket) + WebRTC (peer-to-peer video)
+- Payments: Razorpay integration (test + live)
+- Deployment: Replit with run.sh (Daphne ASGI server)
+- Security: HTTPS, CSRF, input sanitization, rate limiting, 2FA via email
+- ML Suggestions: Simple embeddings API for career goal/expertise autocomplete
+- Offline Support: IndexedDB caching, sync on reconnect
+- Internationalization: Django i18n, English + Spanish
+
+2. User Roles & Workflows
+-------------------------
+A. Visitor
+   - Browse landing (/)
+   - View sessions/mentors
+   - Role selection register/login
+
+B. Learner
+   - Dashboard (/dashboard/learner/)
+   - Browse & book sessions
+   - View/Pay cart (/cart/)
+   - Join live session (/session/<id>/)
+   - Provide feedback
+   - View history & profile settings
+
+C. Mentor
+   - Dashboard (/dashboard/mentor/)
+   - Create sessions
+   - Manage booking requests
+   - Host live sessions
+   - Withdraw earnings
+   - Profile settings
+
+D. Admin
+   - Admin panel (/admin_panel/)
+   - Approve mentors
+   - View analytics (revenue, users)
+   - Manage sessions, payments, content
+
+3. Page-by-Page Master Prompts
+-------------------------------
+1. Landing Page (/)
+   "Design a premium landing page with glassmorphism hero, parallax background, Netflix-style session carousel, mentor showcase, steps section, testimonials, footer. Responsive mobile bottom nav, desktop sidebar."
+
+2. Role Selection
+   "Show two cards: Learner vs Mentor, animated toggle. On selection, proceed to respective registration wizard."
+
+3. Registration Wizard (Learner & Mentor)
+   - Steps: Basic Info, Goals/Expertise (with ML autocomplete), Profile Picture/Intro Video
+   - Progress bar, inline validation, drag-drop media upload, confetti on completion
+
+4. Login (/login/)
+   "Glass card with email+password, 2FA code input, social login buttons, error shake animation."
+
+5. Learner Dashboard (/dashboard/learner/)
+   "Sidebar (desktop) or bottom nav (mobile), progress ring, recommended sessions (WebSocket toast on new), session cards, mentor grid, bookings list, cart shortcut."
+
+6. Mentor Dashboard (/dashboard/mentor/)
+   "Stats cards, create session form (modal), booking requests table with accept/decline, earnings chart, withdrawal module."
+
+7. Session Detail & Booking Modal
+   "Sticky mobile bottom bar, detail accordion, coupon code live calc, Book Now button."
+
+8. Cart & Checkout (/cart/)
+   "Cart summary, 3-step indicator, Razorpay inline widget, retry/refund pop-up."
+
+9. Live Session Room (/session/<id>/)
+   "70/30 video+sidebar split, WebRTC peer connection, chat, whiteboard, raise-hand, controls, recording toggle."
+
+10. Feedback Modal
+    "5-star hover-to-fill, emoji sentiment, comment box, submit shows Lottie checkmark+confetti."
+
+11. Profile & Settings (/profile/)
+    "Editable on-click fields, unsaved-change warnings, dark/light toggle with instant preview."
+
+12. Admin Panel (/admin_panel/)
+    "Real-time charts (Chart.js + WebSocket), mentor approval queue, session and payment tables with filters, bulk actions."
+
+13. Error Pages (401/403/404/500)
+    "Friendly animation, smart suggestion links, 'Back Home' button."
+
+4. Design System & UI/UX
+------------------------
+- Colors: #007BFF, #FF5733, #FFFFFF, #F5F5F5, #121212
+- Typography: Poppins Bold, Inter Regular
+- Components: Flowbite/DaisyUI/Tailwind UI
+- Animations: CSS transitions, Lottie loaders, card hover tilt
+- Accessibility: WCAG AA, ARIA labels, keyboard nav
+
+5. Real-Time & Advanced Features
+--------------------------------
+- WebRTC: STUN/TURN, auto-reconnect, H.264, adaptive bitrate
+- WebSocket: /ws/video/, /ws/notifications/
+- Whiteboard: Canvas sync
+- ML Autocomplete: career/expertise suggestions
+- Offline: IndexedDB caching
+- i18n: {% trans %} support
+
+6. Testing & Deployment
+-----------------------
+- Tests: pytest, 90%+ coverage (unit + integration)
+- Device QA: Chrome, Firefox, Safari, iOS, Android
+- Performance: Lazy-load images, minify CSS/JS
+- Deploy: Replit, run.sh, Sentry for errors

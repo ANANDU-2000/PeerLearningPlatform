@@ -55,6 +55,13 @@ def session_list(request):
         if session.tags:
             all_tags.update([tag.strip() for tag in session.tags.split(',')])
     
+    # Add ML-powered personalized recommendations for authenticated users
+    personalized_recommendations = []
+    if request.user.is_authenticated and request.user.role == 'learner' and not (search_query or tag_filter or min_price or max_price):
+        # Only show personalized recommendations when no filters are applied
+        from .ml_recommendations import get_personalized_recommendations
+        personalized_recommendations = get_personalized_recommendations(request.user, limit=4)
+    
     context = {
         'sessions': queryset,
         'search_query': search_query,
@@ -62,6 +69,7 @@ def session_list(request):
         'min_price': min_price,
         'max_price': max_price,
         'all_tags': sorted(all_tags),
+        'personalized_recommendations': personalized_recommendations,
     }
     
     return render(request, 'sessions/session_list.html', context)
@@ -79,12 +87,20 @@ def session_detail(request, session_id):
         except Booking.DoesNotExist:
             pass
     
-    # Get recommended related sessions
-    related_sessions = Session.objects.filter(
-        tags__icontains=session.tags.split(',')[0] if session.tags else '',
-        start_time__gt=timezone.now(),
-        mentor__is_approved=True
-    ).exclude(id=session.id).order_by('start_time')[:3]
+    # Get ML-powered similar session recommendations
+    if request.user.is_authenticated and request.user.role == 'learner':
+        # Use machine learning recommendations for authenticated learners
+        from .ml_recommendations import get_content_based_recommendations
+        related_sessions = get_content_based_recommendations(request.user, limit=3)
+        # Exclude the current session from recommendations
+        related_sessions = [s for s in related_sessions if s.id != session.id][:3]
+    else:
+        # Fallback to simple tag-based recommendations for non-authenticated users
+        related_sessions = Session.objects.filter(
+            tags__icontains=session.tags.split(',')[0] if session.tags else '',
+            start_time__gt=timezone.now(),
+            mentor__is_approved=True
+        ).exclude(id=session.id).order_by('start_time')[:3]
     
     context = {
         'session': session,

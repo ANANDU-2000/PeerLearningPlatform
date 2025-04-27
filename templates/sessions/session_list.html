@@ -47,6 +47,57 @@
             </div>
         </div>
         
+        <!-- ML-powered Personalized Recommendations -->
+        {% if personalized_recommendations %}
+        <div class="mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">
+                <span class="text-blue-600">{% trans "AI-Powered" %}</span> {% trans "Recommendations for You" %}
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {% for session in personalized_recommendations %}
+                <div class="bg-gradient-to-br from-blue-50 to-white shadow-md rounded-lg overflow-hidden border border-blue-100 transition duration-200 transform hover:translate-y-[-4px] hover:shadow-lg">
+                    <div class="p-4">
+                        <!-- Session header -->
+                        <div class="mb-2">
+                            <h3 class="text-lg font-bold text-gray-900 line-clamp-1">{{ session.title }}</h3>
+                            <p class="text-xs text-gray-600">{{ session.start_time|date:"M j, g:i A" }}</p>
+                        </div>
+                        
+                        <!-- Mentor Info -->
+                        <div class="flex items-center mb-3">
+                            {% if session.mentor.user.profile_picture %}
+                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-8 w-8 rounded-full object-cover mr-2">
+                            {% else %}
+                                <div class="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-md mr-2">
+                                    {{ session.mentor.user.first_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            
+                            <div>
+                                <p class="text-sm font-medium">{{ session.mentor.user.get_full_name }}</p>
+                                <div class="flex items-center">
+                                    <div class="flex items-center text-yellow-400 mr-1">
+                                        <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    </div>
+                                    <span class="text-xs text-gray-600">{{ session.mentor.average_rating|default:"New" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Price and action -->
+                        <div class="flex justify-between items-center mt-3">
+                            <div class="text-md font-bold text-blue-600">₹{{ session.price }}</div>
+                            <a href="{% url 'session_detail' session_id=session.id %}" class="px-3 py-1 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition">
+                                {% trans "View" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
         <!-- Sessions Grid -->
         {% if sessions %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

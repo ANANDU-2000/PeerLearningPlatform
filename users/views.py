@@ -236,14 +236,11 @@ def learner_dashboard(request):
         status='confirmed'
     ).order_by('session__start_time')
     
-    # Get recommended sessions based on career goals
-    learner_profile = request.user.learner_profile
-    recommended_sessions = Session.objects.filter(
-        mentor__is_approved=True,
-        start_time__gt=timezone.now(),
-    ).exclude(
-        bookings__learner=request.user
-    ).order_by('start_time')[:6]
+    # Get ML-powered personalized session recommendations
+    from learning_sessions.ml_recommendations import get_personalized_recommendations
+    
+    # Get personalized recommendations using our ML algorithms
+    recommended_sessions = get_personalized_recommendations(request.user, limit=6)
     
     # Get top-rated mentors
     top_mentors = MentorProfile.objects.filter(

@@ -146,10 +146,16 @@
                             </a>
                         {% endif %}
                         
-                        <!-- Common navigation items -->
-                        <a href="{% url 'session_list' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            {% trans "Find Sessions" %}
-                        </a>
+                        <!-- Navigation items based on user role -->
+                        {% if user.is_authenticated and user.role == 'mentor' %}
+                            <a href="{% url 'session_list' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                {% trans "My Sessions" %}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'session_list' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                {% trans "Find Sessions" %}
+                            </a>
+                        {% endif %}
                         
                         <!-- Role-specific navigation items -->
                         {% if user.is_authenticated %}
@@ -264,11 +270,18 @@
                     <span class="text-xs mt-1">{% trans "Dashboard" %}</span>
                 </a>
                 
-                <!-- Common item for all users -->
+                <!-- Session link based on role -->
+                {% if user.role == 'mentor' %}
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="calendar" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Sessions" %}</span>
+                </a>
+                {% else %}
                 <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
                     <i data-feather="search" class="h-5 w-5"></i>
                     <span class="text-xs mt-1">{% trans "Find" %}</span>
                 </a>
+                {% endif %}
                 
                 <!-- Role-specific items -->
                 {% if user.role == 'learner' %}

@@ -256,35 +256,62 @@
     <!-- Mobile Bottom Navigation -->
     <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900">
         <div class="flex justify-around py-2">
-            <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
-                <i data-feather="home" class="h-5 w-5"></i>
-                <span class="text-xs mt-1">{% trans "Home" %}</span>
-            </a>
-            <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
-                <i data-feather="search" class="h-5 w-5"></i>
-                <span class="text-xs mt-1">{% trans "Find" %}</span>
-            </a>
             {% if user.is_authenticated %}
+                <!-- Dashboard as home for authenticated users -->
                 <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
                     <i data-feather="grid" class="h-5 w-5"></i>
                     <span class="text-xs mt-1">{% trans "Dashboard" %}</span>
                 </a>
+                
+                <!-- Common item for all users -->
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="search" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Find" %}</span>
+                </a>
+                
+                <!-- Role-specific items -->
                 {% if user.role == 'learner' %}
                     <a href="{% url 'cart' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
                         <i data-feather="shopping-cart" class="h-5 w-5"></i>
                         <span class="text-xs mt-1">{% trans "Cart" %}</span>
                     </a>
-                {% endif %}
-                {% if user.role == 'mentor' %}
+                    <a href="{% url 'transaction_history' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                        <i data-feather="credit-card" class="h-5 w-5"></i>
+                        <span class="text-xs mt-1">{% trans "Payments" %}</span>
+                    </a>
+                {% elif user.role == 'mentor' %}
                     <a href="{% url 'create_session' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
                         <i data-feather="plus-circle" class="h-5 w-5"></i>
                         <span class="text-xs mt-1">{% trans "Create" %}</span>
                     </a>
+                    <a href="{% url 'withdrawal_request' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                        <i data-feather="dollar-sign" class="h-5 w-5"></i>
+                        <span class="text-xs mt-1">{% trans "Earnings" %}</span>
+                    </a>
                 {% endif %}
+                
+                <!-- Settings for all authenticated users -->
+                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="settings" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Settings" %}</span>
+                </a>
             {% else %}
+                <!-- For non-authenticated users -->
+                <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="home" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Home" %}</span>
+                </a>
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="search" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Find" %}</span>
+                </a>
                 <a href="{% url 'login' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
                     <i data-feather="log-in" class="h-5 w-5"></i>
                     <span class="text-xs mt-1">{% trans "Login" %}</span>
+                </a>
+                <a href="{% url 'role_selection' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <i data-feather="user-plus" class="h-5 w-5"></i>
+                    <span class="text-xs mt-1">{% trans "Sign Up" %}</span>
                 </a>
             {% endif %}
         </div>

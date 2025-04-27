@@ -30,7 +30,14 @@ TWO_FACTOR_CACHE = {}  # {email: {'code': '123456', 'expires': timestamp}}
 
 
 def landing_page(request):
-    """Render the landing page."""
+    """
+    Render the landing page.
+    If user is authenticated, redirect to their role-specific dashboard.
+    """
+    # If user is already logged in, redirect to their dashboard
+    if request.user.is_authenticated:
+        return redirect(request.user.get_dashboard_url())
+    
     # Get some featured mentors for the showcase section
     featured_mentors = MentorProfile.objects.filter(
         is_approved=True

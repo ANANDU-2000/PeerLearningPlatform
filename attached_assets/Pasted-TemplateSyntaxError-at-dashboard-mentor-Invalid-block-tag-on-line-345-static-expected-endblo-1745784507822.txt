@@ -1,0 +1,53 @@
+TemplateSyntaxError at /dashboard/mentor/
+Invalid block tag on line 345: 'static', expected 'endblock'. Did you forget to register or load this tag?
+Request Method:	GET
+Request URL:	http://c04fd6df-be0d-492d-b2f8-d8a5ecbe079b-00-mp4il0lqopkm.riker.replit.dev/dashboard/mentor/
+Django Version:	5.2
+Exception Type:	TemplateSyntaxError
+Exception Value:	
+Invalid block tag on line 345: 'static', expected 'endblock'. Did you forget to register or load this tag?
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/template/base.py, line 567, in invalid_block_tag
+Raised during:	users.views.mentor_dashboard
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.11.10
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/lc7qv2ldzrs1aq3hbyzmbgvn0h2w26pl-sitecustomize/lib/python/site-packages',
+ '/nix/store/dfg63lldbvcj207iyr9z0xw21d8ax02n-python3.11-pip-24.0/lib/python3.11/site-packages',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python311.zip',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/wblvmd5y7izx0z10d1w7ga7zc4apjxmb-python3.11-setuptools-75.1.1/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/setuptools/_vendor']
+Server time:	Sun, 27 Apr 2025 20:08:17 +0000
+Error during template rendering
+In template /home/runner/workspace/templates/dashboard/mentor_dashboard.html, error at line 345
+
+Invalid block tag on line 345: 'static', expected 'endblock'. Did you forget to register or load this tag?
+335	    </div>
+336	</div>
+337	
+338	<!-- Notification Toast Container -->
+339	<div id="notification-toast" class="fixed bottom-20 right-5 transform transition-transform duration-300 translate-x-full">
+340	    <!-- Will be populated by JS -->
+341	</div>
+342	{% endblock %}
+343	
+344	{% block extra_js %}
+345	<script src="{% static 'js/notifications.js' %}"></script>
+346	<script>
+347	    document.addEventListener('DOMContentLoaded', function() {
+348	        // Initialize notifications WebSocket
+349	        initializeNotifications();
+350	        
+351	        // Handle create session modal
+352	        const createSessionBtn = document.getElementById('create-session-btn');
+353	        const createSessionModal = document.getElementById('create-session-modal');
+354	        const closeModalBtn = document.getElementById('close-modal');
+355	        const cancelCreateSessionBtn = document.getElementById('cancel-create-session');
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/template/base.py, line 510, in parse
+                    compile_func = self.tags[command]
+                                        ^^^^^^^^^^^^^^^^^^ 

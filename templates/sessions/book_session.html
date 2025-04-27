@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Book Session" %} | {{ session.title }} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Back button -->
+        <div class="mb-6">
+            <a href="{% url 'session_detail' session_id=session.id %}" class="inline-flex items-center text-gray-700 hover:text-blue-600">
+                <i data-feather="arrow-left" class="h-4 w-4 mr-1"></i>
+                {% trans "Back to Session" %}
+            </a>
+        </div>
+        
+        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-6">{% trans "Book Session" %}</h1>
+        
+        <!-- Booking Form -->
+        <div class="bg-white shadow rounded-xl overflow-hidden mb-8">
+            <div class="p-6 md:p-8">
+                <div class="flex flex-col md:flex-row">
+                    <!-- Session info -->
+                    <div class="md:w-1/2 md:pr-6 mb-6 md:mb-0">
+                        <h2 class="text-xl font-bold mb-4">{% trans "Session Details" %}</h2>
+                        
+                        <div class="mb-4">
+                            <h3 class="font-bold text-lg mb-1">{{ session.title }}</h3>
+                            <p class="text-gray-600">{{ session.start_time|date:"F j, Y" }} | {{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</p>
+                        </div>
+                        
+                        <div class="flex items-center mb-4">
+                            {% if session.mentor.user.profile_picture %}
+                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                            {% else %}
+                                <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                                    {{ session.mentor.user.first_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            
+                            <div>
+                                <p class="font-medium">{{ session.mentor.user.get_full_name }}</p>
+                                <p class="text-sm text-gray-600">{{ session.mentor.expertise }}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-gray-700">{% trans "Session Fee" %}</span>
+                                <span class="font-medium">₹{{ session.price }}</span>
+                            </div>
+                            
+                            <div id="discount-row" class="flex justify-between items-center mb-2 {% if not form.cleaned_data.coupon_code %}hidden{% endif %}">
+                                <span class="text-gray-700">{% trans "Discount" %}</span>
+                                <span id="discount-amount" class="font-medium text-green-600">-₹0</span>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-2 mt-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-800 font-bold">{% trans "Total" %}</span>
+                                    <span id="total-price" class="font-bold text-lg">₹{{ session.price }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-100">
+                            <h4 class="font-medium text-blue-800 mb-2">{% trans "What happens after booking?" %}</h4>
+                            <ul class="text-sm text-gray-700 space-y-2">
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="h-4 w-4 text-blue-500 mt-0.5 mr-2"></i>
+                                    <span>{% trans "You'll be redirected to payment" %}</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="h-4 w-4 text-blue-500 mt-0.5 mr-2"></i>
+                                    <span>{% trans "After payment, your booking will be confirmed" %}</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="h-4 w-4 text-blue-500 mt-0.5 mr-2"></i>
+                                    <span>{% trans "You'll receive session details via email" %}</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i data-feather="check-circle" class="h-4 w-4 text-blue-500 mt-0.5 mr-2"></i>
+                                    <span>{% trans "Join the session at the scheduled time" %}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Payment Form -->
+                    <div class="md:w-1/2 md:pl-6 md:border-l md:border-gray-200">
+                        <h2 class="text-xl font-bold mb-4">{% trans "Payment Details" %}</h2>
+                        
+                        <form method="post" id="booking-form">
+                            {% csrf_token %}
+                            
+                            {% if form.non_field_errors %}
+                                <div class="mb-4 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4">
+                                    {% for error in form.non_field_errors %}
+                                        <p>{{ error }}</p>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="mb-6">
+                                <label for="{{ form.coupon_code.id_for_label }}" class="block text-gray-700 font-medium mb-2">{% trans "Coupon Code" %} ({% trans "Optional" %})</label>
+                                <div class="flex">
+                                    <input type="text" id="{{ form.coupon_code.id_for_label }}" name="{{ form.coupon_code.html_name }}" class="flex-grow px-4 py-2 rounded-l-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Enter coupon code' %}">
+                                    <button type="button" id="apply-coupon" class="bg-gray-100 text-gray-800 px-4 py-2 rounded-r-lg border border-gray-300 border-l-0 hover:bg-gray-200 transition">
+                                        {% trans "Apply" %}
+                                    </button>
+                                </div>
+                                <div id="coupon-message" class="mt-1 text-sm"></div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <div class="flex items-center mb-2">
+                                    <input type="checkbox" id="terms-checkbox" name="terms" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" required>
+                                    <label for="terms-checkbox" class="ml-2 text-gray-700">{% trans "I agree to the" %} <a href="#" class="text-blue-600 hover:underline">{% trans "Terms of Service" %}</a></label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="refund-checkbox" name="refund_policy" class="h-4 w-4 text-blue-600 rounded focus:ring-blue-500" required>
+                                    <label for="refund-checkbox" class="ml-2 text-gray-700">{% trans "I understand the" %} <a href="#" class="text-blue-600 hover:underline">{% trans "Refund Policy" %}</a></label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" id="booking-submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 transition focus:ring-4 focus:ring-blue-200">
+                                {% trans "Proceed to Payment" %}
+                            </button>
+                            
+                            <p class="text-xs text-gray-500 mt-4 text-center">
+                                {% trans "By clicking 'Proceed to Payment', you will be redirected to our secure payment gateway." %}
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize feather icons
+        feather.replace();
+        
+        // Handle coupon code
+        const couponInput = document.getElementById('{{ form.coupon_code.id_for_label }}');
+        const applyButton = document.getElementById('apply-coupon');
+        const couponMessage = document.getElementById('coupon-message');
+        const discountRow = document.getElementById('discount-row');
+        const discountAmount = document.getElementById('discount-amount');
+        const totalPrice = document.getElementById('total-price');
+        const originalPrice = {{ session.price }};
+        
+        applyButton.addEventListener('click', function() {
+            const couponCode = couponInput.value.trim();
+            
+            if (!couponCode) {
+                couponMessage.textContent = "{% trans 'Please enter a coupon code' %}";
+                couponMessage.className = "mt-1 text-sm text-red-600";
+                return;
+            }
+            
+            // Simple coupon validation (in real app, this would be an API call)
+            if (couponCode.toUpperCase() === 'WELCOME10') {
+                const discount = originalPrice * 0.1;
+                const newTotal = originalPrice - discount;
+                
+                discountAmount.textContent = `-₹${discount.toFixed(0)}`;
+                totalPrice.textContent = `₹${newTotal.toFixed(0)}`;
+                discountRow.classList.remove('hidden');
+                
+                couponMessage.textContent = "{% trans 'Coupon applied: 10% discount' %}";
+                couponMessage.className = "mt-1 text-sm text-green-600";
+            } else {
+                discountRow.classList.add('hidden');
+                totalPrice.textContent = `₹${originalPrice.toFixed(0)}`;
+                
+                couponMessage.textContent = "{% trans 'Invalid coupon code' %}";
+                couponMessage.className = "mt-1 text-sm text-red-600";
+            }
+        });
+        
+        // Validate form
+        const bookingForm = document.getElementById('booking-form');
+        const termsCheckbox = document.getElementById('terms-checkbox');
+        const refundCheckbox = document.getElementById('refund-checkbox');
+        const submitButton = document.getElementById('booking-submit');
+        
+        bookingForm.addEventListener('submit', function(e) {
+            if (!termsCheckbox.checked || !refundCheckbox.checked) {
+                e.preventDefault();
+                alert("{% trans 'Please agree to the Terms of Service and Refund Policy' %}");
+            }
+        });
+    });
+</script>
+{% endblock %}

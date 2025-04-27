@@ -314,6 +314,48 @@ def mentor_dashboard(request):
 
 
 @login_required
+def mentor_profile_view(request, mentor_id):
+    """
+    View for displaying a mentor's public profile.
+    
+    Args:
+        mentor_id: ID of the MentorProfile to display
+    """
+    mentor_profile = get_object_or_404(MentorProfile, id=mentor_id)
+    
+    # Get upcoming public sessions
+    upcoming_sessions = Session.objects.filter(
+        mentor=mentor_profile,
+        start_time__gt=timezone.now(),
+        status='scheduled'
+    ).order_by('start_time')[:5]
+    
+    # Get feedback and ratings
+    from learning_sessions.models import Feedback
+    
+    feedback_list = Feedback.objects.filter(
+        booking__session__mentor=mentor_profile
+    ).select_related('booking__learner').order_by('-created_at')[:10]
+    
+    # Check if the current user has booked a session with this mentor
+    has_booked = False
+    if request.user.is_authenticated and request.user.role == 'learner':
+        from learning_sessions.models import Booking
+        has_booked = Booking.objects.filter(
+            learner=request.user,
+            session__mentor=mentor_profile,
+            status__in=['confirmed', 'completed']
+        ).exists()
+    
+    return render(request, 'users/mentor_profile.html', {
+        'mentor': mentor_profile,
+        'upcoming_sessions': upcoming_sessions,
+        'feedback_list': feedback_list,
+        'has_booked': has_booked,
+    })
+
+
+@login_required
 def accept_reject_booking(request, booking_id, action):
     """
     View for mentors to accept or reject booking requests.

@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Available Sessions" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">{% trans "Available Sessions" %}</h1>
+            <div class="flex">
+                <!-- Search and filters can be added here -->
+            </div>
+        </div>
+        
+        <!-- Filter/Sort Options -->
+        <div class="bg-white shadow rounded-lg p-4 mb-8">
+            <div class="flex flex-wrap items-center justify-between">
+                <!-- Search input -->
+                <div class="w-full md:w-auto mb-4 md:mb-0">
+                    <form method="get" class="flex">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="{% trans 'Search sessions...' %}" class="border border-gray-300 rounded-l-md px-4 py-2 w-full focus:ring-blue-500 focus:border-blue-500">
+                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">
+                            <i data-feather="search" class="h-5 w-5"></i>
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-3">
+                    <select name="topic" id="topic-filter" class="border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">{% trans "All Topics" %}</option>
+                        <option value="programming" {% if topic == 'programming' %}selected{% endif %}>{% trans "Programming" %}</option>
+                        <option value="design" {% if topic == 'design' %}selected{% endif %}>{% trans "Design" %}</option>
+                        <option value="marketing" {% if topic == 'marketing' %}selected{% endif %}>{% trans "Marketing" %}</option>
+                        <option value="business" {% if topic == 'business' %}selected{% endif %}>{% trans "Business" %}</option>
+                    </select>
+                    
+                    <select name="sort" id="sort-filter" class="border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="date" {% if sort == 'date' %}selected{% endif %}>{% trans "Date (Soonest)" %}</option>
+                        <option value="price-asc" {% if sort == 'price-asc' %}selected{% endif %}>{% trans "Price (Low to High)" %}</option>
+                        <option value="price-desc" {% if sort == 'price-desc' %}selected{% endif %}>{% trans "Price (High to Low)" %}</option>
+                        <option value="rating" {% if sort == 'rating' %}selected{% endif %}>{% trans "Rating" %}</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sessions Grid -->
+        {% if sessions %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {% for session in sessions %}
+                    <div class="bg-white shadow rounded-lg overflow-hidden transition duration-200 transform hover:translate-y-[-4px] hover:shadow-md">
+                        <div class="p-6">
+                            <!-- Session header -->
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-900 mb-1">{{ session.title }}</h2>
+                                    <p class="text-sm text-gray-600">{{ session.start_time|date:"F j, Y" }} | {{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</p>
+                                </div>
+                                <div class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                    {{ session.duration_minutes }} {% trans "min" %}
+                                </div>
+                            </div>
+                            
+                            <!-- Mentor Info -->
+                            <div class="flex items-center mb-4">
+                                {% if session.mentor.user.profile_picture %}
+                                    <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                                        {{ session.mentor.user.first_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                                
+                                <div>
+                                    <p class="font-medium">{{ session.mentor.user.get_full_name }}</p>
+                                    <div class="flex items-center">
+                                        <div class="flex items-center text-yellow-400 mr-1">
+                                            <i data-feather="star" class="h-3.5 w-3.5 fill-current"></i>
+                                        </div>
+                                        <span class="text-xs text-gray-600">{{ session.mentor.average_rating|default:"New" }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Session description -->
+                            <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ session.description }}</p>
+                            
+                            <!-- Session tags -->
+                            {% if session.tags %}
+                                <div class="flex flex-wrap gap-1 mb-4">
+                                    {% for tag in session.tags.split %},{% endfor %}
+                                    <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded">{{ tag }}</span>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Action footer -->
+                            <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
+                                <div class="text-lg font-bold text-blue-600">₹{{ session.price }}</div>
+                                
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'session_detail' session_id=session.id %}" class="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition">
+                                        {% trans "Details" %}
+                                    </a>
+                                    <a href="{% url 'book_session' session_id=session.id %}" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition">
+                                        {% trans "Book" %}
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="flex justify-center mt-8">
+                    <nav class="flex items-center space-x-2">
+                        {% if page_obj.has_previous %}
+                            <a href="?page=1{% if search_query %}&q={{ search_query }}{% endif %}{% if topic %}&topic={{ topic }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{% trans "First" %}</a>
+                            <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if topic %}&topic={{ topic }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{% trans "Previous" %}</a>
+                        {% endif %}
+                        
+                        <span class="px-3 py-1 border border-blue-500 bg-blue-50 rounded-md text-blue-600 font-medium">{{ page_obj.number }}</span>
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}{% if topic %}&topic={{ topic }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{% trans "Next" %}</a>
+                            <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&q={{ search_query }}{% endif %}{% if topic %}&topic={{ topic }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}" class="px-3 py-1 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">{% trans "Last" %}</a>
+                        {% endif %}
+                    </nav>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-white shadow rounded-lg p-8 text-center">
+                <div class="mb-4">
+                    <i data-feather="calendar" class="h-16 w-16 mx-auto text-gray-400"></i>
+                </div>
+                <h2 class="text-xl font-medium mb-2">{% trans "No sessions found" %}</h2>
+                <p class="text-gray-600 mb-6">{% trans "There are no sessions available matching your criteria." %}</p>
+                <a href="{% url 'session_list' %}" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition">
+                    {% trans "View All Sessions" %}
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize feather icons
+        feather.replace();
+        
+        // Handle filters
+        const topicFilter = document.getElementById('topic-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        
+        function applyFilters() {
+            const topic = topicFilter.value;
+            const sort = sortFilter.value;
+            const searchQuery = new URLSearchParams(window.location.search).get('q') || '';
+            
+            let url = '{% url 'session_list' %}?';
+            if (searchQuery) url += `q=${searchQuery}&`;
+            if (topic) url += `topic=${topic}&`;
+            if (sort) url += `sort=${sort}`;
+            
+            window.location.href = url;
+        }
+        
+        if (topicFilter) topicFilter.addEventListener('change', applyFilters);
+        if (sortFilter) sortFilter.addEventListener('change', applyFilters);
+    });
+</script>
+{% endblock %}

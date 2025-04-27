@@ -1,437 +1,253 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load static %}
 
 {% block title %}{{ session.title }} | PeerLearn{% endblock %}
 
 {% block content %}
-<div class="bg-gray-100 min-h-screen py-10">
-    <div class="container mx-auto px-6">
-        <div class="flex flex-col md:flex-row md:space-x-8">
-            <!-- Main Content -->
-            <div class="w-full md:w-2/3">
-                <!-- Session Title & Info -->
-                <div class="bg-white rounded-xl shadow-md p-8 mb-6">
-                    <div class="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
-                        <div>
-                            <h1 class="text-3xl font-bold mb-3">{{ session.title }}</h1>
-                            <div class="flex flex-wrap mb-4">
-                                {% if session.tags %}
-                                    {% for tag in session.tags.split|dictsort:0 %}
-                                        <span class="bg-blue-100 text-blue-800 text-sm py-1 px-3 rounded-full mr-2 mb-2">{{ tag.strip }}</span>
-                                    {% endfor %}
-                                {% endif %}
-                            </div>
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Back button -->
+        <div class="mb-6">
+            <a href="{% url 'session_list' %}" class="inline-flex items-center text-gray-700 hover:text-blue-600">
+                <i data-feather="arrow-left" class="h-4 w-4 mr-1"></i>
+                {% trans "Back to Sessions" %}
+            </a>
+        </div>
+        
+        <!-- Session Header -->
+        <div class="bg-white shadow rounded-xl overflow-hidden mb-8">
+            <div class="p-6 md:p-8">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between">
+                    <div class="flex-grow mb-6 md:mb-0 md:mr-8">
+                        <div class="flex items-center mb-3">
+                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-2">
+                                {{ session.status }}
+                            </span>
+                            <span class="text-gray-500 text-sm">{{ session.duration_minutes }} {% trans "minutes" %}</span>
                         </div>
-                        <div class="text-2xl font-bold text-blue-600 md:text-right">
-                            ₹{{ session.price }}
-                        </div>
-                    </div>
-                    
-                    <!-- Session Details -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        <div class="flex items-center">
-                            <i data-feather="calendar" class="h-5 w-5 text-gray-500 mr-2"></i>
-                            <div>
-                                <p class="text-sm text-gray-500">{% trans "Date" %}</p>
-                                <p class="font-medium">{{ session.start_time|date:"F j, Y" }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <i data-feather="clock" class="h-5 w-5 text-gray-500 mr-2"></i>
-                            <div>
-                                <p class="text-sm text-gray-500">{% trans "Time" %}</p>
-                                <p class="font-medium">{{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <i data-feather="users" class="h-5 w-5 text-gray-500 mr-2"></i>
-                            <div>
-                                <p class="text-sm text-gray-500">{% trans "Capacity" %}</p>
-                                <p class="font-medium">{{ session.current_participants }}/{{ session.max_participants }} {% trans "participants" %}</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Session Status -->
-                    {% if session.is_past %}
-                        <div class="bg-gray-100 text-gray-700 py-2 px-4 rounded-md mb-6 inline-block">
-                            <i data-feather="clock" class="h-4 w-4 inline mr-1"></i>
-                            {% trans "This session has ended" %}
-                        </div>
-                    {% elif session.is_full %}
-                        <div class="bg-yellow-100 text-yellow-700 py-2 px-4 rounded-md mb-6 inline-block">
-                            <i data-feather="alert-circle" class="h-4 w-4 inline mr-1"></i>
-                            {% trans "This session is full" %}
-                        </div>
-                    {% elif session.is_ongoing %}
-                        <div class="bg-green-100 text-green-700 py-2 px-4 rounded-md mb-6 inline-block">
-                            <i data-feather="video" class="h-4 w-4 inline mr-1"></i>
-                            {% trans "This session is live now" %}
-                        </div>
-                    {% endif %}
-                    
-                    <!-- Description -->
-                    <div class="mb-6">
-                        <h2 class="text-xl font-bold mb-4">{% trans "About This Session" %}</h2>
-                        <div class="prose max-w-none text-gray-700">
-                            {{ session.description|linebreaks }}
-                        </div>
-                    </div>
-                    
-                    <!-- What You'll Learn -->
-                    <div class="mb-6">
-                        <h2 class="text-xl font-bold mb-4">{% trans "What You'll Learn" %}</h2>
-                        <ul class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <li class="flex items-start">
-                                <i data-feather="check-circle" class="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
-                                <span>{% trans "Personalized guidance tailored to your needs" %}</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i data-feather="check-circle" class="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
-                                <span>{% trans "Live interactive learning with expert mentor" %}</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i data-feather="check-circle" class="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
-                                <span>{% trans "Real-time problem solving and feedback" %}</span>
-                            </li>
-                            <li class="flex items-start">
-                                <i data-feather="check-circle" class="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
-                                <span>{% trans "Collaborative whiteboard for visual explanations" %}</span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <!-- Mentor Profile -->
-                <div class="bg-white rounded-xl shadow-md p-8 mb-6">
-                    <h2 class="text-xl font-bold mb-4">{% trans "About Your Mentor" %}</h2>
-                    
-                    <div class="flex flex-col md:flex-row">
-                        <div class="mb-4 md:mb-0 md:mr-6">
+                        
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{{ session.title }}</h1>
+                        
+                        <div class="flex items-center mb-6">
                             {% if session.mentor.user.profile_picture %}
-                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-24 w-24 rounded-full object-cover">
+                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
                             {% else %}
-                                <div class="h-24 w-24 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-3xl">
+                                <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
                                     {{ session.mentor.user.first_name|first|upper }}
                                 </div>
                             {% endif %}
+                            
+                            <div>
+                                <p class="font-medium">{{ session.mentor.user.get_full_name }}</p>
+                                <div class="flex items-center">
+                                    <div class="flex items-center text-yellow-400 mr-1">
+                                        <i data-feather="star" class="h-3.5 w-3.5 fill-current"></i>
+                                    </div>
+                                    <span class="text-sm text-gray-500">{{ session.mentor.average_rating|default:"New" }}</span>
+                                    <span class="mx-2 text-gray-300">|</span>
+                                    <span class="text-sm text-gray-500">{{ session.mentor.total_reviews|default:"0" }} {% trans "reviews" %}</span>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div>
-                            <h3 class="text-lg font-bold mb-1">{{ session.mentor.user.get_full_name }}</h3>
-                            <p class="text-blue-600 mb-3">{{ session.mentor.expertise }}</p>
+                        <!-- Session time and date -->
+                        <div class="flex flex-col md:flex-row mb-6">
+                            <div class="flex items-center mb-3 md:mb-0 md:mr-8">
+                                <i data-feather="calendar" class="h-5 w-5 text-gray-400 mr-2"></i>
+                                <span>{{ session.start_time|date:"F j, Y" }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i data-feather="clock" class="h-5 w-5 text-gray-400 mr-2"></i>
+                                <span>{{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Session description -->
+                        <div class="prose max-w-none mb-6">
+                            <p class="text-gray-700">{{ session.description }}</p>
+                        </div>
+                        
+                        <!-- Session tags -->
+                        {% if session.tags %}
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                {% for tag in session.tags.split %}
+                                    <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Booking card -->
+                    <div class="w-full md:w-80 shrink-0">
+                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+                            <div class="text-2xl font-bold text-gray-900 mb-2">₹{{ session.price }}</div>
                             
                             <div class="flex items-center mb-4">
-                                <div class="flex text-yellow-400 mr-2">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: {{ session.current_participants|floatformat:0 }}%"></div>
+                                </div>
+                                <span class="text-sm text-gray-500 ml-2">{{ session.current_participants }}/{{ session.max_participants }}</span>
+                            </div>
+                            
+                            {% if user.is_authenticated %}
+                                {% if is_mentor %}
+                                    <!-- This is my session as a mentor -->
+                                    {% if session.is_ongoing %}
+                                        <a href="{% url 'session_room' session_id=session.id %}" class="w-full mb-3 block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                            {% trans "Start Session" %}
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'edit_session' session_id=session.id %}" class="w-full mb-3 block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                            {% trans "Edit Session" %}
+                                        </a>
+                                        <form method="post" action="{% url 'cancel_session' session_id=session.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-full block text-center border border-red-500 text-red-600 hover:bg-red-50 font-medium py-3 px-4 rounded-md transition">
+                                                {% trans "Cancel Session" %}
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                {% elif is_booked %}
+                                    <!-- Already booked this session -->
+                                    {% if session.is_ongoing %}
+                                        <a href="{% url 'session_room' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                            {% trans "Join Session" %}
+                                        </a>
+                                    {% else %}
+                                        <div class="w-full block text-center bg-green-600 text-white font-medium py-3 px-4 rounded-md mb-2">
+                                            {% trans "Booked" %}
+                                        </div>
+                                        <p class="text-sm text-gray-600 text-center">
+                                            {% trans "You'll receive a reminder before the session starts." %}
+                                        </p>
+                                    {% endif %}
+                                {% else %}
+                                    <!-- Can book this session -->
+                                    {% if session.is_full %}
+                                        <div class="w-full block text-center bg-gray-400 text-white font-medium py-3 px-4 rounded-md">
+                                            {% trans "Fully Booked" %}
+                                        </div>
+                                    {% elif session.is_past %}
+                                        <div class="w-full block text-center bg-gray-400 text-white font-medium py-3 px-4 rounded-md">
+                                            {% trans "Session Ended" %}
+                                        </div>
+                                    {% else %}
+                                        <a href="{% url 'book_session' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                            {% trans "Book Session" %}
+                                        </a>
+                                    {% endif %}
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'login' %}?next={{ request.path }}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                    {% trans "Log in to Book" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Share session -->
+                        <div class="mt-4">
+                            <div class="text-center mb-2">
+                                <span class="text-sm text-gray-600">{% trans "Share this session" %}</span>
+                            </div>
+                            <div class="flex justify-center space-x-3">
+                                <button class="share-btn p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition" data-platform="twitter">
+                                    <i data-feather="twitter" class="h-4 w-4 text-gray-700"></i>
+                                </button>
+                                <button class="share-btn p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition" data-platform="facebook">
+                                    <i data-feather="facebook" class="h-4 w-4 text-gray-700"></i>
+                                </button>
+                                <button class="share-btn p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition" data-platform="linkedin">
+                                    <i data-feather="linkedin" class="h-4 w-4 text-gray-700"></i>
+                                </button>
+                                <button class="copy-link-btn p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition">
+                                    <i data-feather="link" class="h-4 w-4 text-gray-700"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- About the Mentor -->
+        <div class="bg-white shadow rounded-xl overflow-hidden mb-8">
+            <div class="p-6 md:p-8">
+                <h2 class="text-xl font-bold mb-6">{% trans "About the Mentor" %}</h2>
+                
+                <div class="flex flex-col md:flex-row">
+                    <div class="md:w-1/3 mb-6 md:mb-0 md:mr-6">
+                        <div class="flex flex-col items-center">
+                            {% if session.mentor.user.profile_picture %}
+                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-32 w-32 rounded-full object-cover mb-4 border-4 border-gray-100 shadow-sm">
+                            {% else %}
+                                <div class="h-32 w-32 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-4xl mb-4 border-4 border-gray-100 shadow-sm">
+                                    {{ session.mentor.user.first_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            
+                            <h3 class="text-lg font-bold">{{ session.mentor.user.get_full_name }}</h3>
+                            <p class="text-gray-600 mb-2">{{ session.mentor.expertise }}</p>
+                            
+                            <div class="flex items-center mb-4">
+                                <div class="flex items-center text-yellow-400">
                                     {% for i in "12345" %}
-                                        {% if forloop.counter <= session.mentor.average_rating %}
+                                        {% if forloop.counter <= session.mentor.average_rating|default:0 %}
                                             <i data-feather="star" class="h-4 w-4 fill-current"></i>
                                         {% else %}
                                             <i data-feather="star" class="h-4 w-4"></i>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
-                                <span class="text-sm text-gray-600">{{ session.mentor.total_reviews }} {% trans "reviews" %}</span>
+                                <span class="ml-2 text-sm text-gray-600">{{ session.mentor.total_reviews|default:"0" }} {% trans "reviews" %}</span>
                             </div>
                             
-                            <p class="text-gray-700 mb-4">{{ session.mentor.bio|truncatewords:50 }}</p>
+                            {% if user.is_authenticated and not is_mentor %}
+                                <a href="{% url 'mentor_profile' mentor_id=session.mentor.id %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                    {% trans "View Profile" %}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="md:w-2/3">
+                        <div class="prose max-w-none">
+                            <p class="text-gray-700 mb-6">{{ session.mentor.bio }}</p>
                             
-                            <a href="{{ session.mentor.get_absolute_url }}" class="text-blue-600 hover:text-blue-800 font-medium">
-                                {% trans "View full profile" %} <i data-feather="arrow-right" class="h-4 w-4 inline"></i>
-                            </a>
+                            <h4 class="text-lg font-medium mb-2">{% trans "Experience" %}</h4>
+                            <p class="text-gray-700">{{ session.mentor.experience }}</p>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Related Sessions -->
-                {% if related_sessions %}
-                    <div class="bg-white rounded-xl shadow-md p-8">
-                        <h2 class="text-xl font-bold mb-4">{% trans "You Might Also Like" %}</h2>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {% for related_session in related_sessions %}
-                                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                    <h3 class="font-bold mb-2">{{ related_session.title }}</h3>
-                                    <div class="flex items-center mb-2">
-                                        {% if related_session.mentor.user.profile_picture %}
-                                            <img src="{{ related_session.mentor.user.profile_picture.url }}" alt="{{ related_session.mentor.user.get_full_name }}" class="h-8 w-8 rounded-full object-cover mr-2">
-                                        {% else %}
-                                            <div class="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-2">
-                                                {{ related_session.mentor.user.first_name|first|upper }}
-                                            </div>
-                                        {% endif %}
-                                        <span class="text-sm">{{ related_session.mentor.user.get_full_name }}</span>
-                                    </div>
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-blue-600 font-bold">₹{{ related_session.price }}</span>
-                                        <a href="{% url 'session_detail' session_id=related_session.id %}" class="text-sm text-blue-600 hover:text-blue-800">
-                                            {% trans "View Details" %}
-                                        </a>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endif %}
             </div>
-            
-            <!-- Sidebar - Booking & Stats -->
-            <div class="w-full md:w-1/3 mt-6 md:mt-0">
-                <!-- Sticky Booking Card -->
-                <div class="md:sticky md:top-24">
-                    <div class="bg-white rounded-xl shadow-md p-6 mb-6 glass-card">
-                        <h2 class="text-xl font-bold mb-4">{% trans "Book This Session" %}</h2>
-                        
-                        {% if user_booking %}
-                            <!-- Already Booked Status -->
-                            <div class="bg-green-100 text-green-800 p-4 rounded-md mb-4">
-                                <div class="flex items-start">
-                                    <div class="flex-shrink-0">
-                                        <i data-feather="check-circle" class="h-5 w-5"></i>
-                                    </div>
-                                    <div class="ml-3">
-                                        <h3 class="text-sm font-medium">{% trans "You've booked this session" %}</h3>
-                                        <div class="mt-2 text-sm">
-                                            <p>{% trans "Status:" %} <strong>{{ user_booking.get_status_display }}</strong></p>
-                                            
-                                            {% if user_booking.status == 'confirmed' and user_booking.payment_complete %}
-                                                {% if session.is_ongoing %}
-                                                    <a href="{% url 'session_room' session_id=session.id %}" class="mt-2 block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition">
-                                                        {% trans "Join Session" %}
-                                                    </a>
-                                                {% else %}
-                                                    <p class="mt-1">{% trans "You're all set! Join the session at the scheduled time." %}</p>
-                                                {% endif %}
-                                            {% elif user_booking.status == 'confirmed' and not user_booking.payment_complete %}
-                                                <p class="mt-1">{% trans "Your booking is confirmed but payment is pending." %}</p>
-                                                <a href="{% url 'cart' %}" class="mt-2 block w-full bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition">
-                                                    {% trans "Complete Payment" %}
-                                                </a>
-                                            {% elif user_booking.status == 'pending' %}
-                                                <p class="mt-1">{% trans "Your booking request is pending approval from the mentor." %}</p>
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% else %}
-                            <!-- Session Price & Availability -->
-                            <div class="mb-6">
-                                <div class="flex justify-between items-center mb-2">
-                                    <span class="text-gray-700">{% trans "Price" %}</span>
-                                    <span class="text-2xl font-bold text-blue-600">₹{{ session.price }}</span>
-                                </div>
-                                <div class="flex justify-between items-center mb-4">
-                                    <span class="text-gray-700">{% trans "Availability" %}</span>
-                                    <span class="{% if session.is_full %}text-red-600{% else %}text-green-600{% endif %}">
-                                        {% if session.is_full %}
-                                            {% trans "Fully Booked" %}
-                                        {% else %}
-                                            {{ session.current_participants }}/{{ session.max_participants }} {% trans "booked" %}
-                                        {% endif %}
-                                    </span>
-                                </div>
+        </div>
+        
+        <!-- Related Sessions -->
+        {% if related_sessions %}
+            <div class="mb-8">
+                <h2 class="text-xl font-bold mb-6">{% trans "More Sessions by this Mentor" %}</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {% for related_session in related_sessions %}
+                        <div class="bg-white shadow rounded-lg overflow-hidden transition duration-200 transform hover:translate-y-[-4px] hover:shadow-md">
+                            <div class="p-5">
+                                <h3 class="text-lg font-bold mb-2">{{ related_session.title }}</h3>
+                                <p class="text-sm text-gray-600 mb-3">{{ related_session.start_time|date:"F j, Y" }} | {{ related_session.start_time|date:"g:i A" }}</p>
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ related_session.description }}</p>
                                 
-                                <!-- Booking Action Button -->
-                                {% if user.is_authenticated and user.role == 'learner' %}
-                                    {% if session.is_past %}
-                                        <button disabled class="w-full bg-gray-300 text-gray-600 py-3 px-4 rounded-lg cursor-not-allowed">
-                                            {% trans "Session has ended" %}
-                                        </button>
-                                    {% elif session.is_full %}
-                                        <button disabled class="w-full bg-gray-300 text-gray-600 py-3 px-4 rounded-lg cursor-not-allowed">
-                                            {% trans "Session is full" %}
-                                        </button>
-                                    {% else %}
-                                        <button id="book-session-btn" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition">
-                                            {% trans "Book Now" %}
-                                        </button>
-                                    {% endif %}
-                                {% elif user.is_authenticated and user.role == 'mentor' %}
-                                    <div class="text-center text-gray-700 py-2">
-                                        {% trans "You're logged in as a mentor." %}
-                                    </div>
-                                {% else %}
-                                    <a href="{% url 'login' %}?next={{ request.path }}" class="block w-full bg-blue-600 text-white text-center py-3 px-4 rounded-lg hover:bg-blue-700 transition">
-                                        {% trans "Log in to Book" %}
+                                <div class="flex justify-between items-center pt-3 border-t border-gray-100">
+                                    <div class="text-lg font-bold text-blue-600">₹{{ related_session.price }}</div>
+                                    
+                                    <a href="{% url 'session_detail' session_id=related_session.id %}" class="px-3 py-1.5 bg-gray-100 text-gray-800 font-medium rounded-md hover:bg-gray-200 transition">
+                                        {% trans "View" %}
                                     </a>
-                                {% endif %}
-                            </div>
-                            
-                            <!-- Session Includes -->
-                            <div class="border-t border-gray-200 pt-4 mb-4">
-                                <h3 class="font-bold mb-3">{% trans "This Session Includes:" %}</h3>
-                                <ul class="space-y-2">
-                                    <li class="flex items-center">
-                                        <i data-feather="video" class="h-4 w-4 text-green-500 mr-2"></i>
-                                        <span>{% trans "Live video conference" %}</span>
-                                    </li>
-                                    <li class="flex items-center">
-                                        <i data-feather="message-square" class="h-4 w-4 text-green-500 mr-2"></i>
-                                        <span>{% trans "Live chat with mentor" %}</span>
-                                    </li>
-                                    <li class="flex items-center">
-                                        <i data-feather="edit-3" class="h-4 w-4 text-green-500 mr-2"></i>
-                                        <span>{% trans "Interactive whiteboard" %}</span>
-                                    </li>
-                                    <li class="flex items-center">
-                                        <i data-feather="file-text" class="h-4 w-4 text-green-500 mr-2"></i>
-                                        <span>{% trans "Q&A opportunity" %}</span>
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <!-- Session Guarantee -->
-                            <div class="bg-gray-50 p-4 rounded-md">
-                                <div class="flex items-start">
-                                    <i data-feather="shield" class="h-5 w-5 text-blue-600 mr-2 mt-0.5"></i>
-                                    <p class="text-sm text-gray-700">
-                                        {% trans "100% Satisfaction Guarantee. If you're not satisfied with the session, you can request a refund within 24 hours." %}
-                                    </p>
                                 </div>
                             </div>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- Session Stats & Reviews Summary -->
-                    <div class="bg-white rounded-xl shadow-md p-6">
-                        <h3 class="font-bold mb-4">{% trans "Session Stats" %}</h3>
-                        
-                        <div class="grid grid-cols-2 gap-4 mb-6">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600">{{ session.mentor.total_reviews }}</div>
-                                <p class="text-sm text-gray-600">{% trans "Total Reviews" %}</p>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-blue-600">{{ session.mentor.average_rating|floatformat:1 }}/5</div>
-                                <p class="text-sm text-gray-600">{% trans "Avg. Rating" %}</p>
-                            </div>
                         </div>
-                        
-                        <!-- Share Button -->
-                        <button id="share-session" class="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition">
-                            <i data-feather="share-2" class="h-4 w-4 mr-2"></i>
-                            {% trans "Share This Session" %}
-                        </button>
-                    </div>
+                    {% endfor %}
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Booking Modal -->
-<div id="booking-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">{% trans "Book This Session" %}</h2>
-                <button id="close-booking-modal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <i data-feather="x" class="h-6 w-6"></i>
-                </button>
-            </div>
-            
-            <form action="{% url 'book_session' session_id=session.id %}" method="post">
-                {% csrf_token %}
-                
-                <div class="mb-6">
-                    <h3 class="font-bold mb-2">{% trans "Session Details" %}</h3>
-                    <div class="bg-gray-50 p-4 rounded-md">
-                        <p class="font-medium">{{ session.title }}</p>
-                        <p class="text-gray-600 text-sm mb-2">{{ session.start_time|date:"F j, Y" }} at {{ session.start_time|date:"g:i A" }}</p>
-                        <p class="text-gray-600 text-sm">{% trans "Mentor:" %} {{ session.mentor.user.get_full_name }}</p>
-                    </div>
-                </div>
-                
-                <div class="mb-6">
-                    <label for="coupon_code" class="block text-gray-700 font-medium mb-2">{% trans "Coupon Code" %} ({% trans "optional" %})</label>
-                    <div class="flex">
-                        <input type="text" id="coupon_code" name="coupon_code" class="flex-grow px-4 py-2 rounded-l-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="{% trans 'Enter coupon code' %}">
-                        <button type="button" id="apply-coupon" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-r-lg border border-gray-300 border-l-0 hover:bg-gray-200 transition">
-                            {% trans "Apply" %}
-                        </button>
-                    </div>
-                    <div id="coupon-message" class="mt-2 text-sm hidden"></div>
-                </div>
-                
-                <div class="border-t border-gray-200 pt-4 mb-6">
-                    <div class="flex justify-between mb-2">
-                        <span>{% trans "Session Price" %}</span>
-                        <span>₹{{ session.price }}</span>
-                    </div>
-                    <div id="discount-row" class="flex justify-between mb-2 text-green-600 hidden">
-                        <span>{% trans "Discount" %}</span>
-                        <span id="discount-amount">-₹0</span>
-                    </div>
-                    <div class="flex justify-between font-bold text-lg">
-                        <span>{% trans "Total" %}</span>
-                        <span id="final-price">₹{{ session.price }}</span>
-                    </div>
-                </div>
-                
-                <div class="flex justify-end">
-                    <button type="submit" class="px-6 py-2 bg-blue-600 rounded-md text-white hover:bg-blue-700 transition">
-                        {% trans "Confirm Booking" %}
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Share Modal -->
-<div id="share-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-        <div class="p-6">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold">{% trans "Share This Session" %}</h2>
-                <button id="close-share-modal" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-                    <i data-feather="x" class="h-6 w-6"></i>
-                </button>
-            </div>
-            
-            <div class="mb-6">
-                <p class="text-gray-700 mb-4">{% trans "Share this session with friends who might be interested:" %}</p>
-                
-                <div class="grid grid-cols-4 gap-4 mb-6">
-                    <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" target="_blank" class="flex flex-col items-center text-center">
-                        <div class="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center mb-2">
-                            <i data-feather="facebook" class="h-6 w-6"></i>
-                        </div>
-                        <span class="text-sm">Facebook</span>
-                    </a>
-                    
-                    <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ session.title }}" target="_blank" class="flex flex-col items-center text-center">
-                        <div class="w-12 h-12 rounded-full bg-blue-400 text-white flex items-center justify-center mb-2">
-                            <i data-feather="twitter" class="h-6 w-6"></i>
-                        </div>
-                        <span class="text-sm">Twitter</span>
-                    </a>
-                    
-                    <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ request.build_absolute_uri }}&title={{ session.title }}" target="_blank" class="flex flex-col items-center text-center">
-                        <div class="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center mb-2">
-                            <i data-feather="linkedin" class="h-6 w-6"></i>
-                        </div>
-                        <span class="text-sm">LinkedIn</span>
-                    </a>
-                    
-                    <a href="https://api.whatsapp.com/send?text={{ session.title }} {{ request.build_absolute_uri }}" target="_blank" class="flex flex-col items-center text-center">
-                        <div class="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center mb-2">
-                            <i data-feather="message-circle" class="h-6 w-6"></i>
-                        </div>
-                        <span class="text-sm">WhatsApp</span>
-                    </a>
-                </div>
-                
-                <div class="flex">
-                    <input type="text" id="share-url" value="{{ request.build_absolute_uri }}" class="flex-grow px-4 py-2 rounded-l-lg border border-gray-300 bg-gray-50" readonly>
-                    <button id="copy-url" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-r-lg border border-gray-300 border-l-0 hover:bg-gray-200 transition">
-                        {% trans "Copy" %}
-                    </button>
-                </div>
-                <div id="copy-message" class="mt-2 text-sm text-green-600 hidden">{% trans "URL copied to clipboard!" %}</div>
-            </div>
-        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
@@ -439,114 +255,53 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Booking Modal Functionality
-        const bookSessionBtn = document.getElementById('book-session-btn');
-        const bookingModal = document.getElementById('booking-modal');
-        const closeBookingModal = document.getElementById('close-booking-modal');
-        
-        if (bookSessionBtn) {
-            bookSessionBtn.addEventListener('click', function() {
-                bookingModal.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden');
-            });
-        }
-        
-        if (closeBookingModal) {
-            closeBookingModal.addEventListener('click', function() {
-                bookingModal.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-            });
-        }
-        
-        // Apply Coupon Functionality
-        const applyCouponBtn = document.getElementById('apply-coupon');
-        const couponInput = document.getElementById('coupon_code');
-        const couponMessage = document.getElementById('coupon-message');
-        const discountRow = document.getElementById('discount-row');
-        const discountAmount = document.getElementById('discount-amount');
-        const finalPrice = document.getElementById('final-price');
-        
-        if (applyCouponBtn) {
-            applyCouponBtn.addEventListener('click', function() {
-                const couponCode = couponInput.value.trim();
-                
-                if (!couponCode) {
-                    showCouponMessage('Please enter a coupon code.', 'error');
-                    return;
-                }
-                
-                // Example discount calculation (in a real app, this would be an API call)
-                if (couponCode.toUpperCase() === 'WELCOME10') {
-                    const discount = {{ session.price }} * 0.1;
-                    const newTotal = {{ session.price }} - discount;
-                    
-                    discountAmount.textContent = `-₹${discount.toFixed(2)}`;
-                    finalPrice.textContent = `₹${newTotal.toFixed(2)}`;
-                    discountRow.classList.remove('hidden');
-                    
-                    showCouponMessage('Coupon applied successfully!', 'success');
-                } else {
-                    showCouponMessage('Invalid coupon code.', 'error');
-                }
-            });
-        }
-        
-        function showCouponMessage(message, type) {
-            couponMessage.textContent = message;
-            couponMessage.classList.remove('hidden', 'text-green-600', 'text-red-600');
-            couponMessage.classList.add(type === 'success' ? 'text-green-600' : 'text-red-600');
-        }
-        
-        // Share Modal Functionality
-        const shareSessionBtn = document.getElementById('share-session');
-        const shareModal = document.getElementById('share-modal');
-        const closeShareModal = document.getElementById('close-share-modal');
-        
-        if (shareSessionBtn) {
-            shareSessionBtn.addEventListener('click', function() {
-                shareModal.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden');
-            });
-        }
-        
-        if (closeShareModal) {
-            closeShareModal.addEventListener('click', function() {
-                shareModal.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-            });
-        }
-        
-        // Copy URL Functionality
-        const copyUrlBtn = document.getElementById('copy-url');
-        const shareUrl = document.getElementById('share-url');
-        const copyMessage = document.getElementById('copy-message');
-        
-        if (copyUrlBtn) {
-            copyUrlBtn.addEventListener('click', function() {
-                shareUrl.select();
-                document.execCommand('copy');
-                
-                copyMessage.classList.remove('hidden');
-                setTimeout(() => {
-                    copyMessage.classList.add('hidden');
-                }, 3000);
-            });
-        }
-        
-        // Close modals when clicking outside
-        window.addEventListener('click', function(e) {
-            if (e.target === bookingModal) {
-                bookingModal.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-            }
-            if (e.target === shareModal) {
-                shareModal.classList.add('hidden');
-                document.body.classList.remove('overflow-hidden');
-            }
-        });
-        
         // Initialize feather icons
         feather.replace();
+        
+        // Handle social sharing
+        const shareButtons = document.querySelectorAll('.share-btn');
+        const copyLinkBtn = document.querySelector('.copy-link-btn');
+        const sessionUrl = window.location.href;
+        const sessionTitle = "{{ session.title }}";
+        
+        shareButtons.forEach(function(button) {
+            button.addEventListener('click', function() {
+                const platform = this.getAttribute('data-platform');
+                let shareUrl;
+                
+                switch(platform) {
+                    case 'twitter':
+                        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(sessionTitle)}&url=${encodeURIComponent(sessionUrl)}`;
+                        break;
+                    case 'facebook':
+                        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(sessionUrl)}`;
+                        break;
+                    case 'linkedin':
+                        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(sessionUrl)}`;
+                        break;
+                }
+                
+                window.open(shareUrl, '_blank', 'width=600,height=400');
+            });
+        });
+        
+        // Handle copy link
+        if (copyLinkBtn) {
+            copyLinkBtn.addEventListener('click', function() {
+                navigator.clipboard.writeText(sessionUrl).then(function() {
+                    const originalHtml = copyLinkBtn.innerHTML;
+                    copyLinkBtn.innerHTML = '<i data-feather="check" class="h-4 w-4 text-green-600"></i>';
+                    feather.replace();
+                    
+                    setTimeout(function() {
+                        copyLinkBtn.innerHTML = originalHtml;
+                        feather.replace();
+                    }, 2000);
+                }).catch(function(err) {
+                    console.error('Could not copy text: ', err);
+                });
+            });
+        }
     });
 </script>
 {% endblock %}

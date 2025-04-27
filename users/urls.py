@@ -37,6 +37,7 @@ urlpatterns = [
     
     # Profile and settings
     path('profile/settings/', views.profile_settings_view, name='profile_settings'),
+    path('mentor/<int:mentor_id>/', views.mentor_profile_view, name='mentor_profile'),
     
     # Booking management for mentors
     path('booking/<int:booking_id>/<str:action>/', views.accept_reject_booking, name='booking_action'),

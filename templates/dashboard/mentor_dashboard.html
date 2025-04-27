@@ -5,113 +5,147 @@
 {% block title %}{% trans "Mentor Dashboard" %} | PeerLearn{% endblock %}
 
 {% block content %}
-<div class="bg-gray-100 min-h-screen">
+<div class="bg-gray-50 min-h-screen font-sans">
     <!-- Desktop Sidebar (hidden on mobile) -->
-    <div class="hidden md:block fixed left-0 top-16 bottom-0 w-64 bg-white shadow-md z-10">
+    <div class="hidden md:block fixed left-0 top-16 bottom-0 w-64 bg-white shadow-lg z-10 border-r border-gray-100">
         <div class="p-6">
             <div class="flex items-center mb-6">
                 {% if user.profile_picture %}
-                    <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-12 w-12 rounded-full object-cover mr-3">
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-14 w-14 rounded-full object-cover mr-3 border-2 border-blue-500 shadow-md">
                 {% else %}
-                    <div class="h-12 w-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                    <div class="h-14 w-14 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xl mr-3 shadow-md">
                         {{ user.first_name|first|upper }}
                     </div>
                 {% endif %}
                 <div>
-                    <h2 class="text-lg font-bold">{{ user.get_full_name }}</h2>
-                    <p class="text-gray-500 text-sm">{% trans "Mentor" %}</p>
+                    <h2 class="text-lg font-bold text-gray-800">{{ user.get_full_name }}</h2>
+                    <div class="flex items-center">
+                        <span class="text-sm text-blue-600 font-medium">{% trans "Mentor" %}</span>
+                        {% if mentor_profile.is_approved %}
+                            <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">{% trans "Verified" %}</span>
+                        {% else %}
+                            <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full">{% trans "Pending" %}</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
             
-            <nav class="mt-8">
-                <a href="{% url 'mentor_dashboard' %}" class="flex items-center py-3 px-4 text-blue-600 bg-blue-100 rounded-md mb-2">
-                    <i data-feather="grid" class="h-5 w-5 mr-3"></i>
+            <nav class="mt-8 space-y-1.5">
+                <a href="{% url 'mentor_dashboard' %}" class="group flex items-center py-3 px-4 text-blue-600 bg-blue-50 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="grid" class="h-5 w-5 mr-3 text-blue-500"></i>
                     <span>{% trans "Dashboard" %}</span>
                 </a>
-                <a href="{% url 'create_session' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
-                    <i data-feather="plus-circle" class="h-5 w-5 mr-3"></i>
+                <a href="{% url 'create_session' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="plus-circle" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
                     <span>{% trans "Create Session" %}</span>
                 </a>
-                <a href="{% url 'transaction_history' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
-                    <i data-feather="credit-card" class="h-5 w-5 mr-3"></i>
+                <a href="{% url 'transaction_history' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="credit-card" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
                     <span>{% trans "Earnings" %}</span>
                 </a>
-                <a href="{% url 'withdrawal_request' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
-                    <i data-feather="dollar-sign" class="h-5 w-5 mr-3"></i>
+                <a href="{% url 'withdrawal_request' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="dollar-sign" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
                     <span>{% trans "Withdraw" %}</span>
                 </a>
-                <a href="{% url 'profile_settings' %}" class="flex items-center py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-md mb-2">
-                    <i data-feather="settings" class="h-5 w-5 mr-3"></i>
+                <a href="{% url 'profile_settings' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="settings" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
                     <span>{% trans "Settings" %}</span>
                 </a>
             </nav>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-6">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+                    <h4 class="font-medium text-blue-800 mb-2">Need help?</h4>
+                    <p class="text-sm text-gray-600 mb-3">Have questions or need assistance with your mentoring?</p>
+                    <a href="#" class="text-sm text-blue-600 font-medium hover:text-blue-800">Contact Support →</a>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Main Content -->
-    <div class="md:ml-64 p-6">
+    <div class="md:ml-64 p-6 lg:p-8">
         <!-- Approval Status Alert -->
         {% if not mentor_profile.is_approved %}
-            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-sm">
+            <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 mb-6 rounded-lg shadow-sm">
                 <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i data-feather="alert-circle" class="h-5 w-5 mr-2"></i>
+                    <div class="flex-shrink-0 bg-yellow-100 rounded-full p-2">
+                        <i data-feather="alert-circle" class="h-5 w-5 text-yellow-500"></i>
                     </div>
-                    <div>
+                    <div class="ml-3">
                         <p class="font-bold">{% trans "Your mentor profile is pending approval" %}</p>
-                        <p>{% trans "We're reviewing your profile. You'll be able to create sessions once approved." %}</p>
+                        <p class="text-sm">{% trans "We're reviewing your profile. You'll be able to create sessions once approved." %}</p>
                     </div>
+                    <button class="ml-auto text-yellow-500 hover:text-yellow-700">
+                        <i data-feather="x" class="h-5 w-5"></i>
+                    </button>
                 </div>
             </div>
         {% endif %}
         
-        <h1 class="text-3xl font-bold mb-8">{% trans "Welcome back" %}, {{ user.first_name }}!</h1>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{% trans "Welcome back" %}, {{ user.first_name }}!</h1>
+        <p class="text-gray-600 mb-8">{% now "l, F j, Y" %} • Here's what's happening with your sessions</p>
         
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <!-- Stats Card 1: Upcoming Sessions -->
-            <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-500">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">{% trans "Upcoming Sessions" %}</h2>
-                    <i data-feather="calendar" class="h-6 w-6 text-blue-500"></i>
+                    <h2 class="text-xl font-bold text-gray-800">{% trans "Upcoming Sessions" %}</h2>
+                    <div class="bg-blue-100 text-blue-600 p-2 rounded-full">
+                        <i data-feather="calendar" class="h-6 w-6"></i>
+                    </div>
                 </div>
-                <div class="text-3xl font-bold mb-2">{{ upcoming_sessions.count }}</div>
+                <div class="text-3xl font-bold mb-2 text-gray-800">{{ upcoming_sessions.count }}</div>
                 <p class="text-gray-600">{% trans "sessions scheduled" %}</p>
+                <a href="#" class="block mt-4 text-blue-600 text-sm font-medium hover:text-blue-800">View all sessions →</a>
             </div>
             
             <!-- Stats Card 2: Pending Requests -->
-            <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-yellow-500">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">{% trans "Pending Requests" %}</h2>
-                    <i data-feather="clock" class="h-6 w-6 text-yellow-500"></i>
+                    <h2 class="text-xl font-bold text-gray-800">{% trans "Pending Requests" %}</h2>
+                    <div class="bg-yellow-100 text-yellow-600 p-2 rounded-full">
+                        <i data-feather="clock" class="h-6 w-6"></i>
+                    </div>
                 </div>
-                <div class="text-3xl font-bold mb-2">{{ pending_bookings.count }}</div>
+                <div class="text-3xl font-bold mb-2 text-gray-800">{{ pending_bookings.count }}</div>
                 <p class="text-gray-600">{% trans "requests awaiting response" %}</p>
+                <a href="#pending-requests" class="block mt-4 text-blue-600 text-sm font-medium hover:text-blue-800">View requests →</a>
             </div>
             
             <!-- Stats Card 3: Total Earnings -->
-            <div class="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-500">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">{% trans "Total Earnings" %}</h2>
-                    <i data-feather="dollar-sign" class="h-6 w-6 text-green-500"></i>
+                    <h2 class="text-xl font-bold text-gray-800">{% trans "Total Earnings" %}</h2>
+                    <div class="bg-green-100 text-green-600 p-2 rounded-full">
+                        <i data-feather="dollar-sign" class="h-6 w-6"></i>
+                    </div>
                 </div>
-                <div class="text-3xl font-bold mb-2">₹{{ total_earnings }}</div>
+                <div class="text-3xl font-bold mb-2 text-gray-800">₹{{ total_earnings }}</div>
                 {% if pending_withdrawals > 0 %}
                     <p class="text-gray-600">{{ pending_withdrawals }} {% trans "pending withdrawal(s)" %}</p>
                 {% else %}
                     <p class="text-gray-600">{% trans "available for withdrawal" %}</p>
                 {% endif %}
+                <a href="{% url 'withdrawal_request' %}" class="block mt-4 text-blue-600 text-sm font-medium hover:text-blue-800">Withdraw funds →</a>
             </div>
         </div>
         
         <!-- Create Session CTA -->
-        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-md p-6 mb-8 text-white">
-            <div class="flex flex-col md:flex-row md:items-center justify-between">
-                <div class="mb-4 md:mb-0">
-                    <h2 class="text-xl font-bold mb-2">{% trans "Ready to share your knowledge?" %}</h2>
-                    <p class="text-blue-100">{% trans "Create a new session and start teaching learners from around the world." %}</p>
+        <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-md p-8 mb-8 text-white relative overflow-hidden">
+            <div class="absolute right-0 top-0 opacity-10">
+                <svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="100" fill="white"/>
+                    <path d="M100 50V150M50 100H150" stroke="white" stroke-width="10" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="flex flex-col md:flex-row md:items-center justify-between relative z-10">
+                <div class="mb-6 md:mb-0">
+                    <h2 class="text-2xl font-bold mb-2">{% trans "Ready to share your knowledge?" %}</h2>
+                    <p class="text-blue-100 max-w-lg">{% trans "Create a new session and start teaching learners from around the world. Schedule your next virtual class now." %}</p>
                 </div>
-                <button id="create-session-btn" class="bg-white text-blue-600 py-2 px-6 rounded-lg font-bold hover:bg-blue-50 transition">
+                <button id="create-session-btn" class="bg-white text-blue-600 py-2.5 px-6 rounded-lg font-bold hover:bg-blue-50 transition shadow-md transform hover:scale-105">
                     {% trans "Create New Session" %}
                 </button>
             </div>

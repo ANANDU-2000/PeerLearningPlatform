@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <!-- Background -->
+  <rect width="800" height="450" fill="#047857" />
+  
+  <!-- Abstract design elements -->
+  <g opacity="0.15" fill="#ffffff">
+    <!-- Grid pattern -->
+    <line x1="50" y1="50" x2="750" y2="50" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="100" x2="750" y2="100" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="150" x2="750" y2="150" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="200" x2="750" y2="200" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="250" x2="750" y2="250" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="300" x2="750" y2="300" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="350" x2="750" y2="350" stroke="#ffffff" stroke-width="1" />
+    <line x1="50" y1="400" x2="750" y2="400" stroke="#ffffff" stroke-width="1" />
+    
+    <line x1="50" y1="50" x2="50" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="150" y1="50" x2="150" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="250" y1="50" x2="250" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="350" y1="50" x2="350" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="450" y1="50" x2="450" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="550" y1="50" x2="550" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="650" y1="50" x2="650" y2="400" stroke="#ffffff" stroke-width="1" />
+    <line x1="750" y1="50" x2="750" y2="400" stroke="#ffffff" stroke-width="1" />
+  </g>
+  
+  <!-- Wireframe elements -->
+  <g opacity="0.25" fill="#ffffff">
+    <!-- Mock UI elements -->
+    <rect x="150" y="100" width="200" height="40" rx="5" />
+    <rect x="150" y="160" width="200" height="80" rx="5" />
+    <rect x="150" y="260" width="95" height="40" rx="5" />
+    <rect x="255" y="260" width="95" height="40" rx="5" />
+    
+    <rect x="450" y="100" width="200" height="200" rx="10" />
+    <circle cx="550" cy="140" r="20" />
+    <rect x="480" y="180" width="140" height="10" rx="2" />
+    <rect x="480" y="200" width="140" height="10" rx="2" />
+    <rect x="480" y="220" width="140" height="10" rx="2" />
+    <rect x="480" y="250" width="70" height="30" rx="5" />
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="200" cy="150" r="50" fill="#10b981" opacity="0.7" />
+  <circle cx="600" cy="300" r="70" fill="#34d399" opacity="0.5" />
+  <rect x="400" y="150" width="120" height="120" rx="20" fill="#6ee7b7" opacity="0.4" />
+  
+  <!-- Main text -->
+  <text x="400" y="225" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">Design &amp; User Experience</text>
+  
+  <!-- Design symbols -->
+  <g fill="white" opacity="0.9">
+    <rect x="320" y="280" width="20" height="20" rx="5" />
+    <circle cx="370" cy="290" r="10" />
+    <polygon points="410,280 430,280 420,300" />
+    <rect x="450" y="280" width="20" height="20" transform="rotate(45, 460, 290)" />
+  </g>
+</svg>

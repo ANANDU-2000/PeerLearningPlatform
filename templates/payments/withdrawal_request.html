@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Withdrawal Request" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen font-sans">
+    <!-- Desktop Sidebar (hidden on mobile) -->
+    <div class="hidden md:block fixed left-0 top-16 bottom-0 w-64 bg-white shadow-lg z-10 border-r border-gray-100">
+        <div class="p-6">
+            <div class="flex items-center mb-6">
+                {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-14 w-14 rounded-full object-cover mr-3 border-2 border-blue-500 shadow-md">
+                {% else %}
+                    <div class="h-14 w-14 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xl mr-3 shadow-md">
+                        {{ user.first_name|first|upper }}
+                    </div>
+                {% endif %}
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800">{{ user.get_full_name }}</h2>
+                    <div class="flex items-center">
+                        <span class="text-sm text-blue-600 font-medium">{% trans "Mentor" %}</span>
+                        {% if mentor_profile.is_approved %}
+                            <span class="ml-2 bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded-full">{% trans "Verified" %}</span>
+                        {% else %}
+                            <span class="ml-2 bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full">{% trans "Pending" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="mt-8 space-y-1.5">
+                <a href="{% url 'mentor_dashboard' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="grid" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
+                    <span>{% trans "Dashboard" %}</span>
+                </a>
+                <a href="{% url 'create_session' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="plus-circle" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
+                    <span>{% trans "Create Session" %}</span>
+                </a>
+                <a href="{% url 'transaction_history' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="credit-card" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
+                    <span>{% trans "Earnings" %}</span>
+                </a>
+                <a href="{% url 'withdrawal_request' %}" class="group flex items-center py-3 px-4 text-blue-600 bg-blue-50 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="dollar-sign" class="h-5 w-5 mr-3 text-blue-500"></i>
+                    <span>{% trans "Withdraw" %}</span>
+                </a>
+                <a href="{% url 'profile_settings' %}" class="group flex items-center py-3 px-4 text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg font-medium transition-all duration-200 transform hover:translate-x-1">
+                    <i data-feather="settings" class="h-5 w-5 mr-3 text-gray-500 group-hover:text-blue-500"></i>
+                    <span>{% trans "Settings" %}</span>
+                </a>
+            </nav>
+            
+            <div class="absolute bottom-0 left-0 right-0 p-6">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+                    <h4 class="font-medium text-blue-800 mb-2">Need help?</h4>
+                    <p class="text-sm text-gray-600 mb-3">Have questions about withdrawals?</p>
+                    <a href="#" class="text-sm text-blue-600 font-medium hover:text-blue-800">Contact Support →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="md:ml-64 p-6 lg:p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">{% trans "Withdraw Earnings" %}</h1>
+        <p class="text-gray-600 mb-8">{% trans "Request a withdrawal of your earned funds to your bank account" %}</p>
+        
+        <!-- Stats Card for Available Balance -->
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-800 mb-1">{% trans "Available Balance" %}</h2>
+                    <p class="text-sm text-gray-500">{% trans "Amount available for withdrawal" %}</p>
+                </div>
+                <div class="text-3xl font-bold text-green-600">₹{{ available_balance }}</div>
+            </div>
+        </div>
+        
+        {% if pending_withdrawal %}
+            <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 p-4 mb-6 rounded-lg shadow-sm">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 bg-yellow-100 rounded-full p-2">
+                        <i data-feather="clock" class="h-5 w-5 text-yellow-500"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="font-bold">{% trans "You have a pending withdrawal request" %}</p>
+                        <p class="text-sm">{% trans "Amount:" %} ₹{{ pending_withdrawal.amount }} - {% trans "Requested on:" %} {{ pending_withdrawal.created_at|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        
+        {% if available_balance > 0 and not pending_withdrawal %}
+            <div class="bg-white rounded-xl shadow-md p-6 mb-8">
+                <h2 class="text-xl font-bold mb-6">{% trans "Request Withdrawal" %}</h2>
+                
+                <form method="post" action="{% url 'withdrawal_request' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-6">
+                        <label for="amount" class="block text-gray-700 font-medium mb-2">{% trans "Withdrawal Amount (INR)" %}*</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500">₹</span>
+                            </div>
+                            <input type="number" id="amount" name="amount" min="100" max="{{ available_balance }}" step="1" class="w-full pl-8 px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required value="{{ available_balance }}">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">{% trans "Minimum withdrawal amount is ₹100" %}</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="account_details" class="block text-gray-700 font-medium mb-2">{% trans "Bank Account Details" %}*</label>
+                        <textarea id="account_details" name="account_details" rows="4" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500" required placeholder="{% trans 'Account holder name, Account number, IFSC code, Bank name and branch' %}">{{ mentor_profile.bank_account_details }}</textarea>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-6 py-3 bg-blue-600 rounded-lg text-white hover:bg-blue-700 transition font-medium shadow-sm">
+                            {% trans "Submit Withdrawal Request" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        {% elif available_balance == 0 %}
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8 text-center border border-gray-200">
+                <div class="mb-4 text-gray-400">
+                    <i data-feather="credit-card" class="h-12 w-12 mx-auto"></i>
+                </div>
+                <h3 class="text-lg font-medium mb-2">{% trans "No funds available for withdrawal" %}</h3>
+                <p class="text-gray-600 mb-4">{% trans "You don't have any funds available for withdrawal right now. Start earning by creating and conducting sessions." %}</p>
+                <a href="{% url 'create_session' %}" class="inline-block bg-blue-600 text-white py-2 px-6 rounded-md hover:bg-blue-700 transition">
+                    {% trans "Create Session" %}
+                </a>
+            </div>
+        {% endif %}
+        
+        <!-- Recent Withdrawals -->
+        <h2 class="text-xl font-bold mb-4">{% trans "Recent Withdrawals" %}</h2>
+        
+        {% if withdrawals %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-8">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Date" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Amount" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Status" %}
+                            </th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {% trans "Processed Date" %}
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for withdrawal in withdrawals %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ withdrawal.created_at|date:"M d, Y" }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">₹{{ withdrawal.amount }}</div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                        {% if withdrawal.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% elif withdrawal.status == 'approved' %}bg-green-100 text-green-800
+                                        {% else %}bg-red-100 text-red-800{% endif %}">
+                                        {{ withdrawal.get_status_display }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if withdrawal.processed_at %}
+                                        <div class="text-sm text-gray-900">{{ withdrawal.processed_at|date:"M d, Y" }}</div>
+                                    {% else %}
+                                        <div class="text-sm text-gray-500">-</div>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8 text-center border border-gray-200">
+                <div class="mb-4 text-gray-400">
+                    <i data-feather="clock" class="h-12 w-12 mx-auto"></i>
+                </div>
+                <h3 class="text-lg font-medium mb-2">{% trans "No withdrawal history" %}</h3>
+                <p class="text-gray-600">{% trans "You haven't made any withdrawal requests yet." %}</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize notifications
+        if (typeof initializeNotifications === 'function') {
+            initializeNotifications();
+        }
+    });
+</script>
+{% endblock %}

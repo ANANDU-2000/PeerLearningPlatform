@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <!-- Background -->
+  <rect width="800" height="450" fill="#4c1d95" />
+  
+  <!-- Abstract data visualization patterns -->
+  <g opacity="0.15" fill="#ffffff">
+    <!-- Data points -->
+    <circle cx="100" cy="100" r="4" />
+    <circle cx="150" cy="120" r="4" />
+    <circle cx="200" cy="90" r="4" />
+    <circle cx="250" cy="150" r="4" />
+    <circle cx="300" cy="110" r="4" />
+    <circle cx="350" cy="160" r="4" />
+    <circle cx="400" cy="130" r="4" />
+    <circle cx="450" cy="170" r="4" />
+    <circle cx="500" cy="140" r="4" />
+    <circle cx="550" cy="100" r="4" />
+    <circle cx="600" cy="120" r="4" />
+    <circle cx="650" cy="90" r="4" />
+    <circle cx="700" cy="150" r="4" />
+    
+    <!-- Connect the dots -->
+    <polyline points="100,100 150,120 200,90 250,150 300,110 350,160 400,130 450,170 500,140 550,100 600,120 650,90 700,150" fill="none" stroke="#ffffff" stroke-width="1" />
+    
+    <!-- Scatter plot -->
+    <circle cx="150" cy="250" r="3" />
+    <circle cx="200" cy="280" r="3" />
+    <circle cx="250" cy="260" r="3" />
+    <circle cx="300" cy="300" r="3" />
+    <circle cx="350" cy="270" r="3" />
+    <circle cx="400" cy="290" r="3" />
+    <circle cx="450" cy="250" r="3" />
+    <circle cx="500" cy="280" r="3" />
+    <circle cx="550" cy="260" r="3" />
+    <circle cx="600" cy="290" r="3" />
+    <circle cx="650" cy="270" r="3" />
+    
+    <!-- Axes -->
+    <line x1="100" y1="350" x2="700" y2="350" stroke="#ffffff" stroke-width="2" />
+    <line x1="100" y1="350" x2="100" y2="100" stroke="#ffffff" stroke-width="2" />
+    
+    <!-- Bar chart -->
+    <rect x="120" y="320" width="20" height="30" />
+    <rect x="170" y="310" width="20" height="40" />
+    <rect x="220" y="300" width="20" height="50" />
+    <rect x="270" y="320" width="20" height="30" />
+    <rect x="320" y="290" width="20" height="60" />
+    <rect x="370" y="330" width="20" height="20" />
+    <rect x="420" y="300" width="20" height="50" />
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="200" cy="150" r="50" fill="#8b5cf6" opacity="0.7" />
+  <circle cx="600" cy="300" r="70" fill="#a78bfa" opacity="0.5" />
+  <rect x="400" y="150" width="120" height="120" rx="20" fill="#c4b5fd" opacity="0.4" />
+  
+  <!-- Main text -->
+  <text x="400" y="225" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">Data Science &amp; Analytics</text>
+  
+  <!-- Data symbols -->
+  <g fill="white" opacity="0.9">
+    <text x="300" y="290" font-family="Arial, sans-serif" font-size="24">π</text>
+    <text x="370" y="290" font-family="Arial, sans-serif" font-size="24">∑</text>
+    <text x="440" y="290" font-family="Arial, sans-serif" font-size="24">σ</text>
+    <text x="510" y="290" font-family="Arial, sans-serif" font-size="24">μ</text>
+  </g>
+</svg>

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <!-- Background -->
+  <rect width="800" height="450" fill="#1e40af" />
+  
+  <!-- Abstract code pattern background -->
+  <g opacity="0.1" fill="#ffffff">
+    <text x="50" y="60" font-family="monospace" font-size="14">function main() {</text>
+    <text x="70" y="90" font-family="monospace" font-size="14">const data = fetchAPI();</text>
+    <text x="70" y="120" font-family="monospace" font-size="14">if (data.isValid) {</text>
+    <text x="90" y="150" font-family="monospace" font-size="14">processData(data);</text>
+    <text x="90" y="180" font-family="monospace" font-size="14">renderUI(data.results);</text>
+    <text x="70" y="210" font-family="monospace" font-size="14">} else {</text>
+    <text x="90" y="240" font-family="monospace" font-size="14">handleError(data.error);</text>
+    <text x="70" y="270" font-family="monospace" font-size="14">}</text>
+    <text x="50" y="300" font-family="monospace" font-size="14">}</text>
+    
+    <text x="400" y="150" font-family="monospace" font-size="14">const styles = {</text>
+    <text x="420" y="180" font-family="monospace" font-size="14">background: '#fff',</text>
+    <text x="420" y="210" font-family="monospace" font-size="14">color: '#333',</text>
+    <text x="420" y="240" font-family="monospace" font-size="14">padding: '1rem',</text>
+    <text x="400" y="270" font-family="monospace" font-size="14">};</text>
+    
+    <text x="500" y="60" font-family="monospace" font-size="14">import React from 'react';</text>
+    <text x="500" y="90" font-family="monospace" font-size="14">import { useState } from 'react';</text>
+  </g>
+  
+  <!-- Decorative elements -->
+  <circle cx="150" cy="100" r="40" fill="#60a5fa" opacity="0.8" />
+  <circle cx="600" cy="350" r="60" fill="#3b82f6" opacity="0.6" />
+  <rect x="450" y="100" width="100" height="100" rx="20" fill="#93c5fd" opacity="0.5" />
+  
+  <!-- Main text -->
+  <text x="400" y="225" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">Programming &amp; Development</text>
+  
+  <!-- Coding symbols -->
+  <g fill="white" opacity="0.9">
+    <text x="280" y="290" font-family="monospace" font-size="24">&lt;/&gt;</text>
+    <text x="380" y="290" font-family="monospace" font-size="24">{...}</text>
+    <text x="480" y="290" font-family="monospace" font-size="24">if()</text>
+  </g>
+</svg>

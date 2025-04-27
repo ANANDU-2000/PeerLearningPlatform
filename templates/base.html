@@ -117,6 +117,7 @@
     
     <!-- Internationalization support -->
     {% load i18n %}
+    {% load static %}
 </head>
 <body class="light-mode">
     <!-- Top Navigation -->
@@ -394,7 +395,7 @@
     </footer>
     
     <!-- Notification Container -->
-    <div id="notification-container" class="fixed bottom-20 right-5 z-50 max-w-xs"></div>
+    <div id="notification-toast" class="fixed bottom-20 right-5 z-50 max-w-xs translate-x-full transition-transform duration-300 ease-in-out"></div>
     
     <!-- Core JavaScript -->
     <script>
@@ -469,5 +470,16 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+    
+    <!-- Load notification script -->
+    <script src="{% static 'js/notifications.js' %}"></script>
+    <script>
+        // Initialize notifications system
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof initializeNotifications === 'function') {
+                initializeNotifications();
+            }
+        });
+    </script>
 </body>
 </html>

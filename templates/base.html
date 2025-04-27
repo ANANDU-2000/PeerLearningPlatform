@@ -133,16 +133,37 @@
                     
                     <!-- Main Navigation (Desktop) -->
                     <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-                        <a href="{% url 'landing_page' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                            {% trans "Home" %}
-                        </a>
+                        {% if user.is_authenticated %}
+                            <!-- Show dashboard as home for logged in users -->
+                            <a href="{{ user.get_dashboard_url }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                {% trans "Dashboard" %}
+                            </a>
+                        {% else %}
+                            <!-- Show landing page as home for non-logged in users -->
+                            <a href="{% url 'landing_page' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                {% trans "Home" %}
+                            </a>
+                        {% endif %}
+                        
+                        <!-- Common navigation items -->
                         <a href="{% url 'session_list' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             {% trans "Find Sessions" %}
                         </a>
-                        {% if user.is_authenticated and user.role == 'mentor' %}
-                            <a href="{% url 'create_session' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
-                                {% trans "Create Session" %}
-                            </a>
+                        
+                        <!-- Role-specific navigation items -->
+                        {% if user.is_authenticated %}
+                            {% if user.role == 'mentor' %}
+                                <a href="{% url 'create_session' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    {% trans "Create Session" %}
+                                </a>
+                                <a href="{% url 'withdrawal_request' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    {% trans "Earnings" %}
+                                </a>
+                            {% elif user.role == 'learner' %}
+                                <a href="{% url 'cart' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                    {% trans "My Cart" %}
+                                </a>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>

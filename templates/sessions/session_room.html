@@ -126,6 +126,71 @@
         cursor: pointer;
     }
     
+    /* Network quality indicator */
+    .network-quality {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .network-quality.good {
+        background: rgba(16, 185, 129, 0.8);
+        color: white;
+    }
+    
+    .network-quality.medium {
+        background: rgba(245, 158, 11, 0.8);
+        color: white;
+    }
+    
+    .network-quality.poor {
+        background: rgba(239, 68, 68, 0.8);
+        color: white;
+    }
+    
+    /* Buffering spinner */
+    .buffering-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .buffering-indicator .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+    
+    .buffering-indicator .text {
+        color: white;
+        margin-top: 8px;
+        font-size: 14px;
+        text-align: center;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    /* Show buffering when video is stalled */
+    .video-container.buffering .buffering-indicator {
+        display: flex;
+    }
+    
     /* Sidebar tabs */
     .tab {
         cursor: pointer;

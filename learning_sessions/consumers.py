@@ -440,10 +440,13 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
     async def periodic_ping(self):
         """Send periodic pings to detect connection problems."""
         try:
-            ping_interval = 30  # seconds
+            ping_interval = 15  # seconds - reduced for quicker detection of issues
+            adaptive_interval = ping_interval  # Start with default, adjust based on network conditions
+            consecutive_failures = 0
+            
             while True:
-                # Wait for ping interval
-                await asyncio.sleep(ping_interval)
+                # Wait for ping interval (adaptive based on network conditions)
+                await asyncio.sleep(adaptive_interval)
                 
                 # Ensure WebSocket is still open before sending ping
                 if not hasattr(self, 'scope') or self.scope.get('session_closed', False):
@@ -453,6 +456,13 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                 try:
                     # Record when we're sending this ping
                     self.last_ping_time = time.time() * 1000
+                    
+                    # Reset consecutive failures if we can send a ping
+                    if consecutive_failures > 0:
+                        consecutive_failures = 0
+                        # Gradually return to normal ping interval if it was adjusted
+                        if adaptive_interval != ping_interval:
+                            adaptive_interval = min(ping_interval, adaptive_interval * 1.5)
                     
                     # Send ping
                     await self.send(text_data=json.dumps({

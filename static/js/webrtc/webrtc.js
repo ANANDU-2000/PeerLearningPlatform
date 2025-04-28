@@ -70,13 +70,42 @@ class PeerLearnRTC {
             }
             
             try {
-                // Get user media (camera and microphone) with retry for common constraints
+                // Detect network speed and adjust video quality accordingly
+                let networkQuality = 'high'; // Default to high quality
+                
+                // Use navigator.connection if available to detect network capabilities
+                if (navigator.connection) {
+                    const effectiveType = navigator.connection.effectiveType || "unknown";
+                    const downlink = navigator.connection.downlink || 0;
+                    
+                    if (effectiveType === '2g' || downlink < 0.5) {
+                        networkQuality = 'low';
+                        console.log("Detected slow connection, using low video quality");
+                    } else if (effectiveType === '3g' || downlink < 2) {
+                        networkQuality = 'medium';
+                        console.log("Detected moderate connection, using medium video quality");
+                    } else {
+                        console.log("Detected good connection, using high video quality");
+                    }
+                }
+                
+                // Configure media constraints based on detected network quality
                 let mediaConstraints = {
-                    video: true,
-                    audio: true
+                    audio: true,
+                    video: {
+                        width: networkQuality === 'low' ? { ideal: 320, max: 640 } : 
+                               networkQuality === 'medium' ? { ideal: 640, max: 1280 } :
+                               { ideal: 1280, max: 1920 },
+                        height: networkQuality === 'low' ? { ideal: 240, max: 480 } : 
+                                networkQuality === 'medium' ? { ideal: 480, max: 720 } :
+                                { ideal: 720, max: 1080 },
+                        frameRate: networkQuality === 'low' ? { ideal: 15, max: 20 } : 
+                                  networkQuality === 'medium' ? { ideal: 20, max: 24 } :
+                                  { ideal: 24, max: 30 }
+                    }
                 };
                 
-                console.log("Requesting camera and microphone access with constraints:", mediaConstraints);
+                console.log(`Using ${networkQuality} quality video settings:`, mediaConstraints);
                 this.localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
                 console.log("Successfully got camera and microphone access");
             } catch (mediaError) {

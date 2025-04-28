@@ -385,62 +385,101 @@ def cancel_session(request, session_id):
 @login_required
 def book_session(request, session_id):
     """View for learners to book a session."""
-    if request.user.role != 'learner':
-        messages.error(request, _('Only learners can book sessions.'))
-        return redirect('landing_page')
-    
-    session = get_object_or_404(Session, id=session_id, mentor__is_approved=True)
-    
-    # Check if session is available for booking
-    if session.is_past:
-        messages.error(request, _('This session has already ended.'))
-        return redirect('session_list')
-    
-    if session.is_full:
-        messages.error(request, _('This session is already fully booked.'))
-        return redirect('session_list')
-    
-    # Check if user has already booked this session
-    existing_booking = Booking.objects.filter(session=session, learner=request.user).first()
-    if existing_booking:
-        messages.info(request, _('You have already booked this session.'))
-        return redirect('cart')
-    
-    if request.method == 'POST':
-        form = BookingForm(request.POST)
-        if form.is_valid():
-            booking = form.save(commit=False)
-            booking.session = session
-            booking.learner = request.user
-            
-            # Apply coupon code if provided
-            coupon_code = form.cleaned_data.get('coupon_code')
-            if coupon_code:
-                # In a real app, validate coupon code against a database
-                # For now, just use a simple example
-                if coupon_code == 'WELCOME10':
-                    discount = session.price * 0.1  # 10% discount
-                    booking.coupon_applied = coupon_code
-                    booking.discount_amount = discount
-                    booking.final_price = session.price - discount
-                else:
-                    messages.warning(request, _('Invalid coupon code.'))
-            
-            booking.save()
-            
-            # Increment current participants count
-            session.current_participants += 1
-            session.save()
-            
-            messages.success(request, _('Session booked successfully! Proceed to payment.'))
+    try:
+        # Check if user is a learner
+        if request.user.role != 'learner':
+            messages.error(request, _('Only learners can book sessions.'))
+            return redirect('landing_page')
+        
+        session = get_object_or_404(Session, id=session_id, mentor__is_approved=True)
+        
+        # Check if session is available for booking
+        if session.is_past:
+            messages.error(request, _('This session has already ended.'))
+            return redirect('session_list')
+        
+        if session.is_full:
+            messages.error(request, _('This session is already fully booked.'))
+            return redirect('session_list')
+        
+        # Check if user has already booked this session (including any status)
+        existing_booking = Booking.objects.filter(session=session, learner=request.user).exists()
+        if existing_booking:
+            messages.info(request, _('You have already booked this session.'))
             return redirect('cart')
-    else:
-        form = BookingForm()
-    
-    return render(request, 'sessions/book_session.html', {
-        'form': form,
-        'session': session
-    })
+        
+        # For GET requests, show confirmation page first
+        if request.method == 'GET':
+            confirm = request.GET.get('confirm', 'false') == 'true'
+            
+            if not confirm:
+                # Show confirmation first before adding to cart
+                return render(request, 'sessions/book_session.html', {
+                    'session': session,
+                    'form': BookingForm(),
+                    'confirmation_needed': True
+                })
+        
+        # Process booking (either POST or GET with confirm=true)
+        if request.method == 'POST' or (request.method == 'GET' and request.GET.get('confirm') == 'true'):
+            form = BookingForm(request.POST) if request.method == 'POST' else BookingForm()
+            
+            if form.is_valid() or request.method == 'GET':
+                # Begin database transaction
+                from django.db import transaction
+                with transaction.atomic():
+                    # Create the booking
+                    booking = Booking() if request.method == 'GET' else form.save(commit=False)
+                    booking.session = session
+                    booking.learner = request.user
+                    
+                    # Set the final price (handling free sessions)
+                    booking.final_price = session.price
+                    
+                    # Apply coupon code if provided
+                    coupon_code = form.cleaned_data.get('coupon_code') if request.method == 'POST' else None
+                    if coupon_code:
+                        # In a real app, validate coupon code against a database
+                        # For now, just use a simple example
+                        if coupon_code == 'WELCOME10':
+                            discount = session.price * 0.1  # 10% discount
+                            booking.coupon_applied = coupon_code
+                            booking.discount_amount = discount
+                            booking.final_price = session.price - discount
+                        else:
+                            messages.warning(request, _('Invalid coupon code.'))
+                    
+                    booking.save()
+                    
+                    # Check if the session is now full
+                    current_bookings = Booking.objects.filter(
+                        session=session, 
+                        status__in=['pending', 'confirmed']
+                    ).count()
+                    
+                    # Update the session participants count
+                    session.current_participants = current_bookings
+                    session.save()
+                
+                messages.success(request, _('Session added to cart! Proceed to payment.'))
+                return redirect('cart')
+            else:
+                # Form is invalid
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, f"{field}: {error}")
+        
+        # GET request without confirmation
+        return render(request, 'sessions/book_session.html', {
+            'form': BookingForm(),
+            'session': session
+        })
+        
+    except Exception as e:
+        # Log the error
+        print(f"Error in book_session: {str(e)}")
+        messages.error(request, _('An error occurred while booking the session. Please try again.'))
+        return redirect('session_list')
 
 
 @login_required

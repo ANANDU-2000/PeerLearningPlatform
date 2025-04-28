@@ -476,56 +476,133 @@ def book_session(request, session_id):
 @login_required
 def session_room(request, session_id):
     """View for the live session room."""
-    session = get_object_or_404(Session, id=session_id)
-    
-    # Check if user has permission to access this session
-    # TESTING ONLY: Allow any learner to join any session
-    if request.user.role == 'learner':
-        # For testing, consider all learners allowed if they have a booking or are the test user
-        has_booking = Booking.objects.filter(
-            session=session, 
-            learner=request.user
-        ).exists()
-        is_learner_allowed = has_booking or 'test_learner' in request.user.email
-    else:
-        is_learner_allowed = False
-    
-    is_mentor_allowed = (
-        request.user.role == 'mentor' and 
-        session.mentor.user == request.user
-    )
-    
-    if not (is_learner_allowed or is_mentor_allowed):
-        messages.error(request, _('You do not have permission to access this session.'))
+    try:
+        # Get session with proper error handling
+        try:
+            session = get_object_or_404(Session, id=session_id)
+        except Exception as e:
+            messages.error(request, _('The requested session does not exist.'))
+            return redirect('dashboard')
+        
+        # First, authenticate the user
+        if not request.user.is_authenticated:
+            messages.error(request, _('Please log in to access the session room.'))
+            return redirect('login')
+        
+        # Check if user has permission to access this session
+        if request.user.role == 'learner':
+            # Check if learner has a confirmed booking for this session
+            try:
+                has_booking = Booking.objects.filter(
+                    session=session, 
+                    learner=request.user,
+                    status='confirmed',
+                    payment_complete=True
+                ).exists()
+                
+                # For development/testing, also allow test learners
+                is_learner_allowed = has_booking or 'test_learner' in request.user.email
+                
+                if not is_learner_allowed:
+                    # Check if they have an unpaid booking
+                    has_unpaid = Booking.objects.filter(
+                        session=session,
+                        learner=request.user,
+                        payment_complete=False
+                    ).exists()
+                    
+                    if has_unpaid:
+                        messages.error(request, _('Please complete payment for this session before joining.'))
+                        return redirect('cart')
+            except Exception as e:
+                messages.error(request, _('Error checking booking status. Please try again.'))
+                print(f"Error checking learner booking: {str(e)}")
+                return redirect('learner_dashboard')
+        else:
+            is_learner_allowed = False
+        
+        is_mentor_allowed = (
+            request.user.role == 'mentor' and 
+            session.mentor and  # Check if mentor exists
+            session.mentor.user_id == request.user.id
+        )
+        
+        if not (is_learner_allowed or is_mentor_allowed):
+            messages.error(request, _('You do not have permission to access this session.'))
+            return redirect('dashboard')
+        
+        # Check session timing to prevent access to past or far-future sessions
+        now = timezone.now()
+        
+        # Check if session has ended
+        if session.end_time < now:
+            messages.error(request, _('This session has already ended.'))
+            return redirect('dashboard')
+        
+        # Check if session is too far in the future (more than 1 hour before start)
+        if session.start_time > now + timezone.timedelta(hours=1):
+            time_until = session.start_time - now
+            hours = time_until.seconds // 3600
+            minutes = (time_until.seconds % 3600) // 60
+            
+            if time_until.days > 0:
+                messages.error(request, _(f'This session starts in {time_until.days} days and {hours} hours. You can join up to 1 hour before the start time.'))
+            else:
+                messages.error(request, _(f'This session starts in {hours} hours and {minutes} minutes. You can join up to 1 hour before the start time.'))
+            
+            return redirect('session_detail', session_id=session_id)
+        
+        # Update session status if it's starting
+        if session.status == 'scheduled' and session.start_time <= now:
+            try:
+                session.status = 'in_progress'
+                session.save()
+            except Exception as e:
+                print(f"Error updating session status: {str(e)}")
+                # Continue anyway - non-critical error
+        
+        # WebRTC configuration
+        try:
+            stun_servers = settings.STUN_SERVERS
+            turn_servers = settings.TURN_SERVERS
+            turn_username = settings.TURN_USERNAME
+            turn_credential = settings.TURN_CREDENTIAL
+        except Exception as e:
+            # Use defaults if settings are missing
+            print(f"Error loading WebRTC config: {str(e)}")
+            stun_servers = ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302']
+            turn_servers = []
+            turn_username = ''
+            turn_credential = ''
+        
+        # Get participants with error handling
+        try:
+            bookings = session.bookings.filter(
+                status='confirmed', 
+                payment_complete=True
+            ).select_related('learner')
+            participants = [booking.learner for booking in bookings]
+        except Exception as e:
+            print(f"Error loading participants: {str(e)}")
+            participants = []
+        
+        context = {
+            'session': session,
+            'is_mentor': is_mentor_allowed,
+            'is_learner': is_learner_allowed,
+            'participants': participants,
+            'stun_servers': stun_servers,
+            'turn_servers': turn_servers,
+            'turn_username': turn_username,
+            'turn_credential': turn_credential,
+        }
+        
+        return render(request, 'sessions/session_room.html', context)
+        
+    except Exception as e:
+        print(f"Unexpected error in session_room: {str(e)}")
+        messages.error(request, _('An unexpected error occurred. Please try again.'))
         return redirect('dashboard')
-    
-    # Update session status if it's starting
-    if session.status == 'scheduled' and session.start_time <= timezone.now():
-        session.status = 'in_progress'
-        session.save()
-    
-    # WebRTC configuration
-    stun_servers = settings.STUN_SERVERS
-    turn_servers = settings.TURN_SERVERS
-    turn_username = settings.TURN_USERNAME
-    turn_credential = settings.TURN_CREDENTIAL
-    
-    # Get participants
-    bookings = session.bookings.filter(status='confirmed', payment_complete=True).select_related('learner')
-    participants = [booking.learner for booking in bookings]
-    
-    context = {
-        'session': session,
-        'is_mentor': is_mentor_allowed,
-        'is_learner': is_learner_allowed,
-        'participants': participants,
-        'stun_servers': stun_servers,
-        'turn_servers': turn_servers,
-        'turn_username': turn_username,
-        'turn_credential': turn_credential,
-    }
-    
-    return render(request, 'sessions/session_room.html', context)
 
 
 @login_required

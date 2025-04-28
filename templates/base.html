@@ -368,12 +368,22 @@
     <main class="pb-16 sm:pb-0">
         {% block content %}{% endblock %}
         
-        <!-- Welcome Message -->
-        <div class="welcome-message hidden" aria-live="polite">
-            <button class="close-btn" aria-label="Close welcome message">×</button>
-            <h3>{% trans "Welcome to PeerLearn" %}</h3>
-            <p>{% trans "Your dashboard is ready. Explore the features!" %}</p>
-        </div>
+        <!-- Welcome Message - Role-specific content -->
+        {% if user.is_authenticated %}
+            <div class="welcome-message hidden" aria-live="polite" data-role="{{ user.role }}">
+                <button class="close-btn" aria-label="Close welcome message">×</button>
+                {% if user.role == 'mentor' %}
+                    <h3>{% trans "Welcome, Mentor!" %}</h3>
+                    <p>{% trans "Your mentor dashboard is ready. Create and manage your learning sessions!" %}</p>
+                {% elif user.role == 'learner' %}
+                    <h3>{% trans "Welcome, Learner!" %}</h3>
+                    <p>{% trans "Your learner dashboard is ready. Discover and join sessions!" %}</p>
+                {% else %}
+                    <h3>{% trans "Welcome to PeerLearn" %}</h3>
+                    <p>{% trans "Your dashboard is ready. Explore the features!" %}</p>
+                {% endif %}
+            </div>
+        {% endif %}
     </main>
     
     <!-- Footer -->

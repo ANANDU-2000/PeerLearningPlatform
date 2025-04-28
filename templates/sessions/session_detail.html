@@ -283,35 +283,117 @@
         // Initialize feather icons
         feather.replace();
         
-        // Handle countdown timer
+        // Handle enhanced countdown timer with session status tracking
         const countdownElements = document.querySelectorAll('.countdown');
+        const joinSessionBtn = document.querySelector('.join-session-btn');
+        const sessionStatus = "{{ session.status }}";
+        const currentUserRole = "{{ user.role }}";
+        const isMentor = currentUserRole === 'mentor';
+        
+        // Get session times
+        const startTimeStr = "{{ session.start_time|date:'c' }}";
+        const endTimeStr = "{{ session.end_time|date:'c' }}";
+        const startTime = new Date(startTimeStr);
+        const endTime = new Date(endTimeStr);
+        
+        // Track session state
+        let hasNotifiedStart = false;
+        let hasNotifiedEnd = false;
+        let hasNotifiedFiveMin = false;
         
         function updateCountdown() {
+            const currentTime = new Date();
+            
+            // For debugging time calculation issues
+            console.log("Session time data:", {
+                now: currentTime.toISOString(),
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                timeToStart: startTime - currentTime,
+                timeToEnd: endTime - currentTime
+            });
+            
             countdownElements.forEach(function(element) {
-                const startTimeStr = element.getAttribute('data-start-time');
-                const startTime = new Date(startTimeStr);
-                const currentTime = new Date();
+                // Status variables
+                const sessionEnded = currentTime > endTime;
+                const sessionInProgress = currentTime >= startTime && currentTime < endTime;
+                const sessionUpcoming = currentTime < startTime;
                 
-                // Calculate the time difference in milliseconds
-                let timeDiff = startTime - currentTime;
+                // Calculate the appropriate time difference based on session status
+                let timeDiff;
+                let statusPrefix = "";
                 
-                // If the session has already started, show "Live Now"
-                if (timeDiff <= 0) {
-                    element.innerHTML = '<span class="text-red-600 font-bold">Live Now</span>';
+                if (sessionEnded) {
+                    // Session has ended
+                    timeDiff = 0;
+                    element.innerHTML = '<span class="text-gray-600 font-medium">Session Ended</span>';
+                    
+                    // Update UI to show session ended
+                    if (joinSessionBtn) {
+                        joinSessionBtn.classList.add('opacity-50', 'cursor-not-allowed', 'bg-gray-500');
+                        joinSessionBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        joinSessionBtn.innerHTML = '{% trans "Session Ended" %}';
+                        joinSessionBtn.disabled = true;
+                    }
+                    
+                    // Notify mentor that session has ended (only once)
+                    if (!hasNotifiedEnd && isMentor) {
+                        showNotification(
+                            "Session has ended",
+                            "Your session '{{ session.title }}' has now ended. Don't forget to follow up with learners.",
+                            "error"
+                        );
+                        hasNotifiedEnd = true;
+                    }
+                    
                     return;
+                } else if (sessionInProgress) {
+                    // Session is currently live
+                    timeDiff = endTime - currentTime;
+                    statusPrefix = '<span class="text-red-600 font-bold mr-2">LIVE NOW</span> <span class="text-gray-600">Ends in: </span>';
+                    
+                    // Update Join button to be prominent
+                    if (joinSessionBtn) {
+                        joinSessionBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-500');
+                        joinSessionBtn.classList.add('bg-red-600', 'hover:bg-red-700', 'animate-pulse');
+                        joinSessionBtn.innerHTML = '<i data-feather="video" class="h-5 w-5 mr-2"></i> {% trans "Join Now" %}';
+                        joinSessionBtn.disabled = false;
+                        
+                        // Refresh feather icons
+                        feather.replace();
+                    }
+                    
+                    // Notify that session has started (only once)
+                    if (!hasNotifiedStart && !sessionEnded) {
+                        showNotification(
+                            "Session Started",
+                            "Your session is now live! Click 'Join Now' to enter the session room.",
+                            "success"
+                        );
+                        hasNotifiedStart = true;
+                    }
+                } else {
+                    // Session hasn't started yet
+                    timeDiff = startTime - currentTime;
+                    statusPrefix = '<span class="text-gray-600">Starts in: </span>';
+                    
+                    // 5-minute reminder for upcoming sessions
+                    const fiveMinutes = 5 * 60 * 1000;
+                    if (timeDiff <= fiveMinutes && !hasNotifiedFiveMin) {
+                        showNotification(
+                            "Session Starting Soon",
+                            "Your session will start in less than 5 minutes. Get ready!",
+                            "info"
+                        );
+                        hasNotifiedFiveMin = true;
+                    }
                 }
                 
-                // Calculate days, hours, minutes, seconds
+                // Calculate time components
                 const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-                timeDiff -= days * (1000 * 60 * 60 * 24);
-                
-                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-                timeDiff -= hours * (1000 * 60 * 60);
-                
-                const minutes = Math.floor(timeDiff / (1000 * 60));
-                timeDiff -= minutes * (1000 * 60);
-                
-                const seconds = Math.floor(timeDiff / 1000);
+                const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
                 
                 // Format the countdown string
                 let countdownStr = '';
@@ -322,8 +404,19 @@
                 
                 countdownStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 
-                element.textContent = countdownStr;
+                // Update the element with prefix and time
+                element.innerHTML = statusPrefix + countdownStr;
             });
+        }
+        
+        // Show notification with customizable type
+        function showNotification(title, message, type = "info") {
+            if (typeof window.showNotification === 'function') {
+                window.showNotification(`${title}: ${message}`, type);
+            } else {
+                // Fallback to alert if showNotification isn't available
+                alert(`${title}: ${message}`);
+            }
         }
         
         // Initial update

@@ -15,25 +15,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
 /**
  * Initialize welcome message functionality
+ * - Shows only on dashboard pages
+ * - Specific to user role (mentor/learner)
+ * - Page-specific persistence with localStorage
  */
 function initWelcomeMessage() {
+    // Only show welcome message on dashboard pages
+    const currentPath = window.location.pathname;
+    const isDashboardPage = currentPath.includes('/dashboard/');
+    
+    if (!isDashboardPage) return;
+    
+    // Get role-specific welcome message
     const welcomeMsg = document.querySelector('.welcome-message');
     
     // Only proceed if welcome message exists
     if (!welcomeMsg) return;
     
+    const userRole = welcomeMsg.getAttribute('data-role');
     const closeBtn = welcomeMsg.querySelector('.close-btn');
     
-    // Check if user has dismissed the message before
-    const welcomeDismissed = localStorage.getItem('welcome_dismissed');
-    const currentPage = window.location.pathname;
-    const dashboardKey = currentPage + '_welcome_dismissed';
+    // Create unique key for this path and role
+    const storageKey = `${currentPath}_${userRole}_dismissed`;
     
-    // Only show if not dismissed on this specific page
-    if (!localStorage.getItem(dashboardKey)) {
+    console.log("Welcome message check:", {
+        path: currentPath,
+        role: userRole,
+        storageKey: storageKey,
+        isDismissed: localStorage.getItem(storageKey)
+    });
+    
+    // Only show if not dismissed for this specific path and role
+    if (!localStorage.getItem(storageKey)) {
         // Wait a moment before showing the message
         setTimeout(() => {
-            welcomeMsg.classList.remove('hidden');
+            // Check for duplicate welcome messages and only show one
+            const visibleWelcomeMessages = document.querySelectorAll('.welcome-message:not(.hidden)');
+            if (visibleWelcomeMessages.length === 0) {
+                welcomeMsg.classList.remove('hidden');
+            }
         }, 2000);
     }
     
@@ -41,8 +61,8 @@ function initWelcomeMessage() {
     if (closeBtn) {
         closeBtn.addEventListener('click', function() {
             hideWelcomeMessage(welcomeMsg);
-            // Remember that user dismissed the message for this specific page
-            localStorage.setItem(dashboardKey, 'true');
+            // Remember that user dismissed the message for this specific page and role
+            localStorage.setItem(storageKey, 'true');
         });
     }
     

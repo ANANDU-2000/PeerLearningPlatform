@@ -21,4 +21,15 @@ urlpatterns = [
     path('payments/', views.payment_management, name='payment_management'),
     path('analytics/', views.analytics, name='analytics'),
     path('video-storage/', views.video_storage, name='video_storage'),
+    
+    # Security management
+    path('security/', views.security_management, name='security_management'),
+    path('security/generate-key/', views.generate_access_key, name='generate_access_key'),
+    path('security/keys/<int:key_id>/activate/', views.activate_access_key, name='activate_access_key'),
+    path('security/keys/<int:key_id>/deactivate/', views.deactivate_access_key, name='deactivate_access_key'),
+    path('security/keys/<int:key_id>/delete/', views.delete_access_key, name='delete_access_key'),
+    path('security/ip/add/', views.add_allowed_ip, name='add_allowed_ip'),
+    path('security/ip/<int:ip_id>/activate/', views.activate_allowed_ip, name='activate_allowed_ip'),
+    path('security/ip/<int:ip_id>/deactivate/', views.deactivate_allowed_ip, name='deactivate_allowed_ip'),
+    path('security/ip/<int:ip_id>/delete/', views.delete_allowed_ip, name='delete_allowed_ip'),
 ]

@@ -177,6 +177,19 @@
                 
                 <!-- Right side -->
                 <div class="flex items-center">
+                    <!-- Create Live Session Button (For Mentors) -->
+                    {% if user.is_authenticated and user.role == 'mentor' %}
+                    <div class="relative mr-4">
+                        <a href="{% url 'create_session' %}" class="create-session-btn inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full h-9 w-9 transition-all duration-200 transform hover:scale-110" title="{% trans 'Create Live Session' %}">
+                            <i data-feather="plus" class="h-5 w-5"></i>
+                        </a>
+                        <div class="create-session-tooltip absolute hidden bg-blue-800 text-white text-xs rounded py-1 px-2 right-0 top-full mt-1 whitespace-nowrap z-10">
+                            {% trans "Create Live Session" %}
+                            <div class="tooltip-arrow absolute -top-1 right-3 w-2 h-2 bg-blue-800 transform rotate-45"></div>
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Language Selector -->
                     <div class="relative mr-4">
                         <form action="{% url 'set_language' %}" method="post" id="language-form">
@@ -415,6 +428,20 @@
         // Initialize Feather Icons
         document.addEventListener('DOMContentLoaded', function() {
             feather.replace();
+            
+            // Create Session Button Tooltip
+            const createSessionBtn = document.querySelector('.create-session-btn');
+            const createSessionTooltip = document.querySelector('.create-session-tooltip');
+            
+            if (createSessionBtn && createSessionTooltip) {
+                createSessionBtn.addEventListener('mouseenter', function() {
+                    createSessionTooltip.classList.remove('hidden');
+                });
+                
+                createSessionBtn.addEventListener('mouseleave', function() {
+                    createSessionTooltip.classList.add('hidden');
+                });
+            }
             
             // Dropdown toggle
             document.querySelectorAll('.dropdown button').forEach(button => {

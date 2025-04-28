@@ -105,19 +105,37 @@ def register_view(request, role='learner'):
             profile_form = MentorProfileForm(request.POST)
         
         if user_form.is_valid() and profile_form.is_valid():
-            user = user_form.save(commit=False)
-            user.role = role
-            user.save()
-            
-            profile = profile_form.save(commit=False)
-            profile.user = user
-            profile.save()
-            
-            # Log in the user
-            login(request, user)
-            messages.success(request, _('Registration successful!'))
-            
-            return redirect(user.get_dashboard_url())
+            try:
+                # Save user with transaction to ensure rollback if profile fails
+                from django.db import transaction
+                
+                with transaction.atomic():
+                    # Create and save user
+                    user = user_form.save(commit=False)
+                    user.role = role
+                    user.save()
+                    
+                    # Check if a profile already exists (should not in normal flow)
+                    if role == 'learner':
+                        LearnerProfile.objects.filter(user=user).delete()
+                    else:
+                        MentorProfile.objects.filter(user=user).delete()
+                    
+                    # Create and save profile
+                    profile = profile_form.save(commit=False)
+                    profile.user = user
+                    profile.save()
+                
+                # Log in the user
+                login(request, user)
+                messages.success(request, _('Registration successful!'))
+                
+                # Redirect to appropriate dashboard
+                return redirect(user.get_dashboard_url())
+                
+            except Exception as e:
+                # If any error occurs, show error message
+                messages.error(request, _('Registration failed. Please try again. Error: {}').format(str(e)))
     else:
         user_form = UserRegistrationForm()
         

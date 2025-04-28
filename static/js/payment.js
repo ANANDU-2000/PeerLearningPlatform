@@ -35,8 +35,8 @@ function handlePaymentSuccess(response) {
                 try {
                     var data = JSON.parse(xhr.responseText);
                     if (data.status === 'success') {
-                        // Redirect to success page
-                        window.location.href = '/payments/payment-success/';
+                        // Redirect to My Booked Sessions page
+                        window.location.href = '/sessions/my-booked-sessions/';
                     } else {
                         // Show error message
                         alert('Payment verification failed: ' + data.message);
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     try {
                         var data = JSON.parse(xhr.responseText);
                         if (data.status === 'success') {
-                            window.location.href = '/payments/payment-success/';
+                            window.location.href = '/sessions/my-booked-sessions/';
                         } else {
                             alert('Error: ' + data.message);
                         }

@@ -392,7 +392,11 @@ def payment_callback(request):
 @login_required
 def payment_success(request):
     """View for successful payment completion."""
-    return render(request, 'payments/payment_success.html')
+    # Add success message
+    messages.success(request, _('Payment completed successfully! Your sessions are now confirmed.'))
+    
+    # Redirect to the My Booked Sessions page
+    return redirect('my_booked_sessions')
 
 
 @login_required

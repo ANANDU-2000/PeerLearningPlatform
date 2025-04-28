@@ -135,7 +135,7 @@
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {% for session in personalized_recommendations %}
-                <div class="bg-gradient-to-br from-blue-50 to-white shadow-md rounded-lg overflow-hidden border border-blue-100 transition duration-200 transform hover:translate-y-[-4px] hover:shadow-lg">
+                <div class="bg-gradient-to-br from-blue-50 to-white shadow-md rounded-lg overflow-hidden border border-blue-100 transition duration-200 transform hover:translate-y-[-4px] hover:shadow-lg session-card">
                     <div class="p-4">
                         <!-- Session header -->
                         <div class="mb-2">
@@ -182,7 +182,7 @@
         {% if sessions %}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {% for session in sessions %}
-                    <div class="bg-white shadow rounded-lg overflow-hidden transition duration-200 transform hover:translate-y-[-4px] hover:shadow-md">
+                    <div class="bg-white shadow rounded-lg overflow-hidden transition duration-200 transform hover:translate-y-[-4px] hover:shadow-md session-card">
                         <div class="p-6">
                             <!-- Session header -->
                             <div class="flex justify-between items-start mb-3">
@@ -285,25 +285,73 @@
         // Initialize feather icons
         feather.replace();
         
-        // Handle filters
-        const topicFilter = document.getElementById('topic-filter');
-        const sortFilter = document.getElementById('sort-filter');
+        // Mobile filter toggle
+        const mobileFilterToggle = document.getElementById('mobile-filter-toggle');
+        const filterContainer = document.getElementById('filter-container');
         
-        function applyFilters() {
-            const topic = topicFilter.value;
-            const sort = sortFilter.value;
-            const searchQuery = new URLSearchParams(window.location.search).get('q') || '';
-            
-            let url = '{% url 'session_list' %}?';
-            if (searchQuery) url += `q=${searchQuery}&`;
-            if (topic) url += `topic=${topic}&`;
-            if (sort) url += `sort=${sort}`;
-            
-            window.location.href = url;
+        if (mobileFilterToggle && filterContainer) {
+            mobileFilterToggle.addEventListener('click', function() {
+                // Toggle the display of the filter container on mobile
+                if (filterContainer.classList.contains('hidden')) {
+                    filterContainer.classList.remove('hidden');
+                    mobileFilterToggle.querySelector('span').textContent = '{% trans "Hide Filters" %}';
+                } else {
+                    filterContainer.classList.add('hidden');
+                    mobileFilterToggle.querySelector('span').textContent = '{% trans "Filters & Search" %}';
+                }
+                // Re-render feather icons
+                feather.replace();
+            });
         }
         
-        if (topicFilter) topicFilter.addEventListener('change', applyFilters);
-        if (sortFilter) sortFilter.addEventListener('change', applyFilters);
+        // Auto-submit form on select change for desktop
+        const tagFilter = document.getElementById('tag-filter');
+        const sortFilter = document.getElementById('sort-filter');
+        const form = document.getElementById('session-filter-form');
+        
+        // Function to handle filter change events but only on desktop
+        function handleFilterChangeDesktop() {
+            if (window.innerWidth >= 768) { // 768px is the md breakpoint in Tailwind
+                form.submit();
+            }
+        }
+        
+        if (tagFilter) tagFilter.addEventListener('change', handleFilterChangeDesktop);
+        if (sortFilter) sortFilter.addEventListener('change', handleFilterChangeDesktop);
+        
+        // Automatically adjust filter container visibility on resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 768) { // 768px is the md breakpoint in Tailwind
+                filterContainer.classList.remove('hidden');
+            } else if (!mobileFilterToggle.classList.contains('active')) {
+                filterContainer.classList.add('hidden');
+            }
+        });
+        
+        // Handle active filters display and removal
+        const clearFilterLinks = document.querySelectorAll('.filter-badge a');
+        clearFilterLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const href = this.getAttribute('href');
+                window.location.href = href;
+            });
+        });
+        
+        // Make session cards clickable
+        const sessionCards = document.querySelectorAll('.session-card');
+        sessionCards.forEach(card => {
+            const link = card.querySelector('a[href*="session_detail"]');
+            if (link) {
+                card.addEventListener('click', function(e) {
+                    // Don't trigger when clicking on buttons or links inside the card
+                    if (!e.target.closest('button') && !e.target.closest('a')) {
+                        link.click();
+                    }
+                });
+                card.style.cursor = 'pointer';
+            }
+        });
     });
 </script>
 {% endblock %}

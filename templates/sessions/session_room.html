@@ -210,15 +210,26 @@
     <!-- Main Content Area (Video + Whiteboard) -->
     <div class="flex-grow flex flex-col p-4">
         <!-- Session Info Banner -->
-        <div class="bg-white rounded-lg shadow-sm p-3 mb-4 flex justify-between items-center">
+        <div class="bg-white rounded-lg shadow-sm p-3 mb-4 flex flex-col md:flex-row md:justify-between md:items-center">
             <div>
                 <h1 class="text-lg font-bold">{{ session.title }}</h1>
                 <p class="text-sm text-gray-600">{{ session.start_time|date:"F j, Y" }} | {{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</p>
             </div>
-            <div class="flex items-center">
-                <div class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-4">
+            <div class="flex flex-wrap items-center mt-2 md:mt-0">
+                <!-- Session Timer -->
+                <div class="mr-4 flex flex-col items-center">
+                    <span class="text-xs text-gray-500">{% trans "Session ends in" %}</span>
+                    <span id="session-timer" class="font-mono text-sm font-bold" 
+                          data-end-time="{{ session.end_time|date:'c' }}">00:00:00</span>
+                </div>
+                
+                <!-- Session Status -->
+                <div class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-4 flex items-center">
+                    <span class="inline-block h-2 w-2 rounded-full bg-green-500 mr-1 animate-pulse"></span>
                     {% trans "Live" %}
                 </div>
+                
+                <!-- Leave Button (Hidden on Mobile) -->
                 <div class="hidden md:flex items-center border-l border-gray-300 pl-4">
                     <button id="leave-session" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition">
                         {% trans "Leave Session" %}
@@ -238,11 +249,40 @@
                         <div class="label">
                             {% if is_mentor %}{% trans "You (Mentor)" %}{% else %}{% trans "You" %}{% endif %}
                         </div>
+                        
+                        <!-- Video Controls Overlay -->
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 bg-black bg-opacity-30">
+                            <div class="flex space-x-3">
+                                <!-- Video Toggle -->
+                                <button id="video-toggle" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
+                                    <i data-feather="video" class="h-5 w-5"></i>
+                                </button>
+                                
+                                <!-- Audio Toggle -->
+                                <button id="audio-toggle" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
+                                    <i data-feather="mic" class="h-5 w-5"></i>
+                                </button>
+                                
+                                <!-- Screen Share -->
+                                <button id="screen-share" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
+                                    <i data-feather="monitor" class="h-5 w-5"></i>
+                                </button>
+                                
+                                <!-- Raise Hand (for learners only) -->
+                                {% if not is_mentor %}
+                                <button id="raise-hand" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
+                                    <i data-feather="hand" class="h-5 w-5"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Mini Controls (always visible) -->
                         <div class="controls">
-                            <button id="video-toggle" class="control-btn">
+                            <button id="video-toggle-mini" class="control-btn">
                                 <i data-feather="video" class="h-5 w-5"></i>
                             </button>
-                            <button id="audio-toggle" class="control-btn">
+                            <button id="audio-toggle-mini" class="control-btn">
                                 <i data-feather="mic" class="h-5 w-5"></i>
                             </button>
                         </div>
@@ -269,10 +309,85 @@
             </div>
             
             <!-- Whiteboard Panel (initially hidden) -->
-            <div id="whiteboard-content" class="hidden h-full">
-                <div class="whiteboard-container">
-                    <canvas id="whiteboard-canvas"></canvas>
+            <div id="whiteboard-content" class="hidden h-full flex flex-col">
+                <!-- Whiteboard Toolbar -->
+                <div class="bg-white p-2 border-b border-gray-200 flex items-center space-x-2">
+                    <!-- Color Picker -->
+                    <div class="flex space-x-2">
+                        <button class="w-6 h-6 rounded-full bg-black hover:ring-2 ring-offset-1 ring-gray-400" data-color="#000000"></button>
+                        <button class="w-6 h-6 rounded-full bg-red-600 hover:ring-2 ring-offset-1 ring-gray-400" data-color="#dc2626"></button>
+                        <button class="w-6 h-6 rounded-full bg-blue-600 hover:ring-2 ring-offset-1 ring-gray-400" data-color="#2563eb"></button>
+                        <button class="w-6 h-6 rounded-full bg-green-600 hover:ring-2 ring-offset-1 ring-gray-400" data-color="#16a34a"></button>
+                        <button class="w-6 h-6 rounded-full bg-yellow-500 hover:ring-2 ring-offset-1 ring-gray-400" data-color="#eab308"></button>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="h-8 border-l border-gray-300"></div>
+                    
+                    <!-- Tool Picker -->
+                    <div class="flex space-x-2">
+                        <button id="wb-pen-tool" class="w-8 h-8 rounded hover:bg-gray-100 p-1 active bg-gray-200" title="{% trans 'Pen' %}">
+                            <i data-feather="pen-tool" class="h-6 w-6"></i>
+                        </button>
+                        <button id="wb-square-tool" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Rectangle' %}">
+                            <i data-feather="square" class="h-6 w-6"></i>
+                        </button>
+                        <button id="wb-circle-tool" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Circle' %}">
+                            <i data-feather="circle" class="h-6 w-6"></i>
+                        </button>
+                        <button id="wb-text-tool" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Text' %}">
+                            <i data-feather="type" class="h-6 w-6"></i>
+                        </button>
+                        <button id="wb-eraser-tool" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Eraser' %}">
+                            <i data-feather="delete" class="h-6 w-6"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="h-8 border-l border-gray-300"></div>
+                    
+                    <!-- Line Width -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-sm text-gray-600">{% trans "Width" %}:</span>
+                        <input type="range" min="1" max="20" value="3" class="w-24" id="wb-line-width">
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div class="h-8 border-l border-gray-300"></div>
+                    
+                    <!-- Actions -->
+                    <div class="flex space-x-2 ml-auto">
+                        <button id="wb-undo" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Undo' %}">
+                            <i data-feather="corner-up-left" class="h-6 w-6"></i>
+                        </button>
+                        <button id="wb-clear" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Clear All' %}">
+                            <i data-feather="trash-2" class="h-6 w-6"></i>
+                        </button>
+                        <button id="wb-save" class="w-8 h-8 rounded hover:bg-gray-100 p-1" title="{% trans 'Save' %}">
+                            <i data-feather="download" class="h-6 w-6"></i>
+                        </button>
+                    </div>
                 </div>
+                
+                <!-- Whiteboard Canvas Container -->
+                <div class="whiteboard-container flex-grow overflow-hidden bg-white">
+                    <canvas id="whiteboard-canvas" class="w-full h-full"></canvas>
+                </div>
+                
+                <!-- Mentor Controls (only visible to mentor) -->
+                {% if is_mentor %}
+                <div class="bg-blue-50 p-2 border-t border-blue-200 flex justify-between items-center">
+                    <span class="text-sm text-blue-800">{% trans "Mentor Controls" %}</span>
+                    <div class="flex space-x-2">
+                        <button id="wb-allow-all" class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">
+                            {% trans "Allow All to Draw" %}
+                        </button>
+                        <button id="wb-disallow-all" class="text-xs bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700">
+                            {% trans "Disable Drawing" %}
+                        </button>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
         
@@ -374,6 +489,58 @@
             turnCredential: '{{ turn_credential }}'
         });
         
+        // Add custom event handlers for WebRTC messages
+        if (sessionUI.rtc) {
+            // Extend the handleSignalingMessage function to include new message types
+            const originalHandleSignaling = sessionUI.rtc.handleSignalingMessage;
+            sessionUI.rtc.handleSignalingMessage = function(data) {
+                // First call the original method for standard message types
+                originalHandleSignaling.call(this, data);
+                
+                // Then handle our custom message types
+                switch (data.type) {
+                    case 'raise_hand':
+                        sessionUI.handleRaiseHand(data);
+                        break;
+                    case 'whiteboard_data':
+                        sessionUI.handleWhiteboardData(data);
+                        break;
+                    case 'whiteboard_clear':
+                        sessionUI.clearWhiteboard(false);
+                        sessionUI.addSystemMessage(`${data.from_user_name || 'A participant'} cleared the whiteboard.`);
+                        break;
+                    case 'whiteboard_undo':
+                        // This would be more complex in a real app
+                        sessionUI.addSystemMessage(`${data.from_user_name || 'A participant'} undid their last action.`);
+                        break;
+                    case 'whiteboard_permissions':
+                        // Handle whiteboard permission changes
+                        if (!sessionUI.whiteboard) return;
+                        
+                        const msg = data.allowAll ? 
+                            "The mentor has enabled drawing for all participants." : 
+                            "The mentor has disabled drawing for participants.";
+                        
+                        sessionUI.addSystemMessage(msg);
+                        
+                        // Only update UI if you're not the mentor
+                        if (!{% if is_mentor %}true{% else %}false{% endif %}) {
+                            sessionUI.whiteboardCanvas.style.pointerEvents = data.allowAll ? 'auto' : 'none';
+                        }
+                        break;
+                    case 'screen_share':
+                        // In a full implementation, we would handle remote screen sharing
+                        // This would require additional WebRTC video track handling
+                        if (data.action === 'start') {
+                            sessionUI.addSystemMessage(`${data.from_user_name || 'A participant'} started sharing their screen.`);
+                        } else if (data.action === 'stop') {
+                            sessionUI.addSystemMessage(`${data.from_user_name || 'A participant'} stopped sharing their screen.`);
+                        }
+                        break;
+                }
+            };
+        }
+        
         // Mobile tab switching
         document.getElementById('videos-tab-mobile').addEventListener('click', function() {
             sessionUI.switchTab('videos');
@@ -389,6 +556,31 @@
         
         document.getElementById('leave-session-mobile').addEventListener('click', function() {
             sessionUI.leaveSession();
+        });
+        
+        // Add data-user-id attributes to participant items for hand raising feature
+        const participantItems = document.querySelectorAll('#participants-list li');
+        participantItems.forEach(item => {
+            const userId = item.querySelector('.user-id')?.textContent;
+            if (userId) {
+                item.setAttribute('data-user-id', userId);
+            }
+        });
+        
+        // Handle window resize to adjust whiteboard canvas size
+        window.addEventListener('resize', function() {
+            if (sessionUI.whiteboard && sessionUI.whiteboardCanvas) {
+                const container = sessionUI.whiteboardCanvas.parentElement;
+                const originalImageData = sessionUI.whiteboard.context.getImageData(
+                    0, 0, sessionUI.whiteboardCanvas.width, sessionUI.whiteboardCanvas.height
+                );
+                
+                sessionUI.whiteboardCanvas.width = container.offsetWidth;
+                sessionUI.whiteboardCanvas.height = container.offsetHeight;
+                
+                // Restore drawing after resize
+                sessionUI.whiteboard.context.putImageData(originalImageData, 0, 0);
+            }
         });
     });
 </script>

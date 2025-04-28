@@ -11,9 +11,16 @@ class SessionUIController {
         this.chatForm = document.getElementById('chat-form');
         this.chatInput = document.getElementById('chat-input');
         this.leaveButton = document.getElementById('leave-session');
+        
+        // Video controls
         this.videoToggle = document.getElementById('video-toggle');
+        this.videoToggleMini = document.getElementById('video-toggle-mini');
         this.audioToggle = document.getElementById('audio-toggle');
-        this.whiteboardToggle = document.getElementById('whiteboard-toggle');
+        this.audioToggleMini = document.getElementById('audio-toggle-mini');
+        this.screenShareButton = document.getElementById('screen-share');
+        this.raiseHandButton = document.getElementById('raise-hand');
+        
+        // Tab navigation
         this.videosTab = document.getElementById('videos-tab');
         this.chatTab = document.getElementById('chat-tab');
         this.whiteboardTab = document.getElementById('whiteboard-tab');
@@ -21,14 +28,48 @@ class SessionUIController {
         this.chatContent = document.getElementById('chat-content');
         this.whiteboardContent = document.getElementById('whiteboard-content');
         
+        // Session timer
+        this.sessionTimer = document.getElementById('session-timer');
+        
+        // Whiteboard elements
+        this.whiteboardCanvas = document.getElementById('whiteboard-canvas');
+        this.whiteboardColorButtons = document.querySelectorAll('[data-color]');
+        this.whiteboardLineWidth = document.getElementById('wb-line-width');
+        this.whiteboardTools = {
+            pen: document.getElementById('wb-pen-tool'),
+            rect: document.getElementById('wb-square-tool'),
+            circle: document.getElementById('wb-circle-tool'),
+            text: document.getElementById('wb-text-tool'),
+            eraser: document.getElementById('wb-eraser-tool')
+        };
+        this.whiteboardActions = {
+            undo: document.getElementById('wb-undo'),
+            clear: document.getElementById('wb-clear'),
+            save: document.getElementById('wb-save')
+        };
+        this.whiteboardMentorControls = {
+            allowAll: document.getElementById('wb-allow-all'),
+            disallowAll: document.getElementById('wb-disallow-all')
+        };
+        
         // WebRTC client
         this.rtc = null;
+        
+        // Screen share stream
+        this.screenStream = null;
+        this.isScreenSharing = false;
+        
+        // Hand raised state
+        this.isHandRaised = false;
         
         // Whiteboard controller
         this.whiteboard = null;
         
         // Initialize event listeners
         this.initEventListeners();
+        
+        // Start session timer if end time is available
+        this.startSessionTimer();
     }
 
     /**
@@ -57,17 +98,43 @@ class SessionUIController {
             });
         }
         
-        // Video toggle button
+        // Video toggle buttons (main and mini)
         if (this.videoToggle) {
             this.videoToggle.addEventListener('click', () => {
                 this.toggleVideo();
             });
         }
         
-        // Audio toggle button
+        if (this.videoToggleMini) {
+            this.videoToggleMini.addEventListener('click', () => {
+                this.toggleVideo();
+            });
+        }
+        
+        // Audio toggle buttons (main and mini)
         if (this.audioToggle) {
             this.audioToggle.addEventListener('click', () => {
                 this.toggleAudio();
+            });
+        }
+        
+        if (this.audioToggleMini) {
+            this.audioToggleMini.addEventListener('click', () => {
+                this.toggleAudio();
+            });
+        }
+        
+        // Screen sharing
+        if (this.screenShareButton) {
+            this.screenShareButton.addEventListener('click', () => {
+                this.toggleScreenSharing();
+            });
+        }
+        
+        // Raise hand (for learners)
+        if (this.raiseHandButton) {
+            this.raiseHandButton.addEventListener('click', () => {
+                this.toggleRaiseHand();
             });
         }
         
@@ -95,13 +162,73 @@ class SessionUIController {
         if (this.whiteboardTab) {
             this.whiteboardTab.addEventListener('click', () => {
                 this.switchTab('whiteboard');
+                this.initWhiteboard();
             });
         }
         
-        // Whiteboard toggle
-        if (this.whiteboardToggle) {
-            this.whiteboardToggle.addEventListener('click', () => {
-                this.toggleWhiteboard();
+        // Whiteboard color selection
+        if (this.whiteboardColorButtons) {
+            this.whiteboardColorButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const color = button.getAttribute('data-color');
+                    this.setWhiteboardColor(color);
+                    
+                    // Update UI
+                    this.whiteboardColorButtons.forEach(b => b.classList.remove('ring-2'));
+                    button.classList.add('ring-2');
+                });
+            });
+        }
+        
+        // Whiteboard tool selection
+        if (this.whiteboardTools) {
+            Object.keys(this.whiteboardTools).forEach(tool => {
+                const button = this.whiteboardTools[tool];
+                if (button) {
+                    button.addEventListener('click', () => {
+                        this.setWhiteboardTool(tool);
+                        
+                        // Update UI
+                        Object.values(this.whiteboardTools).forEach(b => {
+                            b.classList.remove('bg-gray-200');
+                        });
+                        button.classList.add('bg-gray-200');
+                    });
+                }
+            });
+        }
+        
+        // Whiteboard actions
+        if (this.whiteboardActions.undo) {
+            this.whiteboardActions.undo.addEventListener('click', () => {
+                this.undoWhiteboard();
+            });
+        }
+        
+        if (this.whiteboardActions.clear) {
+            this.whiteboardActions.clear.addEventListener('click', () => {
+                if (confirm('Are you sure you want to clear the whiteboard?')) {
+                    this.clearWhiteboard();
+                }
+            });
+        }
+        
+        if (this.whiteboardActions.save) {
+            this.whiteboardActions.save.addEventListener('click', () => {
+                this.saveWhiteboard();
+            });
+        }
+        
+        // Whiteboard mentor controls
+        if (this.whiteboardMentorControls.allowAll) {
+            this.whiteboardMentorControls.allowAll.addEventListener('click', () => {
+                this.setWhiteboardPermissions(true);
+            });
+        }
+        
+        if (this.whiteboardMentorControls.disallowAll) {
+            this.whiteboardMentorControls.disallowAll.addEventListener('click', () => {
+                this.setWhiteboardPermissions(false);
             });
         }
         
@@ -111,6 +238,9 @@ class SessionUIController {
             if (this.rtc) {
                 this.rtc.close();
             }
+            
+            // Stop screen sharing if active
+            this.stopScreenSharing();
         });
     }
 
@@ -345,8 +475,583 @@ class SessionUIController {
             this.rtc.close();
         }
         
+        // Stop screen sharing if active
+        this.stopScreenSharing();
+        
         // Redirect back to dashboard
         const dashboardUrl = document.querySelector('meta[name="dashboard-url"]').getAttribute('content');
         window.location.href = dashboardUrl;
+    }
+
+    /**
+     * Start the session timer countdown
+     */
+    startSessionTimer() {
+        if (!this.sessionTimer) return;
+        
+        const endTimeStr = this.sessionTimer.getAttribute('data-end-time');
+        if (!endTimeStr) return;
+        
+        const endTime = new Date(endTimeStr);
+        
+        // Update timer every second
+        this.timerInterval = setInterval(() => {
+            const now = new Date();
+            const diff = endTime - now;
+            
+            if (diff <= 0) {
+                // Session has ended
+                clearInterval(this.timerInterval);
+                this.sessionTimer.textContent = "00:00:00";
+                this.addSystemMessage("The session time has ended. You can continue using this room, but you won't be able to rejoin if you leave.");
+                return;
+            }
+            
+            // Calculate hours, minutes, seconds
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            // Format time as HH:MM:SS
+            const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            this.sessionTimer.textContent = timeStr;
+            
+            // Warning when 5 minutes left
+            if (diff <= 5 * 60 * 1000 && diff > 4.9 * 60 * 1000) {
+                this.addSystemMessage("⚠️ The session will end in 5 minutes.");
+                this.showNotification("Session ending in 5 minutes");
+            }
+            
+            // Warning when 1 minute left
+            if (diff <= 60 * 1000 && diff > 59 * 1000) {
+                this.addSystemMessage("⚠️ The session will end in 1 minute.");
+                this.showNotification("Session ending in 1 minute");
+            }
+        }, 1000);
+    }
+
+    /**
+     * Toggle screen sharing
+     */
+    async toggleScreenSharing() {
+        if (this.isScreenSharing) {
+            this.stopScreenSharing();
+            return;
+        }
+        
+        try {
+            // Get screen stream
+            this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: {
+                    cursor: 'always'
+                },
+                audio: false
+            });
+            
+            // Update button
+            if (this.screenShareButton) {
+                this.screenShareButton.innerHTML = '<i data-feather="monitor" class="h-5 w-5 text-red-500"></i>';
+                if (typeof feather !== 'undefined') {
+                    feather.replace();
+                }
+            }
+            
+            // Create a new video element for the screen share
+            const screenVideoContainer = document.createElement('div');
+            screenVideoContainer.className = 'video-container mentor bg-gray-900';
+            screenVideoContainer.id = 'screen-share-container';
+            
+            const screenVideo = document.createElement('video');
+            screenVideo.autoplay = true;
+            screenVideo.playsInline = true;
+            screenVideo.id = 'screen-share-video';
+            screenVideo.srcObject = this.screenStream;
+            
+            const screenLabel = document.createElement('div');
+            screenLabel.className = 'label';
+            screenLabel.textContent = 'Your Screen';
+            
+            screenVideoContainer.appendChild(screenVideo);
+            screenVideoContainer.appendChild(screenLabel);
+            
+            // Add to video grid
+            if (this.videoGrid) {
+                this.videoGrid.appendChild(screenVideoContainer);
+                
+                // Reorganize layout to accommodate screen share
+                this.videoGrid.className = 'grid grid-cols-2 gap-4 h-full';
+            }
+            
+            // Set flag
+            this.isScreenSharing = true;
+            
+            // Handle stream end
+            this.screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                this.stopScreenSharing();
+            });
+            
+            // Add a system message
+            this.addSystemMessage("You started sharing your screen.");
+            
+            // Send notification to other participants via signaling
+            if (this.rtc) {
+                this.rtc.sendSignalingMessage({
+                    type: 'screen_share',
+                    action: 'start'
+                });
+            }
+        } catch (error) {
+            console.error('Error starting screen share:', error);
+            this.showErrorMessage('Failed to start screen sharing. ' + error.message);
+        }
+    }
+
+    /**
+     * Stop screen sharing
+     */
+    stopScreenSharing() {
+        if (!this.isScreenSharing || !this.screenStream) return;
+        
+        // Stop all tracks
+        this.screenStream.getTracks().forEach(track => track.stop());
+        
+        // Update button
+        if (this.screenShareButton) {
+            this.screenShareButton.innerHTML = '<i data-feather="monitor" class="h-5 w-5"></i>';
+            if (typeof feather !== 'undefined') {
+                feather.replace();
+            }
+        }
+        
+        // Remove video element
+        const screenContainer = document.getElementById('screen-share-container');
+        if (screenContainer && this.videoGrid) {
+            this.videoGrid.removeChild(screenContainer);
+            
+            // Restore original layout
+            this.videoGrid.className = 'grid grid-cols-1 gap-4 h-full';
+        }
+        
+        // Reset variables
+        this.screenStream = null;
+        this.isScreenSharing = false;
+        
+        // Add a system message
+        this.addSystemMessage("You stopped sharing your screen.");
+        
+        // Send notification to other participants via signaling
+        if (this.rtc) {
+            this.rtc.sendSignalingMessage({
+                type: 'screen_share',
+                action: 'stop'
+            });
+        }
+    }
+
+    /**
+     * Toggle raise hand feature
+     */
+    toggleRaiseHand() {
+        this.isHandRaised = !this.isHandRaised;
+        
+        // Update button UI
+        if (this.raiseHandButton) {
+            this.raiseHandButton.classList.toggle('bg-yellow-500', this.isHandRaised);
+            this.raiseHandButton.classList.toggle('text-white', this.isHandRaised);
+        }
+        
+        // Send notification to participants
+        if (this.rtc) {
+            this.rtc.sendSignalingMessage({
+                type: 'raise_hand',
+                raised: this.isHandRaised
+            });
+        }
+        
+        // Show message in chat
+        if (this.isHandRaised) {
+            this.addSystemMessage("You raised your hand. The mentor will be notified.");
+        } else {
+            this.addSystemMessage("You lowered your hand.");
+        }
+    }
+
+    /**
+     * Handle when a participant raises their hand
+     */
+    handleRaiseHand(data) {
+        // Find participant in the list
+        const participantItem = document.querySelector(`[data-user-id="${data.from_user_id}"]`);
+        
+        if (participantItem) {
+            // Add/remove hand icon
+            const handIcon = participantItem.querySelector('.hand-icon');
+            
+            if (data.raised) {
+                if (!handIcon) {
+                    const icon = document.createElement('span');
+                    icon.className = 'hand-icon ml-2 text-yellow-500';
+                    icon.innerHTML = '✋';
+                    participantItem.appendChild(icon);
+                }
+            } else {
+                if (handIcon) {
+                    handIcon.remove();
+                }
+            }
+        }
+        
+        // Show notification for raised hands
+        if (data.raised) {
+            this.showNotification(`${data.user_name} raised their hand`);
+            this.addSystemMessage(`${data.user_name} raised their hand.`);
+        } else {
+            this.addSystemMessage(`${data.user_name} lowered their hand.`);
+        }
+    }
+
+    /**
+     * Initialize whiteboard
+     */
+    initWhiteboard() {
+        if (this.whiteboard || !this.whiteboardCanvas) return;
+        
+        // Set canvas dimensions
+        const container = this.whiteboardCanvas.parentElement;
+        this.whiteboardCanvas.width = container.offsetWidth;
+        this.whiteboardCanvas.height = container.offsetHeight;
+        
+        // Initialize drawing context
+        const ctx = this.whiteboardCanvas.getContext('2d');
+        
+        // Configure defaults
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Drawing state
+        this.isDrawing = false;
+        this.lastX = 0;
+        this.lastY = 0;
+        this.drawingHistory = [];
+        this.currentPath = [];
+        this.currentTool = 'pen';
+        
+        // Event listeners
+        this.whiteboardCanvas.addEventListener('mousedown', this.startDrawing.bind(this));
+        this.whiteboardCanvas.addEventListener('mousemove', this.draw.bind(this));
+        this.whiteboardCanvas.addEventListener('mouseup', this.stopDrawing.bind(this));
+        this.whiteboardCanvas.addEventListener('mouseout', this.stopDrawing.bind(this));
+        
+        // Touch support
+        this.whiteboardCanvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.whiteboardCanvas.dispatchEvent(mouseEvent);
+        });
+        
+        this.whiteboardCanvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            this.whiteboardCanvas.dispatchEvent(mouseEvent);
+        });
+        
+        this.whiteboardCanvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            this.whiteboardCanvas.dispatchEvent(mouseEvent);
+        });
+        
+        // Set active whiteboard
+        this.whiteboard = {
+            canvas: this.whiteboardCanvas,
+            context: ctx
+        };
+        
+        // Add welcome message
+        this.addSystemMessage("Whiteboard is active. You can draw and collaborate in real-time.");
+    }
+
+    /**
+     * Start drawing on whiteboard
+     */
+    startDrawing(e) {
+        const ctx = this.whiteboard?.context;
+        if (!ctx) return;
+        
+        this.isDrawing = true;
+        
+        // Get mouse position relative to canvas
+        const rect = this.whiteboardCanvas.getBoundingClientRect();
+        this.lastX = e.clientX - rect.left;
+        this.lastY = e.clientY - rect.top;
+        
+        // Start a new path
+        this.currentPath = [{
+            x: this.lastX,
+            y: this.lastY,
+            color: ctx.strokeStyle,
+            width: ctx.lineWidth,
+            tool: this.currentTool
+        }];
+    }
+
+    /**
+     * Draw on whiteboard
+     */
+    draw(e) {
+        if (!this.isDrawing || !this.whiteboard?.context) return;
+        
+        const ctx = this.whiteboard.context;
+        
+        // Get current mouse position
+        const rect = this.whiteboardCanvas.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        // Draw based on selected tool
+        if (this.currentTool === 'pen') {
+            ctx.beginPath();
+            ctx.moveTo(this.lastX, this.lastY);
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+        } else if (this.currentTool === 'eraser') {
+            // For eraser, draw in white with larger width
+            const originalStyle = ctx.strokeStyle;
+            const originalWidth = ctx.lineWidth;
+            
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = originalWidth * 3;
+            
+            ctx.beginPath();
+            ctx.moveTo(this.lastX, this.lastY);
+            ctx.lineTo(currentX, currentY);
+            ctx.stroke();
+            
+            // Restore original style
+            ctx.strokeStyle = originalStyle;
+            ctx.lineWidth = originalWidth;
+        }
+        
+        // Add point to current path
+        this.currentPath.push({
+            x: currentX,
+            y: currentY,
+            color: ctx.strokeStyle,
+            width: ctx.lineWidth,
+            tool: this.currentTool
+        });
+        
+        // Update position
+        this.lastX = currentX;
+        this.lastY = currentY;
+        
+        // Send drawing data to others
+        this.sendWhiteboardData();
+    }
+
+    /**
+     * Stop drawing on whiteboard
+     */
+    stopDrawing() {
+        if (this.isDrawing) {
+            this.isDrawing = false;
+            
+            // Save current path to history for undo
+            this.drawingHistory.push(this.currentPath);
+            this.currentPath = [];
+        }
+    }
+
+    /**
+     * Send whiteboard data to participants
+     */
+    sendWhiteboardData() {
+        if (!this.rtc || this.currentPath.length < 2) return;
+        
+        // Send only the last two points to reduce data volume
+        const dataToSend = this.currentPath.slice(-2);
+        
+        this.rtc.sendSignalingMessage({
+            type: 'whiteboard_data',
+            data: dataToSend
+        });
+    }
+
+    /**
+     * Receive and process whiteboard data from other participants
+     */
+    handleWhiteboardData(data) {
+        if (!this.whiteboard?.context || !data.data || data.data.length < 2) return;
+        
+        const ctx = this.whiteboard.context;
+        const points = data.data;
+        
+        // Draw received data
+        const originalStyle = ctx.strokeStyle;
+        const originalWidth = ctx.lineWidth;
+        
+        ctx.strokeStyle = points[0].color;
+        ctx.lineWidth = points[0].width;
+        
+        if (points[0].tool === 'pen' || points[0].tool === 'eraser') {
+            // For eraser, use white color
+            if (points[0].tool === 'eraser') {
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = points[0].width * 3;
+            }
+            
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            ctx.lineTo(points[1].x, points[1].y);
+            ctx.stroke();
+        }
+        
+        // Restore original style
+        ctx.strokeStyle = originalStyle;
+        ctx.lineWidth = originalWidth;
+    }
+
+    /**
+     * Set whiteboard color
+     */
+    setWhiteboardColor(color) {
+        if (!this.whiteboard?.context) return;
+        this.whiteboard.context.strokeStyle = color;
+    }
+
+    /**
+     * Set whiteboard tool
+     */
+    setWhiteboardTool(tool) {
+        this.currentTool = tool;
+    }
+
+    /**
+     * Undo last whiteboard action
+     */
+    undoWhiteboard() {
+        if (!this.whiteboard?.context || this.drawingHistory.length === 0) return;
+        
+        // Remove last path from history
+        this.drawingHistory.pop();
+        
+        // Clear canvas
+        this.clearWhiteboard(false);
+        
+        // Redraw all paths in history
+        const ctx = this.whiteboard.context;
+        
+        this.drawingHistory.forEach(path => {
+            if (path.length < 2) return;
+            
+            for (let i = 1; i < path.length; i++) {
+                const p1 = path[i - 1];
+                const p2 = path[i];
+                
+                const originalStyle = ctx.strokeStyle;
+                const originalWidth = ctx.lineWidth;
+                
+                ctx.strokeStyle = p1.color;
+                ctx.lineWidth = p1.width;
+                
+                if (p1.tool === 'pen' || p1.tool === 'eraser') {
+                    // For eraser, use white color
+                    if (p1.tool === 'eraser') {
+                        ctx.strokeStyle = '#FFFFFF';
+                        ctx.lineWidth = p1.width * 3;
+                    }
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                    ctx.stroke();
+                }
+                
+                // Restore original style
+                ctx.strokeStyle = originalStyle;
+                ctx.lineWidth = originalWidth;
+            }
+        });
+        
+        // Notify other participants
+        if (this.rtc) {
+            this.rtc.sendSignalingMessage({
+                type: 'whiteboard_undo'
+            });
+        }
+    }
+
+    /**
+     * Clear whiteboard
+     */
+    clearWhiteboard(notify = true) {
+        if (!this.whiteboard?.context) return;
+        
+        const ctx = this.whiteboard.context;
+        ctx.clearRect(0, 0, this.whiteboardCanvas.width, this.whiteboardCanvas.height);
+        
+        if (notify) {
+            // Clear history
+            this.drawingHistory = [];
+            
+            // Notify other participants
+            if (this.rtc) {
+                this.rtc.sendSignalingMessage({
+                    type: 'whiteboard_clear'
+                });
+            }
+        }
+    }
+
+    /**
+     * Save whiteboard as image
+     */
+    saveWhiteboard() {
+        if (!this.whiteboardCanvas) return;
+        
+        // Create a temporary link
+        const link = document.createElement('a');
+        link.download = `peerlearn-whiteboard-${new Date().toISOString().slice(0, 10)}.png`;
+        
+        // Convert canvas to data URL
+        link.href = this.whiteboardCanvas.toDataURL('image/png');
+        
+        // Simulate click to trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        this.showNotification('Whiteboard saved as PNG image');
+    }
+
+    /**
+     * Set whiteboard permissions
+     */
+    setWhiteboardPermissions(allowAll) {
+        if (!this.rtc) return;
+        
+        // Send permission update to all participants
+        this.rtc.sendSignalingMessage({
+            type: 'whiteboard_permissions',
+            allowAll: allowAll
+        });
+        
+        // Add system message
+        const message = allowAll ? 
+            "All participants can now draw on the whiteboard." : 
+            "Drawing on the whiteboard is now disabled for participants.";
+        
+        this.addSystemMessage(message);
+        this.showNotification(message);
     }
 }

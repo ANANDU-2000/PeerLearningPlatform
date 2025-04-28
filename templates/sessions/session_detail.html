@@ -68,6 +68,16 @@
                             <p class="text-gray-700">{{ session.description }}</p>
                         </div>
                         
+                        <!-- Topics to Cover -->
+                        {% if session.topics_to_cover %}
+                        <div class="mb-6">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-3">{% trans "Topics to be Covered" %}</h3>
+                            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-md">
+                                <pre class="whitespace-pre-wrap text-gray-700 text-sm font-sans">{{ session.topics_to_cover }}</pre>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         <!-- Session tags -->
                         {% if session.tags %}
                             <div class="flex flex-wrap gap-2 mb-6">

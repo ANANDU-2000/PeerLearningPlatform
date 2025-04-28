@@ -643,7 +643,6 @@ def session_room(request, session_id):
 
 
 @login_required
-@require_POST
 def submit_feedback(request, booking_id):
     """View for learners to submit feedback after a session."""
     booking = get_object_or_404(Booking, id=booking_id, learner=request.user)
@@ -661,23 +660,33 @@ def submit_feedback(request, booking_id):
     except Feedback.DoesNotExist:
         pass
     
-    form = FeedbackForm(request.POST)
-    if form.is_valid():
-        feedback = form.save(commit=False)
-        feedback.booking = booking
-        feedback.save()
-        
-        # Update mentor's average rating
-        mentor = booking.session.mentor
-        total_ratings = Feedback.objects.filter(booking__session__mentor=mentor).count()
-        avg_rating = Feedback.objects.filter(booking__session__mentor=mentor).aggregate(avg=Avg('rating'))['avg']
-        
-        mentor.total_reviews = total_ratings
-        mentor.average_rating = avg_rating
-        mentor.save()
-        
-        messages.success(request, _('Thank you for your feedback!'))
+    if request.method == 'POST':
+        form = FeedbackForm(request.POST)
+        if form.is_valid():
+            feedback = form.save(commit=False)
+            feedback.booking = booking
+            feedback.save()
+            
+            # Update mentor's average rating
+            mentor = booking.session.mentor
+            total_ratings = Feedback.objects.filter(booking__session__mentor=mentor).count()
+            avg_rating = Feedback.objects.filter(booking__session__mentor=mentor).aggregate(avg=Avg('rating'))['avg']
+            
+            mentor.total_reviews = total_ratings
+            mentor.average_rating = avg_rating
+            mentor.save()
+            
+            messages.success(request, _('Thank you for your feedback!'))
+            return redirect('learner_dashboard')
+        else:
+            messages.error(request, _('There was an error submitting your feedback. Please try again.'))
     else:
-        messages.error(request, _('There was an error submitting your feedback. Please try again.'))
+        form = FeedbackForm()
     
-    return redirect('learner_dashboard')
+    context = {
+        'booking': booking,
+        'form': form,
+        'session': booking.session,
+    }
+    
+    return render(request, 'sessions/submit_feedback.html', context)

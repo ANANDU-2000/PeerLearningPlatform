@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Submit Feedback" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{% trans "Session Feedback" %}</h1>
+            <p class="text-gray-600">{% trans "Help improve future sessions with your honest feedback" %}</p>
+        </div>
+        
+        <!-- Feedback Card -->
+        <div class="bg-white shadow rounded-xl overflow-hidden">
+            <!-- Session details -->
+            <div class="px-6 pt-6">
+                <div class="flex items-center mb-4">
+                    <div class="flex-shrink-0">
+                        {% if booking.session.mentor.user.profile_picture %}
+                            <img src="{{ booking.session.mentor.user.profile_picture.url }}" alt="{{ booking.session.mentor.user.get_full_name }}" class="h-12 w-12 rounded-full">
+                        {% else %}
+                            <div class="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                                {{ booking.session.mentor.user.first_name|first|upper }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="ml-4">
+                        <h2 class="text-lg font-semibold text-gray-900">{{ booking.session.title }}</h2>
+                        <p class="text-sm text-gray-600">
+                            {% trans "with" %} {{ booking.session.mentor.user.get_full_name }} &bull; 
+                            {{ booking.session.start_time|date:"M d, Y" }} &bull;
+                            {{ booking.session.duration_minutes }} {% trans "minutes" %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feedback Form -->
+            <form method="post" action="{% url 'submit_feedback' booking_id=booking.id %}" class="p-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                        {% for error in form.non_field_errors %}
+                            <p class="text-sm text-red-600">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Rating -->
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Rate your experience" %} <span class="text-red-600">*</span>
+                    </label>
+                    
+                    <div class="flex justify-center">
+                        <div class="star-rating flex items-center space-x-4">
+                            <div class="flex items-center">
+                                {% for i in "12345" %}
+                                <label class="star-label cursor-pointer p-1">
+                                    <input type="radio" name="rating" value="{{ forloop.counter }}" class="hidden" required {% if form.rating.value == forloop.counter %}checked{% endif %}>
+                                    <svg class="star w-8 h-8 text-gray-300 hover:text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    </svg>
+                                </label>
+                                {% endfor %}
+                            </div>
+                            <span class="rating-text text-sm font-medium text-gray-700"></span>
+                        </div>
+                    </div>
+                    
+                    {% if form.rating.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.rating.errors }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Comments -->
+                <div class="mb-6">
+                    <label for="{{ form.comments.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        {% trans "Your feedback" %}
+                    </label>
+                    
+                    {{ form.comments }}
+                    
+                    {% if form.comments.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.comments.errors }}</p>
+                    {% endif %}
+                    
+                    <p class="mt-1 text-xs text-gray-500">
+                        {% trans "Let us know what you liked or how we can improve" %}
+                    </p>
+                </div>
+                
+                <!-- Submit Buttons -->
+                <div class="flex space-x-4">
+                    <a href="{% url 'learner_dashboard' %}" class="w-1/2 py-2 text-center px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Cancel" %}
+                    </a>
+                    
+                    <button type="submit" class="w-1/2 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        {% trans "Submit Feedback" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Star rating functionality
+        const stars = document.querySelectorAll('.star-label');
+        const ratingText = document.querySelector('.rating-text');
+        const ratingInput = document.querySelector('input[name="rating"]');
+        
+        const ratingTexts = [
+            "",
+            "{% trans 'Poor' %}",
+            "{% trans 'Fair' %}",
+            "{% trans 'Good' %}",
+            "{% trans 'Very Good' %}",
+            "{% trans 'Excellent' %}"
+        ];
+        
+        // Set initial rating text if a rating is already selected
+        if (ratingInput.value) {
+            updateRatingText(parseInt(ratingInput.value));
+        }
+        
+        stars.forEach((star, index) => {
+            const input = star.querySelector('input');
+            const starSvg = star.querySelector('svg');
+            
+            // Set initial state if this rating is already selected
+            if (input.checked) {
+                highlightStars(index);
+            }
+            
+            star.addEventListener('click', function() {
+                const rating = index + 1;
+                
+                // Update visual state
+                highlightStars(index);
+                updateRatingText(rating);
+                
+                // Set the hidden input value
+                document.querySelector('input[name="rating"]').value = rating;
+            });
+            
+            star.addEventListener('mouseover', function() {
+                // Temporarily highlight stars on hover
+                stars.forEach((s, i) => {
+                    const svg = s.querySelector('svg');
+                    if (i <= index) {
+                        svg.classList.add('text-yellow-400');
+                        svg.classList.add('fill-current');
+                        svg.classList.remove('text-gray-300');
+                    }
+                });
+                
+                // Show rating text on hover
+                ratingText.textContent = ratingTexts[index + 1];
+            });
+            
+            star.addEventListener('mouseout', function() {
+                // Restore original state on mouseout
+                const currentRating = parseInt(document.querySelector('input[name="rating"]:checked')?.value || 0);
+                
+                stars.forEach((s, i) => {
+                    const svg = s.querySelector('svg');
+                    if (currentRating && i < currentRating) {
+                        // Keep selected stars highlighted
+                        svg.classList.add('text-yellow-400');
+                        svg.classList.add('fill-current');
+                        svg.classList.remove('text-gray-300');
+                    } else {
+                        // Reset unselected stars
+                        svg.classList.remove('text-yellow-400');
+                        svg.classList.remove('fill-current');
+                        svg.classList.add('text-gray-300');
+                    }
+                });
+                
+                // Restore rating text
+                updateRatingText(currentRating);
+            });
+        });
+        
+        function highlightStars(selectedIndex) {
+            stars.forEach((s, i) => {
+                const svg = s.querySelector('svg');
+                const input = s.querySelector('input');
+                
+                if (i <= selectedIndex) {
+                    svg.classList.add('text-yellow-400');
+                    svg.classList.add('fill-current');
+                    svg.classList.remove('text-gray-300');
+                    
+                    if (i === selectedIndex) {
+                        input.checked = true;
+                    }
+                } else {
+                    svg.classList.remove('text-yellow-400');
+                    svg.classList.remove('fill-current');
+                    svg.classList.add('text-gray-300');
+                    input.checked = false;
+                }
+            });
+        }
+        
+        function updateRatingText(rating) {
+            if (rating > 0) {
+                ratingText.textContent = ratingTexts[rating];
+            } else {
+                ratingText.textContent = '';
+            }
+        }
+    });
+</script>
+{% endblock %}

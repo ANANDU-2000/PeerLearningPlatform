@@ -453,43 +453,103 @@ class SessionUIController {
         
         // Parse the error message to provide more user-friendly information
         let userMessage = '';
+        let errorType = 'error';  // Default error type
+        let errorTimeout = 8000;  // Default timeout duration
+        let isReconnecting = false;  // Flag for reconnection messages
+        let errorClass = 'bg-red-600 text-white';  // Default styling
+        let errorTitle = 'Connection Error';  // Default title
         
         // Customize message based on error type
         if (typeof message === 'string') {
+            // Media device access issues
             if (message.includes('camera') || message.includes('microphone') || 
                 message.includes('NotAllowedError') || message.includes('PermissionDeniedError')) {
                 userMessage = 'Camera or microphone access was denied. Please check your browser permissions and try again.';
+                errorType = 'media';
+                errorTitle = 'Media Access Error';
+                
+            // Device not available errors
+            } else if (message.includes('NotFoundError') || message.includes('NotReadableError') || 
+                       message.includes('OverconstrainedError') || message.includes('TrackStartError')) {
+                userMessage = 'Could not access your camera or microphone. Please verify your device is connected and not in use by another application.';
+                errorType = 'device';
+                errorTitle = 'Device Error';
+                
+            // WebSocket connection issues
             } else if (message.includes('WebSocket') || message.includes('connection')) {
-                userMessage = 'Connection to the session server failed. Please check your internet connection and refresh the page.';
-            } else if (message.includes('ICE') || message.includes('peer')) {
-                userMessage = 'Failed to establish connection with other participants. This may be due to network restrictions or firewall settings.';
+                // Reconnecting messages are informational, not errors
+                if (message.includes('reconnecting') || message.includes('Reconnecting') || 
+                    message.includes('Attempt') || message.includes('attempt')) {
+                    isReconnecting = true;
+                    userMessage = message; // Use original message
+                    errorType = 'reconnecting';
+                    errorTitle = 'Reconnecting';
+                    errorClass = 'bg-yellow-500 text-white';
+                    errorTimeout = 4000; // Shorter timeout for status updates
+                } else if (message.includes('re-established') || message.includes('recovered')) {
+                    userMessage = 'Connection restored successfully!';
+                    errorType = 'success';
+                    errorTitle = 'Connected';
+                    errorClass = 'bg-green-600 text-white';
+                    errorTimeout = 3000; // Even shorter timeout for success messages
+                } else {
+                    userMessage = 'Connection to the session server failed. Please check your internet connection and refresh the page.';
+                }
+                
+            // ICE connection issues (peer-to-peer connectivity)
+            } else if (message.includes('ICE') || message.includes('peer') || 
+                       message.includes('STUN') || message.includes('TURN')) {
+                userMessage = 'Failed to establish connection with other participants. This may be due to network firewall restrictions.';
+                errorType = 'ice';
+                
+            // Client-side errors and fallbacks
+            } else if (message.includes('browser') || message.includes('support')) {
+                userMessage = 'Your browser may have limited support for video calls. For best experience, use Chrome, Firefox, or Safari.';
+                errorType = 'browser';
+                errorTitle = 'Browser Support Issue';
             } else {
+                // Default case - use the original message
                 userMessage = message;
             }
         } else {
+            // For non-string messages
             userMessage = 'An error occurred with the video connection. Please refresh the page to try again.';
         }
         
         // Use the global notification system if available
         if (typeof window.showNotification === 'function') {
-            window.showNotification(userMessage, 'error', 8000);
+            window.showNotification(userMessage, errorType === 'success' ? 'success' : 'error', errorTimeout);
             return;
         }
         
         // Create a more visually appealing error element
         const errorContainer = document.createElement('div');
-        errorContainer.className = 'fixed top-4 left-0 right-0 mx-auto w-96 bg-red-600 text-white py-3 px-4 rounded-md shadow-lg z-50';
+        errorContainer.className = `fixed top-4 left-0 right-0 mx-auto w-96 ${errorClass} py-3 px-4 rounded-md shadow-lg z-50`;
         errorContainer.style.maxWidth = '90%';
+        
+        // Choose icon based on error type
+        let iconPath = '';
+        if (errorType === 'success') {
+            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
+        } else if (errorType === 'reconnecting') {
+            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>';
+        } else if (errorType === 'media' || errorType === 'device') {
+            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>';
+        } else {
+            // Default warning icon
+            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+        }
         
         // Create inner content with icon
         errorContainer.innerHTML = `
             <div class="flex items-center">
                 <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                    ${iconPath}
                 </svg>
                 <div>
-                    <h3 class="font-bold">Connection Error</h3>
+                    <h3 class="font-bold">${errorTitle}</h3>
                     <p class="text-sm">${userMessage}</p>
+                    ${(!isReconnecting) ? '<p class="text-xs mt-1">You can <button id="refresh-page" class="underline">refresh the page</button> to try again</p>' : ''}
                 </div>
             </div>
             <button class="absolute top-2 right-2 text-white hover:text-gray-200" id="close-error">
@@ -502,10 +562,26 @@ class SessionUIController {
         // Add to page
         document.body.appendChild(errorContainer);
         
-        // Add error class to video container for visual indication
-        const localVideoContainer = document.querySelector('.video-container');
-        if (localVideoContainer) {
-            localVideoContainer.classList.add('connection-error');
+        // Add refresh page functionality if present
+        const refreshButton = errorContainer.querySelector('#refresh-page');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', () => {
+                window.location.reload();
+            });
+        }
+        
+        // Only add error styling to video for connection errors
+        if (['error', 'ice', 'reconnecting'].includes(errorType)) {
+            // Add error class to video container for visual indication
+            const localVideoContainer = document.querySelector('.video-container');
+            if (localVideoContainer) {
+                localVideoContainer.classList.add('connection-error');
+                
+                // Remove the error class after reconnection
+                if (errorType === 'success') {
+                    localVideoContainer.classList.remove('connection-error');
+                }
+            }
         }
         
         // Add event listener to close button
@@ -521,18 +597,31 @@ class SessionUIController {
             });
         }
         
-        // Auto-remove after 8 seconds
-        setTimeout(() => {
-            errorContainer.classList.add('fade-out');
+        // Auto-remove after timeout (except for critical errors that need attention)
+        if (errorType !== 'critical') {
             setTimeout(() => {
                 if (errorContainer.parentNode) {
-                    document.body.removeChild(errorContainer);
+                    errorContainer.classList.add('fade-out');
+                    setTimeout(() => {
+                        if (errorContainer.parentNode) {
+                            document.body.removeChild(errorContainer);
+                        }
+                    }, 300);
                 }
-            }, 300);
-        }, 8000);
+            }, errorTimeout);
+        }
         
-        // Show a more subtle error message in the video grid as well
-        this.showInlineErrorMessage(userMessage);
+        // For connection errors, also show a more subtle message in the video grid
+        if (['error', 'ice', 'browser'].includes(errorType)) {
+            this.showInlineErrorMessage(userMessage);
+        }
+        
+        // For reconnection success, also add a system message in chat
+        if (errorType === 'success') {
+            this.addSystemMessage('🟢 Connection restored successfully!');
+        } else if (errorType === 'reconnecting') {
+            this.addSystemMessage('🟠 Attempting to reconnect to session...');
+        }
     }
     
     /**

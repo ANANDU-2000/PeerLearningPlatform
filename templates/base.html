@@ -111,6 +111,26 @@
             transform-origin: 50% 50%;
             transition: stroke-dashoffset 0.3s;
         }
+        
+        /* User menu dropdown animations */
+        #user-menu-dropdown {
+            transform-origin: top right;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        #user-menu-dropdown.opacity-0 {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        
+        #user-menu-dropdown.opacity-100 {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        #user-menu-arrow {
+            transition: transform 0.2s ease;
+        }
     </style>
     
     <!-- Internationalization support -->
@@ -217,41 +237,47 @@
                     <div class="ml-3 relative">
                         {% if user.is_authenticated %}
                             <div class="dropdown relative">
-                                <button class="flex items-center space-x-2 focus:outline-none">
+                                <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1" aria-expanded="false" aria-haspopup="true">
                                     {% if user.profile_picture %}
-                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 rounded-full object-cover">
+                                        <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 rounded-full object-cover border border-gray-200">
                                     {% else %}
-                                        <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
+                                        <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
                                             {{ user.first_name|first|upper }}
                                         </div>
                                     {% endif %}
-                                    <span class="hidden md:block">{{ user.get_full_name }}</span>
-                                    <i data-feather="chevron-down" class="h-4 w-4"></i>
+                                    <span class="hidden md:block font-medium">{{ user.get_full_name }}</span>
+                                    <i data-feather="chevron-down" class="h-4 w-4 transition-transform duration-200" id="user-menu-arrow"></i>
                                 </button>
-                                <div class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
-                                    <a href="{{ user.get_dashboard_url }}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <div id="user-menu-dropdown" class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 transform origin-top-right transition-all duration-200 ease-in-out">
+                                    <a href="{{ user.get_dashboard_url }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i data-feather="grid" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Dashboard" %}
                                     </a>
-                                    <a href="{% url 'profile_settings' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{% url 'profile_settings' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i data-feather="user" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Profile Settings" %}
                                     </a>
                                     {% if user.role == 'learner' %}
-                                        <a href="{% url 'cart' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <a href="{% url 'cart' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i data-feather="shopping-cart" class="h-4 w-4 mr-2 text-gray-500"></i>
                                             {% trans "My Cart" %}
                                         </a>
                                     {% endif %}
                                     {% if user.role == 'mentor' %}
-                                        <a href="{% url 'withdrawal_request' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <a href="{% url 'withdrawal_request' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i data-feather="dollar-sign" class="h-4 w-4 mr-2 text-gray-500"></i>
                                             {% trans "Withdraw Earnings" %}
                                         </a>
                                     {% endif %}
-                                    <a href="{% url 'transaction_history' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{% url 'transaction_history' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i data-feather="credit-card" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Transaction History" %}
                                     </a>
                                     <div class="border-t border-gray-100 my-1"></div>
                                     <form method="post" action="{% url 'logout' %}" class="block">
                                         {% csrf_token %}
-                                        <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                        <button type="submit" class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                            <i data-feather="log-out" class="h-4 w-4 mr-2"></i>
                                             {% trans "Sign out" %}
                                         </button>
                                     </form>
@@ -466,21 +492,70 @@
                 });
             }
             
-            // Dropdown toggle
-            document.querySelectorAll('.dropdown button').forEach(button => {
+            // User Menu Dropdown with improved animation
+            const userMenuButton = document.getElementById('user-menu-button');
+            const userMenuDropdown = document.getElementById('user-menu-dropdown');
+            const userMenuArrow = document.getElementById('user-menu-arrow');
+            
+            if (userMenuButton && userMenuDropdown) {
+                let isOpen = false;
+                
+                userMenuButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    isOpen = !isOpen;
+                    
+                    if (isOpen) {
+                        // Open the menu
+                        userMenuDropdown.classList.remove('hidden');
+                        userMenuDropdown.classList.add('opacity-100', 'scale-100');
+                        userMenuDropdown.classList.remove('opacity-0', 'scale-95');
+                        
+                        // Rotate arrow
+                        userMenuArrow.style.transform = 'rotate(180deg)';
+                        
+                        // Add active state to button
+                        userMenuButton.setAttribute('aria-expanded', 'true');
+                        userMenuButton.classList.add('bg-gray-100');
+                    } else {
+                        // Close the menu
+                        closeUserMenu();
+                    }
+                });
+                
+                // Function to close user menu
+                function closeUserMenu() {
+                    userMenuDropdown.classList.add('opacity-0', 'scale-95');
+                    userMenuDropdown.classList.remove('opacity-100', 'scale-100');
+                    
+                    // Wait for animation before hiding
+                    setTimeout(() => {
+                        userMenuDropdown.classList.add('hidden');
+                    }, 200);
+                    
+                    // Reset arrow
+                    userMenuArrow.style.transform = 'rotate(0deg)';
+                    
+                    // Remove active state from button
+                    userMenuButton.setAttribute('aria-expanded', 'false');
+                    userMenuButton.classList.remove('bg-gray-100');
+                    
+                    isOpen = false;
+                }
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (isOpen && !event.target.closest('.dropdown')) {
+                        closeUserMenu();
+                    }
+                });
+            }
+            
+            // Handle other dropdowns (if any)
+            document.querySelectorAll('.dropdown button:not(#user-menu-button)').forEach(button => {
                 button.addEventListener('click', function() {
                     const content = this.nextElementSibling;
                     content.classList.toggle('hidden');
                 });
-            });
-            
-            // Close dropdowns when clicking outside
-            document.addEventListener('click', function(event) {
-                if (!event.target.closest('.dropdown')) {
-                    document.querySelectorAll('.dropdown-content').forEach(content => {
-                        content.classList.add('hidden');
-                    });
-                }
             });
             
             // Close alert messages

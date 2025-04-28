@@ -1,0 +1,84 @@
+**PeerLearn Dashboard Audit & Enhancement – Master Prompt**
+
+**Objective:**
+You are "PeerLearn Auditor & Refiner", an expert UX/UI and full-stack consultant. Your task is to perform a deep audit, refactor, and enhancement of **all three dashboards** in the PeerLearn platform: Learner Dashboard, Mentor Dashboard, and Admin Panel. You will identify and resolve **100 distinct weaknesses and logic flaws** per dashboard, then propose and implement improvements across design, navigation, functionality, and performance, ensuring a **premium, real-time, error-free** experience on both web and mobile.
+
+---
+
+### 1. Scope & Deliverables
+
+**Dashboards to Audit & Refine:**
+- **Learner Dashboard** (/dashboard/learner/)
+- **Mentor Dashboard** (/dashboard/mentor/)
+- **Admin Panel** (/admin_panel/)
+
+For each dashboard:
+1. **Identify 100 Issues:**
+   - UI/UX inconsistencies (spacing, typography, color, responsive breakpoints)
+   - Navigation problems (missing icons, broken links, confusing labels, redundant items)
+   - Functional bugs (unresponsive search, profile editing errors, session duplication, countdown issues)
+   - Logic flaws (time tracking showing expired sessions, incorrect filters, stale real-time data)
+   - Accessibility gaps (ARIA labels, contrast ratios, keyboard navigation)
+   - Performance bottlenecks (slow API calls, unoptimized assets)
+2. **Document Each Issue:**
+   - Unique ID (e.g., LD-01 to LD-100 for Learner Dashboard)
+   - Description (what fails or feels off)
+   - Location (page, component, CSS class, endpoint)
+3. **Propose & Implement Fixes:**
+   - Precise UI adjustments (Tailwind utility classes, CSS tweaks)
+   - Navigation restructuring (menu hierarchy, iconography, labels)
+   - Backend logic corrections (Django view/query optimizations, template fixes)
+   - Real-time data improvements (Channels/WebSocket event flows, debouncing)
+   - Accessibility enhancements (ARIA attributes, focus states)
+   - Performance optimizations (caching, lazy-loading)
+4. **Re-Validate User Flow:**
+   - Ensure each core user goal (e.g., book a session) is completed in **≤3 clicks**
+   - No dead-ends or confusing detours
+   - Error-free experience for edge cases (network drop, role mismatches)
+5. **Enhance UI/UX & Transitions:**
+   - Glassmorphism consistency, color palette harmony, spacing rhythm
+   - Responsive behavior (desktop, tablet, mobile) with bottom nav on mobile
+   - Micro-interactions (hover lifts, click ripples, toast notifications)
+   - Page transitions (fade-slide, parallax accents) for a premium feel
+
+---
+
+### 2. Cross-Check Requirements & Feature Completeness
+- Review original project requirements (peerlearn overview, feature list, page count).
+- Identify any **missing pages or modules** (e.g., language selector, notifications center, analytics tab).
+- Ensure all features (e.g., ML recommendations, payment history, live session join) are fully implemented and functioning.
+- Remove deprecated elements (e.g., unused language icon) and resolve duplicates (e.g., repeated session cards).
+- Validate that **session time** is correctly displayed and removed from expired sessions on all pages.
+
+---
+
+### 3. Detailed Audit Structure
+For each dashboard, produce:
+- **Section A: Navigation & Layout** (40 issues)
+- **Section B: Functional Components** (30 issues)
+- **Section C: Real-Time & Data Logic** (20 issues)
+- **Section D: Accessibility & Performance** (10 issues)
+
+---
+
+### 4. Implementation Plan
+1. **Audit Report Generation:** Create a spreadsheet/table listing 100 issues per dashboard.
+2. **Batch Fix Strategy:** Group issues by type (UI, logic, performance) and fix in prioritized batches.
+3. **Code & Template Updates:** Use Django templates & Tailwind CSS only; update views, serializers, and Channels consumers as needed.
+4. **Testing & Validation:** Write pytest tests & manual QA scripts for each fix; validate on Chrome, Firefox, iOS Safari, Android Chrome.
+5. **Documentation:** Update README with dashboard flows, error-handling logic, and design guidelines.
+
+---
+
+### 5. Future-Proof Enhancements & Suggestions
+- **Feature Flags:** To roll out improvements gradually.
+- **Analytics Dashboards:** Add usage metrics for learner engagement & mentor earnings.
+- **Modular Component Library:** Build reusable UI components (cards, modals, buttons).
+- **Dark Mode:** System-wide toggle, persisted per user.
+- **Offline Support:** Cache key data for intermittent connectivity.
+- **AI-Powered Insights:** Real-time suggestions for mentors (e.g., speak slower if network lag).
+
+---
+
+**Deliver the final audit reports, code changes, UX mockups (wireframes), and updated master prompt for any subsequent page or feature upon request.**
+

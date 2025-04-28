@@ -12,17 +12,49 @@ from .models import Session, Booking, Feedback
 class SessionForm(forms.ModelForm):
     """Form for creating and editing sessions."""
     
+    # Add thumbnail field
+    thumbnail = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'hidden',
+            'accept': 'image/*'
+        }),
+        help_text=_("Upload a thumbnail image to make your session stand out")
+    )
+    
+    # Add option for free session
+    is_free = forms.BooleanField(
+        required=False,
+        initial=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500'
+        }),
+        label=_("Offer this session for free"),
+        help_text=_("Free sessions can attract more learners and build your reputation")
+    )
+    
+    # SEO keywords/metadata
+    seo_keywords = forms.CharField(
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
+            'placeholder': _('E.g., Python, Data Science, Beginner Friendly')
+        }),
+        label=_("SEO Keywords"),
+        help_text=_("Keywords to help learners find your session (comma separated)")
+    )
+    
     class Meta:
         model = Session
         fields = ['title', 'description', 'start_time', 'end_time', 'price', 'max_participants', 'tags']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
-                'placeholder': _('Session Title')
+                'placeholder': _('E.g., "Mastering Python for Data Science Beginners"')
             }),
             'description': forms.Textarea(attrs={
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
-                'placeholder': _('Session Description'),
+                'placeholder': _('Describe what learners will gain from this session. Include skills they will acquire, any prerequisites, and your teaching approach.'),
                 'rows': 4
             }),
             'start_time': forms.DateTimeInput(attrs={
@@ -34,18 +66,19 @@ class SessionForm(forms.ModelForm):
                 'type': 'datetime-local'
             }),
             'price': forms.NumberInput(attrs={
-                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
+                'class': 'w-full pl-8 pr-4 py-2 rounded-lg border border-gray-300',
                 'placeholder': _('Price (INR)'),
                 'min': 0
             }),
             'max_participants': forms.NumberInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
                 'placeholder': _('Maximum Participants'),
-                'min': 1
+                'min': 1,
+                'value': 5
             }),
             'tags': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
-                'placeholder': _('Tags (comma separated)')
+                'placeholder': _('E.g., python, data-science, beginners')
             }),
         }
     
@@ -54,6 +87,12 @@ class SessionForm(forms.ModelForm):
         cleaned_data = super().clean()
         start_time = cleaned_data.get('start_time')
         end_time = cleaned_data.get('end_time')
+        is_free = cleaned_data.get('is_free')
+        price = cleaned_data.get('price')
+        
+        # Set price to 0 if is_free is checked
+        if is_free and price:
+            cleaned_data['price'] = 0
         
         # Check if start time is in the future
         if start_time and start_time < timezone.now():

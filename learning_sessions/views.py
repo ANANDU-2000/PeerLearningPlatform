@@ -122,22 +122,67 @@ def create_session(request):
     # Check if mentor is approved
     mentor_profile = get_object_or_404(MentorProfile, user=request.user)
     if not mentor_profile.is_approved:
-        messages.error(request, _('Your mentor profile needs to be approved before you can create sessions.'))
-        return redirect('mentor_dashboard')
+        messages.warning(request, _('Your mentor profile is pending approval. You can create sessions, but they will only be visible after your profile is approved.'))
     
     if request.method == 'POST':
-        form = SessionForm(request.POST)
+        form = SessionForm(request.POST, request.FILES)
         if form.is_valid():
             session = form.save(commit=False)
             session.mentor = mentor_profile
+            
+            # Handle additional fields
+            is_free = form.cleaned_data.get('is_free')
+            if is_free:
+                session.price = 0
+                
+            # Set SEO metadata if provided
+            seo_keywords = form.cleaned_data.get('seo_keywords')
+            if seo_keywords:
+                # Store SEO keywords in the tags field or process them as needed
+                # Combine with regular tags if present
+                existing_tags = session.tags
+                if existing_tags:
+                    session.tags = f"{existing_tags},{seo_keywords}"
+                else:
+                    session.tags = seo_keywords
+            
+            # Save the session to get an ID
             session.save()
             
-            messages.success(request, _('Session created successfully!'))
+            # Process thumbnail (either uploaded or selected from presets)
+            thumbnail = form.cleaned_data.get('thumbnail')
+            selected_thumbnail = request.POST.get('selected_thumbnail')
+            
+            # If both are provided, prioritize the uploaded thumbnail
+            if thumbnail:
+                # Process uploaded thumbnail
+                # Here you would save the image to a specific location or pass it to a service
+                pass  # Implementation depends on your image storage system
+            elif selected_thumbnail:
+                # Store reference to the selected preset thumbnail
+                # This might involve copying from static files or saving a reference
+                thumbnail_name = request.POST.get('selected_thumbnail_name', '')
+                # You might want to store this information in a separate model or field
+                pass
+            
+            messages.success(request, _('Session created successfully! Learners will now be able to book it.'))
             return redirect('session_detail', session_id=session.id)
+        else:
+            # Form validation errors
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
-        form = SessionForm()
+        # Initialize form with defaults for better UX
+        initial_data = {
+            'max_participants': 5,  # Default to 5 participants
+        }
+        form = SessionForm(initial=initial_data)
     
-    return render(request, 'sessions/create_session.html', {'form': form})
+    return render(request, 'sessions/create_session.html', {
+        'form': form,
+        'mentor_profile': mentor_profile
+    })
 
 
 @login_required

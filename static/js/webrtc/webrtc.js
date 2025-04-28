@@ -10,7 +10,17 @@ class PeerLearnRTC {
         this.userName = config.userName;
         this.sessionId = config.sessionId;
         this.isMentor = config.isMentor;
-        this.stunServers = config.stunServers || ['stun:stun.l.google.com:19302'];
+        
+        // STUN servers - Default to multiple Google STUN servers for redundancy
+        this.stunServers = config.stunServers || [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302',
+            'stun:stun2.l.google.com:19302',
+            'stun:stun3.l.google.com:19302',
+            'stun:stun4.l.google.com:19302'
+        ];
+        
+        // TURN servers - Optional fallback for restricted networks
         this.turnServers = config.turnServers || [];
         this.turnUsername = config.turnUsername || '';
         this.turnCredential = config.turnCredential || '';
@@ -261,20 +271,50 @@ class PeerLearnRTC {
     }
 
     /**
-     * Setup WebSocket for signaling
+     * Setup WebSocket for signaling with automatic reconnection
      */
     setupWebSocket() {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        // Fix WebSocket URL path to match Django Channels' routing
+        // WebSocket URL path to match Django Channels' routing
         const wsUrl = `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`;
         
-        console.log("Connecting to WebSocket:", wsUrl);
+        // WebSocket reconnection settings
+        this.wsReconnectAttempts = 0;
+        this.wsMaxReconnectAttempts = 5;
+        this.wsReconnectInterval = 2000; // Start with 2 seconds
+        this.wsReconnecting = false;
         
+        console.log("Connecting to WebSocket:", wsUrl);
+        this.connectWebSocket(wsUrl);
+    }
+    
+    /**
+     * Create WebSocket connection with reconnection logic
+     */
+    connectWebSocket(wsUrl) {
         try {
             this.socket = new WebSocket(wsUrl);
             
             this.socket.onopen = () => {
                 console.log("WebSocket connection established successfully");
+                
+                // Reset reconnection counters on successful connection
+                this.wsReconnectAttempts = 0;
+                this.wsReconnectInterval = 2000;
+                
+                // If we were reconnecting, notify that we're back online
+                if (this.wsReconnecting) {
+                    this.onError("Connection re-established successfully!");
+                    this.wsReconnecting = false;
+                }
+                
+                // Send join message to the server
+                this.sendSignalingMessage({
+                    type: 'join',
+                    user_id: this.userId,
+                    user_name: this.userName,
+                    is_mentor: this.isMentor
+                });
             };
             
             this.socket.onmessage = (event) => {
@@ -289,23 +329,55 @@ class PeerLearnRTC {
             };
             
             this.socket.onclose = (event) => {
-                console.log("WebSocket connection closed:", event.code, event.reason);
-                // Attempt to reconnect if connection was closed unexpectedly
-                if (event.code !== 1000) { // 1000 is normal closure
-                    console.log("Attempting to reconnect WebSocket in 3 seconds...");
+                console.warn(`WebSocket connection closed: ${event.code} ${event.reason}`);
+                
+                // Don't attempt to reconnect if this was a normal closure
+                if (event.code === 1000) {
+                    console.log("WebSocket closed normally, not reconnecting");
+                    return;
+                }
+                
+                // Attempt to reconnect with exponential backoff
+                this.wsReconnectAttempts++;
+                
+                if (this.wsReconnectAttempts <= this.wsMaxReconnectAttempts) {
+                    this.wsReconnecting = true;
+                    
+                    // Use exponential backoff for reconnection attempts
+                    const reconnectDelay = Math.min(30000, this.wsReconnectInterval * Math.pow(1.5, this.wsReconnectAttempts - 1));
+                    
+                    console.log(`Attempting to reconnect in ${reconnectDelay/1000} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
+                    
+                    // Show reconnection status to user after the first attempt
+                    if (this.wsReconnectAttempts > 1) {
+                        this.onError(`Connection lost. Reconnecting in ${Math.round(reconnectDelay/1000)} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
+                    }
+                    
                     setTimeout(() => {
-                        this.setupWebSocket();
-                    }, 3000);
+                        console.log(`Reconnecting to WebSocket (Attempt ${this.wsReconnectAttempts})`);
+                        this.connectWebSocket(wsUrl);
+                    }, reconnectDelay);
+                } else {
+                    this.onError("Unable to reconnect after multiple attempts. Please refresh the page to try again.");
                 }
             };
             
             this.socket.onerror = (error) => {
                 console.error("WebSocket error:", error);
-                this.onError("WebSocket connection error. Please check your network connection.");
+                // We don't need to take action here as onclose will be called
             };
         } catch (err) {
-            console.error("Failed to create WebSocket:", err);
-            this.onError("Failed to create WebSocket connection: " + err.message);
+            console.error("Error setting up WebSocket:", err);
+            this.onError("Failed to connect to signaling server: " + err.message);
+            
+            // Also attempt to reconnect on initial connection error
+            if (this.wsReconnectAttempts < this.wsMaxReconnectAttempts) {
+                setTimeout(() => {
+                    this.wsReconnectAttempts++;
+                    console.log(`Attempting to reconnect... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
+                    this.connectWebSocket(wsUrl);
+                }, this.wsReconnectInterval);
+            }
         }
     }
 
@@ -388,24 +460,29 @@ class PeerLearnRTC {
         // Configure ICE servers (STUN/TURN)
         const iceServers = [];
         
-        // Ensure we have at least the default Google STUN server if none provided
-        if (!this.stunServers || this.stunServers.length === 0 || this.stunServers[0] === '') {
-            console.log("No STUN servers configured, using Google STUN server as fallback");
-            iceServers.push({ urls: 'stun:stun.l.google.com:19302' });
-            iceServers.push({ urls: 'stun:stun1.l.google.com:19302' });
-            iceServers.push({ urls: 'stun:stun2.l.google.com:19302' });
-            iceServers.push({ urls: 'stun:stun3.l.google.com:19302' });
-            iceServers.push({ urls: 'stun:stun4.l.google.com:19302' });
-        } else {
-            // Add configured STUN servers
+        // Public STUN servers for NAT traversal (always needed)
+        if (this.stunServers && this.stunServers.length > 0) {
+            // Add all configured STUN servers for redundancy
             this.stunServers.forEach(server => {
                 if (server && server.trim() !== '') {
                     iceServers.push({ urls: server });
                 }
             });
+        } else {
+            // Fallback to multiple Google STUN servers if none provided
+            console.log("No STUN servers configured, using Google STUN servers as fallback");
+            iceServers.push({ urls: 'stun:stun.l.google.com:19302' });
+            iceServers.push({ urls: 'stun:stun1.l.google.com:19302' });
+            iceServers.push({ urls: 'stun:stun2.l.google.com:19302' });
+            iceServers.push({ urls: 'stun:stun3.l.google.com:19302' });
+            iceServers.push({ urls: 'stun:stun4.l.google.com:19302' });
         }
         
-        // Add TURN servers if available
+        // Add free public STUN servers from various providers for additional redundancy
+        iceServers.push({ urls: 'stun:stun.stunprotocol.org:3478' });
+        iceServers.push({ urls: 'stun:stun.voip.blackberry.com:3478' });
+        
+        // Add TURN servers if available (crucial for restrictive networks)
         if (this.turnServers && this.turnServers.length > 0) {
             this.turnServers.forEach(server => {
                 if (server && server.trim() !== '') {
@@ -416,6 +493,9 @@ class PeerLearnRTC {
                     });
                 }
             });
+            console.log("TURN servers added for restrictive network traversal");
+        } else {
+            console.log("No TURN servers configured. Connection may fail in restrictive networks.");
         }
         
         console.log("Using ICE servers:", iceServers);

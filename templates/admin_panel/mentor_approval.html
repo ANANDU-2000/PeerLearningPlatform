@@ -4,9 +4,131 @@
 
 {% block title %}{% trans "Mentor Approval" %} | PeerLearn Admin{% endblock %}
 
+{% block extra_head %}
+<style>
+    /* Glass card styling for premium look */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    }
+    
+    /* Smooth hover transitions */
+    .hover-lift {
+        transition: transform 0.3s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-5px);
+    }
+    
+    /* Gradient button animations */
+    .gradient-btn {
+        background-size: 200% auto;
+        transition: 0.5s;
+    }
+    
+    .gradient-btn:hover {
+        background-position: right center;
+    }
+    
+    /* Mentor card hover effect */
+    .mentor-card {
+        transition: all 0.3s ease;
+    }
+    
+    .mentor-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Mobile responsive fixes */
+    @media (max-width: 768px) {
+        .mobile-pt-16 {
+            padding-top: 4rem;
+        }
+    }
+    
+    /* Tab styling */
+    .tab-active {
+        color: #3b82f6;
+        border-color: #3b82f6;
+    }
+    
+    .tab-inactive {
+        color: #6b7280;
+        border-color: transparent;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="bg-gray-50 min-h-screen font-sans">
-    <!-- Admin Sidebar -->
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 font-sans">
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-gray-800 text-white p-4 fixed top-0 w-full z-20 flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-lg mr-2">
+                A
+            </div>
+            <h2 class="text-lg font-bold">{% trans "Admin Panel" %}</h2>
+        </div>
+        <button id="mobile-menu-button" class="p-2">
+            <i data-feather="menu" class="h-6 w-6"></i>
+        </button>
+    </div>
+    
+    <!-- Mobile Sidebar (Hidden by Default) -->
+    <div id="mobile-sidebar" class="md:hidden fixed left-0 top-16 bottom-0 w-full bg-gray-800 z-50 transform -translate-x-full transition-transform duration-300">
+        <div class="p-6">
+            <div class="flex items-center mb-6">
+                <div class="h-10 w-10 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-xl mr-3">
+                    A
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white">{% trans "Admin Panel" %}</h2>
+                    <span class="text-blue-300 text-sm">{{ user.email }}</span>
+                </div>
+            </div>
+            
+            <nav class="mt-6 space-y-1">
+                <a href="{% url 'admin_dashboard' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="grid" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Dashboard" %}</span>
+                </a>
+                <a href="{% url 'mentor_approval' %}" class="group flex items-center py-3 px-4 text-white bg-gray-700 rounded-lg transition-all duration-200">
+                    <i data-feather="user-check" class="h-5 w-5 mr-3 text-blue-400"></i>
+                    <span>{% trans "Mentor Approval" %}</span>
+                </a>
+                <a href="{% url 'session_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="video" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Session Management" %}</span>
+                </a>
+                <a href="{% url 'user_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="users" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "User Management" %}</span>
+                </a>
+                <a href="{% url 'payment_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="credit-card" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Payments" %}</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="bar-chart-2" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Analytics" %}</span>
+                </a>
+                <div class="pt-6">
+                    <a href="{% url 'logout' %}" class="group flex items-center py-3 px-4 text-red-300 hover:bg-red-900 hover:text-white rounded-lg transition-all duration-200">
+                        <i data-feather="log-out" class="h-5 w-5 mr-3 text-red-400 group-hover:text-white"></i>
+                        <span>{% trans "Logout" %}</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Desktop Sidebar -->
     <div class="hidden md:block fixed left-0 top-16 bottom-0 w-64 bg-gray-800 shadow-lg z-10">
         <div class="p-6">
             <div class="flex items-center mb-8">

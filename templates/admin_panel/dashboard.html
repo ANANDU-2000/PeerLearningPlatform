@@ -1,0 +1,666 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Admin Dashboard" %} | PeerLearn{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<style>
+    /* Glass card styling for premium look */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+    }
+    
+    /* Stats counter animation */
+    .counter-value {
+        transition: all 0.5s ease-in-out;
+    }
+    
+    /* Gradient button animations */
+    .gradient-btn {
+        background-size: 200% auto;
+        transition: 0.5s;
+    }
+    
+    .gradient-btn:hover {
+        background-position: right center;
+    }
+    
+    /* Smooth hover transitions */
+    .hover-lift {
+        transition: transform 0.3s ease;
+    }
+    
+    .hover-lift:hover {
+        transform: translateY(-5px);
+    }
+    
+    /* Mobile responsive fixes */
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .mobile-pt-16 {
+            padding-top: 4rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 font-sans">
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-gray-800 text-white p-4 fixed top-0 w-full z-20 flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-lg mr-2">
+                A
+            </div>
+            <h2 class="text-lg font-bold">{% trans "Admin Panel" %}</h2>
+        </div>
+        <button id="mobile-menu-button" class="p-2">
+            <i data-feather="menu" class="h-6 w-6"></i>
+        </button>
+    </div>
+    
+    <!-- Mobile Sidebar (Hidden by Default) -->
+    <div id="mobile-sidebar" class="md:hidden fixed left-0 top-16 bottom-0 w-full bg-gray-800 z-50 transform -translate-x-full transition-transform duration-300">
+        <div class="p-6">
+            <div class="flex items-center mb-6">
+                <div class="h-10 w-10 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-xl mr-3">
+                    A
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white">{% trans "Admin Panel" %}</h2>
+                    <span class="text-blue-300 text-sm">{{ user.email }}</span>
+                </div>
+            </div>
+            
+            <nav class="mt-6 space-y-1">
+                <a href="{% url 'admin_dashboard' %}" class="group flex items-center py-3 px-4 text-white bg-gray-700 rounded-lg transition-all duration-200">
+                    <i data-feather="grid" class="h-5 w-5 mr-3 text-blue-400"></i>
+                    <span>{% trans "Dashboard" %}</span>
+                </a>
+                <a href="{% url 'mentor_approval' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="user-check" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Mentor Approval" %}</span>
+                </a>
+                <a href="{% url 'session_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="video" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Session Management" %}</span>
+                </a>
+                <a href="{% url 'user_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="users" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "User Management" %}</span>
+                </a>
+                <a href="{% url 'payment_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="credit-card" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Payments" %}</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="bar-chart-2" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Analytics" %}</span>
+                </a>
+                <div class="pt-6">
+                    <a href="{% url 'logout' %}" class="group flex items-center py-3 px-4 text-red-300 hover:bg-red-900 hover:text-white rounded-lg transition-all duration-200">
+                        <i data-feather="log-out" class="h-5 w-5 mr-3 text-red-400 group-hover:text-white"></i>
+                        <span>{% trans "Logout" %}</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Desktop Sidebar -->
+    <div class="hidden md:block fixed left-0 top-16 bottom-0 w-64 bg-gray-800 shadow-lg z-10">
+        <div class="p-6">
+            <div class="flex items-center mb-8">
+                <div class="h-10 w-10 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-xl mr-3">
+                    A
+                </div>
+                <div>
+                    <h2 class="text-lg font-bold text-white">{% trans "Admin Panel" %}</h2>
+                    <span class="text-blue-300 text-sm">{{ user.email }}</span>
+                </div>
+            </div>
+            
+            <nav class="mt-8 space-y-2">
+                <a href="{% url 'admin_dashboard' %}" class="group flex items-center py-3 px-4 text-white bg-gray-700 rounded-lg transition-all duration-200">
+                    <i data-feather="grid" class="h-5 w-5 mr-3 text-blue-400"></i>
+                    <span>{% trans "Dashboard" %}</span>
+                </a>
+                <a href="{% url 'mentor_approval' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="user-check" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Mentor Approval" %}</span>
+                </a>
+                <a href="{% url 'session_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="video" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Session Management" %}</span>
+                </a>
+                <a href="{% url 'user_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="users" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "User Management" %}</span>
+                </a>
+                <a href="{% url 'payment_management' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="credit-card" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Payments" %}</span>
+                </a>
+                <a href="{% url 'analytics' %}" class="group flex items-center py-3 px-4 text-gray-300 hover:bg-gray-700 hover:text-white rounded-lg transition-all duration-200">
+                    <i data-feather="bar-chart-2" class="h-5 w-5 mr-3 text-gray-400 group-hover:text-white"></i>
+                    <span>{% trans "Analytics" %}</span>
+                </a>
+                <div class="pt-6 mt-6 border-t border-gray-700">
+                    <a href="{% url 'logout' %}" class="group flex items-center py-3 px-4 text-red-300 hover:bg-red-900 hover:text-white rounded-lg transition-all duration-200">
+                        <i data-feather="log-out" class="h-5 w-5 mr-3 text-red-400 group-hover:text-white"></i>
+                        <span>{% trans "Logout" %}</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="md:ml-64 mobile-pt-16 p-6">
+        <!-- Welcome Message & Quick Actions -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-800">{% trans "Welcome back, Admin" %}</h1>
+                <p class="text-gray-500 mt-1">{{ today|date:"l, F d, Y" }}</p>
+            </div>
+            
+            <div class="flex space-x-3 mt-4 md:mt-0">
+                <a href="{% url 'mentor_approval' %}" class="gradient-btn bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg flex items-center hover:from-blue-600 hover:to-indigo-700">
+                    <i data-feather="user-check" class="h-4 w-4 mr-2"></i>
+                    <span>{% trans "Mentor Approvals" %}</span>
+                    {% if pending_mentors.count > 0 %}
+                        <span class="ml-2 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs">{{ pending_mentors.count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{% url 'session_management' %}" class="gradient-btn bg-gradient-to-r from-purple-500 to-pink-600 text-white px-4 py-2 rounded-lg flex items-center hover:from-purple-600 hover:to-pink-700">
+                    <i data-feather="video" class="h-4 w-4 mr-2"></i>
+                    <span>{% trans "Live Sessions" %}</span>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 stats-grid">
+            <!-- Users Card -->
+            <div class="glass-card hover-lift p-6 rounded-lg">
+                <div class="flex justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-500">{% trans "Total Users" %}</h3>
+                        <p class="text-3xl font-bold text-gray-800 mt-2 counter-value">{{ total_users }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
+                        <i data-feather="users" class="h-6 w-6 text-blue-600"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-gray-500">{% trans "Learners:" %}</span>
+                    <span class="ml-1 font-medium text-gray-800">{{ total_learners }}</span>
+                    <span class="mx-2 text-gray-400">•</span>
+                    <span class="text-gray-500">{% trans "Mentors:" %}</span>
+                    <span class="ml-1 font-medium text-gray-800">{{ total_mentors }}</span>
+                </div>
+            </div>
+            
+            <!-- Sessions Card -->
+            <div class="glass-card hover-lift p-6 rounded-lg">
+                <div class="flex justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-500">{% trans "Total Sessions" %}</h3>
+                        <p class="text-3xl font-bold text-gray-800 mt-2 counter-value">{{ total_sessions }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-lg bg-purple-100 flex items-center justify-center">
+                        <i data-feather="video" class="h-6 w-6 text-purple-600"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-gray-500">{% trans "Bookings:" %}</span>
+                    <span class="ml-1 font-medium text-gray-800">{{ total_bookings }}</span>
+                </div>
+            </div>
+            
+            <!-- Revenue Card -->
+            <div class="glass-card hover-lift p-6 rounded-lg">
+                <div class="flex justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-500">{% trans "Total Revenue" %}</h3>
+                        <p class="text-3xl font-bold text-gray-800 mt-2 counter-value">₹{{ total_revenue }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center">
+                        <i data-feather="credit-card" class="h-6 w-6 text-green-600"></i>
+                    </div>
+                </div>
+                <div class="mt-4 flex items-center text-sm">
+                    <span class="text-gray-500">{% trans "Last 30 days:" %}</span>
+                    <span class="ml-1 font-medium text-green-600">₹{{ chart_data|last }}</span>
+                </div>
+            </div>
+            
+            <!-- Pending Approvals Card -->
+            <div class="glass-card hover-lift p-6 rounded-lg">
+                <div class="flex justify-between">
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-500">{% trans "Pending Approvals" %}</h3>
+                        <p class="text-3xl font-bold text-gray-800 mt-2 counter-value">{{ pending_mentors.count }}</p>
+                    </div>
+                    <div class="h-12 w-12 rounded-lg bg-amber-100 flex items-center justify-center">
+                        <i data-feather="user-check" class="h-6 w-6 text-amber-600"></i>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    {% if pending_mentors.count > 0 %}
+                        <a href="{% url 'mentor_approval' %}" class="text-sm text-blue-600 flex items-center">
+                            {% trans "View pending approvals" %}
+                            <i data-feather="arrow-right" class="h-4 w-4 ml-1"></i>
+                        </a>
+                    {% else %}
+                        <span class="text-sm text-gray-500">{% trans "No pending mentor approvals" %}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <!-- Revenue Chart -->
+            <div class="glass-card p-6 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">{% trans "Revenue (Last 30 Days)" %}</h3>
+                <div class="h-72">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Real-time Sessions Monitor -->
+            <div class="glass-card p-6 rounded-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-800">{% trans "Live Sessions Monitor" %}</h3>
+                    <div class="flex space-x-2">
+                        <span class="flex items-center text-sm text-gray-500">
+                            <span class="h-2 w-2 rounded-full bg-green-500 mr-1"></span>
+                            {% trans "Active" %}
+                        </span>
+                        <span class="flex items-center text-sm text-gray-500">
+                            <span class="h-2 w-2 rounded-full bg-amber-500 mr-1"></span>
+                            {% trans "Scheduled" %}
+                        </span>
+                    </div>
+                </div>
+                <div class="overflow-auto max-h-72" id="liveSessionsContainer">
+                    {% for session in recent_sessions %}
+                        <div class="p-4 bg-white rounded-lg mb-3 shadow-sm border-l-4 {% if session.is_ongoing %}border-green-500{% else %}border-amber-500{% endif %}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">{{ session.title }}</h4>
+                                    <div class="flex items-center text-sm text-gray-500 mt-1">
+                                        <span class="flex items-center">
+                                            <i data-feather="user" class="h-3 w-3 mr-1"></i>
+                                            {{ session.mentor.user.get_full_name }}
+                                        </span>
+                                        <span class="mx-2 text-gray-300">•</span>
+                                        <span class="flex items-center">
+                                            <i data-feather="users" class="h-3 w-3 mr-1"></i>
+                                            {{ session.bookings.count }}/{{ session.max_participants }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                                    {{ session.start_time|date:"M d, H:i" }}
+                                </span>
+                            </div>
+                            <div class="mt-3 flex justify-end">
+                                <a href="{% url 'session_detail' session_id=session.id %}" class="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 transition-colors">
+                                    {% trans "View Details" %}
+                                </a>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i data-feather="video-off" class="h-8 w-8 mx-auto mb-2 text-gray-400"></i>
+                            <p>{% trans "No live or upcoming sessions" %}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Activity Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Pending Approvals -->
+            <div class="glass-card p-6 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">{% trans "Pending Mentor Approvals" %}</h3>
+                <div class="overflow-auto max-h-96">
+                    {% for mentor in pending_mentors|slice:":5" %}
+                        <div class="p-4 bg-white rounded-lg mb-3 shadow-sm">
+                            <div class="flex items-center">
+                                {% if mentor.user.profile_picture %}
+                                    <img src="{{ mentor.user.profile_picture.url }}" alt="{{ mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                {% else %}
+                                    <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold mr-3">
+                                        {{ mentor.user.first_name|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <div>
+                                    <h4 class="font-medium text-gray-800">{{ mentor.user.get_full_name }}</h4>
+                                    <p class="text-sm text-gray-500">{{ mentor.expertise|truncatechars:25 }}</p>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex space-x-2 justify-end">
+                                <form method="post" action="{% url 'approve_mentor' mentor_id=mentor.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-xs bg-green-50 text-green-600 px-3 py-1 rounded-lg hover:bg-green-100 transition-colors">
+                                        {% trans "Approve" %}
+                                    </button>
+                                </form>
+                                <form method="post" action="{% url 'reject_mentor' mentor_id=mentor.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition-colors">
+                                        {% trans "Reject" %}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i data-feather="user-check" class="h-8 w-8 mx-auto mb-2 text-gray-400"></i>
+                            <p>{% trans "No pending mentor approvals" %}</p>
+                        </div>
+                    {% endfor %}
+                    
+                    {% if pending_mentors.count > 5 %}
+                        <div class="text-center mt-4">
+                            <a href="{% url 'mentor_approval' %}" class="text-sm text-blue-600 hover:text-blue-800">
+                                {% trans "View all" %} ({{ pending_mentors.count }})
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Withdrawal Requests -->
+            <div class="glass-card p-6 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">{% trans "Pending Withdrawals" %}</h3>
+                <div class="overflow-auto max-h-96">
+                    {% for withdrawal in pending_withdrawals|slice:":5" %}
+                        <div class="p-4 bg-white rounded-lg mb-3 shadow-sm">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-medium text-gray-800">{{ withdrawal.mentor.user.get_full_name }}</h4>
+                                    <p class="text-sm text-gray-500">{{ withdrawal.created_at|date:"M d, Y" }}</p>
+                                </div>
+                                <span class="text-lg font-bold text-gray-800">₹{{ withdrawal.amount }}</span>
+                            </div>
+                            <div class="mt-3 text-xs text-gray-500">
+                                {% trans "Bank Account:" %} {{ withdrawal.bank_account_number }}
+                            </div>
+                            <div class="mt-3 flex space-x-2 justify-end">
+                                <button class="text-xs bg-green-50 text-green-600 px-3 py-1 rounded-lg hover:bg-green-100 transition-colors">
+                                    {% trans "Process" %}
+                                </button>
+                                <button class="text-xs bg-red-50 text-red-600 px-3 py-1 rounded-lg hover:bg-red-100 transition-colors">
+                                    {% trans "Reject" %}
+                                </button>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-8 text-gray-500">
+                            <i data-feather="credit-card" class="h-8 w-8 mx-auto mb-2 text-gray-400"></i>
+                            <p>{% trans "No pending withdrawal requests" %}</p>
+                        </div>
+                    {% endfor %}
+                    
+                    {% if pending_withdrawals.count > 5 %}
+                        <div class="text-center mt-4">
+                            <a href="{% url 'payment_management' %}" class="text-sm text-blue-600 hover:text-blue-800">
+                                {% trans "View all" %} ({{ pending_withdrawals.count }})
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Video Storage & Private Access -->
+            <div class="glass-card p-6 rounded-lg">
+                <h3 class="text-lg font-medium text-gray-800 mb-4">{% trans "Video Storage & Access" %}</h3>
+                
+                <!-- Storage Usage -->
+                <div class="mb-4">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-sm text-gray-500">{% trans "Storage Used" %}</span>
+                        <span class="text-sm font-medium text-gray-800">3.2 GB / 10 GB</span>
+                    </div>
+                    <div class="h-2 w-full bg-gray-200 rounded-full">
+                        <div class="h-2 rounded-full bg-blue-500" style="width: 32%"></div>
+                    </div>
+                </div>
+                
+                <!-- Private Access Section -->
+                <div class="mt-6">
+                    <h4 class="text-md font-medium text-gray-700 mb-3">{% trans "Private Access Controls" %}</h4>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                            <div class="flex items-center">
+                                <i data-feather="shield" class="h-5 w-5 mr-2 text-blue-500"></i>
+                                <span class="text-sm text-gray-800">{% trans "IP Restrictions" %}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" class="sr-only" id="ip-restrictions">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                            <div class="flex items-center">
+                                <i data-feather="key" class="h-5 w-5 mr-2 text-blue-500"></i>
+                                <span class="text-sm text-gray-800">{% trans "2FA for Admins" %}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" class="sr-only" id="2fa-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                            <div class="flex items-center">
+                                <i data-feather="video" class="h-5 w-5 mr-2 text-blue-500"></i>
+                                <span class="text-sm text-gray-800">{% trans "Archive Sessions" %}</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" class="sr-only" id="archive-toggle" checked>
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button id="configure-access" class="w-full text-sm bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                            {% trans "Configure Access Settings" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Mobile menu toggle
+    document.addEventListener('DOMContentLoaded', function() {
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileSidebar = document.getElementById('mobile-sidebar');
+        
+        if (mobileMenuButton && mobileSidebar) {
+            mobileMenuButton.addEventListener('click', function() {
+                if (mobileSidebar.classList.contains('-translate-x-full')) {
+                    mobileSidebar.classList.remove('-translate-x-full');
+                } else {
+                    mobileSidebar.classList.add('-translate-x-full');
+                }
+            });
+        }
+        
+        // Initialize charts after DOM is loaded
+        initCharts();
+        
+        // Initialize feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        // Add toggle switch functionality
+        const toggleSwitches = document.querySelectorAll('.switch input');
+        toggleSwitches.forEach(toggle => {
+            toggle.addEventListener('change', function() {
+                // In a real app, this would save the setting via an API call
+                console.log(`${this.id} toggled to ${this.checked}`);
+            });
+        });
+        
+        // Configure access button
+        const configureAccessBtn = document.getElementById('configure-access');
+        if (configureAccessBtn) {
+            configureAccessBtn.addEventListener('click', function() {
+                // This would open a modal or redirect to a settings page
+                alert('{% trans "Access configuration options would appear here." %}');
+            });
+        }
+        
+        // Set up real-time session updates (would use WebSockets in production)
+        setInterval(function() {
+            updateLiveSessions();
+        }, 30000); // Update every 30 seconds
+    });
+    
+    function updateLiveSessions() {
+        // In a real app, this would fetch updated data via AJAX or WebSockets
+        console.log('Updating live sessions...');
+        // For demo purposes we're not actually fetching here
+    }
+    
+    function initCharts() {
+        // Setup Revenue Chart
+        const revenueCtx = document.getElementById('revenueChart');
+        if (revenueCtx) {
+            new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: {{ chart_labels|safe }},
+                    datasets: [{
+                        label: '{% trans "Revenue (INR)" %}',
+                        data: {{ chart_data|safe }},
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointRadius: 4,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.raw;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+</script>
+
+<!-- Add these CSS styles for the toggle switches -->
+<style>
+    /* Toggle Switch Styles */
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+    
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+    
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .4s;
+    }
+    
+    input:checked + .slider {
+        background-color: #3b82f6;
+    }
+    
+    input:focus + .slider {
+        box-shadow: 0 0 1px #3b82f6;
+    }
+    
+    input:checked + .slider:before {
+        transform: translateX(20px);
+    }
+    
+    .slider.round {
+        border-radius: 24px;
+    }
+    
+    .slider.round:before {
+        border-radius: 50%;
+    }
+</style>
+{% endblock %}

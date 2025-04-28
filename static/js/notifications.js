@@ -6,13 +6,26 @@
 function initializeNotifications() {
     console.log('Notification system initialized');
     
+    // Don't show welcome notifications on admin pages
+    const currentPath = window.location.pathname;
+    const isAdminPage = currentPath.includes('/admin-panel/') || currentPath.includes('/admin/');
+    
+    if (isAdminPage) {
+        console.log('Admin page detected, not showing welcome notification');
+        return;
+    }
+    
     // We'll implement real WebSocket notifications later
     // For now, we'll just set up the UI
     
-    // Show a sample notification after 3 seconds (for testing)
-    setTimeout(function() {
-        showNotification('Welcome to PeerLearn', 'Your dashboard is ready. Explore the features!');
-    }, 3000);
+    // Only show this on dashboard pages
+    const isDashboardPage = currentPath.includes('/dashboard/');
+    if (isDashboardPage) {
+        // Show a sample notification after 3 seconds (for testing)
+        setTimeout(function() {
+            showNotification('Welcome to PeerLearn', 'Your dashboard is ready. Explore the features!');
+        }, 3000);
+    }
 }
 
 // Function to show a notification toast

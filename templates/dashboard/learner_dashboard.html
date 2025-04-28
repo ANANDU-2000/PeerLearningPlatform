@@ -348,6 +348,192 @@
             feather.replace();
         }
         refreshFeatherIcons();
+        
+        // Initialize all countdown timers
+        const countdownTimers = document.querySelectorAll('.countdown-timer');
+        countdownTimers.forEach(timer => {
+            updateCountdown(timer);
+            // Update every second
+            setInterval(() => updateCountdown(timer), 1000);
+        });
+        
+        // Add to calendar buttons
+        const calendarButtons = document.querySelectorAll('.add-to-calendar-btn');
+        calendarButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                addToCalendar(
+                    this.getAttribute('data-title'),
+                    this.getAttribute('data-start'),
+                    this.getAttribute('data-end'),
+                    this.getAttribute('data-description')
+                );
+            });
+        });
+        
+        // Show welcome notification if user is new or returning after a while
+        setTimeout(() => {
+            showWelcomeNotification();
+        }, 2000);
     });
+    
+    // Function to update countdown timer
+    function updateCountdown(timerElement) {
+        const startTime = new Date(timerElement.getAttribute('data-start-time'));
+        const endTime = new Date(timerElement.getAttribute('data-end-time'));
+        const sessionId = timerElement.getAttribute('data-session-id');
+        const now = new Date();
+        
+        let timeLeft, isOngoing = false;
+        
+        // Check if the session is currently ongoing
+        if (now >= startTime && now < endTime) {
+            timeLeft = endTime - now;
+            isOngoing = true;
+            
+            // Update button to "Join Now" if not already
+            const parentCard = timerElement.closest('.card-hover-effect');
+            if (parentCard) {
+                const actionButton = parentCard.querySelector('a[href*="session_detail"]');
+                if (actionButton && !actionButton.classList.contains('bg-red-600')) {
+                    actionButton.setAttribute('href', `/learning_sessions/session_room/${sessionId}/`);
+                    actionButton.innerHTML = '<i data-feather="video" class="h-4 w-4 mr-2"></i> {% trans "Join Now" %}';
+                    actionButton.classList.remove('border', 'border-gray-300', 'text-gray-700');
+                    actionButton.classList.add('bg-red-600', 'text-white', 'hover:bg-red-700');
+                    
+                    // Refresh Feather icons
+                    feather.replace();
+                    
+                    // Add "Live Now" badge if not present
+                    if (!parentCard.querySelector('.bg-red-500')) {
+                        const badge = document.createElement('div');
+                        badge.className = 'absolute top-0 right-0 bg-red-500 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider';
+                        badge.textContent = '{% trans "Live Now" %}';
+                        parentCard.appendChild(badge);
+                    }
+                }
+            }
+        } else if (now < startTime) {
+            timeLeft = startTime - now;
+        } else {
+            // Session has ended
+            timerElement.innerHTML = '<div class="text-center text-gray-500">{% trans "Session ended" %}</div>';
+            return;
+        }
+        
+        // Calculate time components
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+        
+        // Update the display
+        timerElement.querySelector('.days').textContent = days;
+        timerElement.querySelector('.hours').textContent = hours < 10 ? '0' + hours : hours;
+        timerElement.querySelector('.minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
+        timerElement.querySelector('.seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
+        
+        // Change label based on ongoing status
+        const label = timerElement.previousElementSibling;
+        if (label && label.classList.contains('text-sm')) {
+            label.textContent = isOngoing ? '{% trans "Ends in:" %}' : '{% trans "Starts in:" %}';
+        }
+        
+        // Show a notification when the session is about to start
+        if (!isOngoing && days === 0 && hours === 0 && minutes === 5 && seconds === 0) {
+            showSessionNotification(
+                '{% trans "Session Starting Soon" %}',
+                `{% trans "Your session will start in 5 minutes. Get ready!" %}`,
+                sessionId
+            );
+        }
+    }
+    
+    // Function to add an event to the calendar (simplified)
+    function addToCalendar(title, start, end, description) {
+        // Create calendar URL (Google Calendar format)
+        const startTime = new Date(start).toISOString().replace(/-|:|\.\d+/g, '');
+        const endTime = new Date(end).toISOString().replace(/-|:|\.\d+/g, '');
+        
+        const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startTime}/${endTime}&details=${encodeURIComponent(description)}`;
+        
+        // Open in new tab
+        window.open(googleCalendarUrl, '_blank');
+    }
+    
+    // Function to show session notification
+    function showSessionNotification(title, message, sessionId) {
+        const toast = document.getElementById('notification-toast');
+        if (!toast) return;
+        
+        toast.innerHTML = `
+            <div class="bg-white rounded-lg shadow-lg p-4 mb-4 flex items-start w-64">
+                <div class="text-blue-500 mr-3">
+                    <i data-feather="bell" class="h-5 w-5"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 class="font-bold">${title}</h4>
+                    <p class="text-sm text-gray-600 mb-2">${message}</p>
+                    <a href="/learning_sessions/session_room/${sessionId}/" class="text-blue-600 text-sm hover:underline">
+                        {% trans "Go to session" %}
+                    </a>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-2">
+                    <i data-feather="x" class="h-4 w-4"></i>
+                </button>
+            </div>
+        `;
+        
+        // Refresh icons
+        feather.replace();
+        
+        // Show the toast
+        toast.classList.remove('translate-x-full');
+        
+        // Hide after 10 seconds
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+        }, 10000);
+    }
+    
+    // Function to show welcome notification
+    function showWelcomeNotification() {
+        const lastVisit = localStorage.getItem('lastDashboardVisit');
+        const now = new Date().toISOString();
+        
+        // Show notification if no last visit or last visit was more than a day ago
+        if (!lastVisit || new Date(lastVisit) < new Date(Date.now() - 86400000)) {
+            const toast = document.getElementById('notification-toast');
+            if (!toast) return;
+            
+            toast.innerHTML = `
+                <div class="bg-white rounded-lg shadow-lg p-4 mb-4 flex items-start w-64">
+                    <div class="text-blue-500 mr-3">
+                        <i data-feather="smile" class="h-5 w-5"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="font-bold">{% trans "Welcome back!" %}</h4>
+                        <p class="text-sm text-gray-600">{% trans "Check out your upcoming sessions and new recommendations." %}</p>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-gray-600 ml-2">
+                        <i data-feather="x" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            `;
+            
+            // Refresh icons
+            feather.replace();
+            
+            // Show the toast
+            toast.classList.remove('translate-x-full');
+            
+            // Hide after 10 seconds
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 10000);
+        }
+        
+        // Update last visit time
+        localStorage.setItem('lastDashboardVisit', now);
+    }
 </script>
 {% endblock %}

@@ -28,7 +28,7 @@ def session_list(request):
         status='scheduled',
         start_time__gt=timezone.now(),
         mentor__is_approved=True
-    ).select_related('mentor__user').order_by('start_time')
+    ).select_related('mentor__user').order_by('start_time').distinct()
     
     # Apply filters if provided
     search_query = request.GET.get('q')

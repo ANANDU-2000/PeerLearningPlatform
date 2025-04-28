@@ -16,35 +16,115 @@
         
         <!-- Filter/Sort Options -->
         <div class="bg-white shadow rounded-lg p-4 mb-8">
-            <div class="flex flex-wrap items-center justify-between">
-                <!-- Search input -->
-                <div class="w-full md:w-auto mb-4 md:mb-0">
-                    <form method="get" class="flex">
-                        <input type="text" name="q" value="{{ search_query }}" placeholder="{% trans 'Search sessions...' %}" class="border border-gray-300 rounded-l-md px-4 py-2 w-full focus:ring-blue-500 focus:border-blue-500">
-                        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700">
-                            <i data-feather="search" class="h-5 w-5"></i>
-                        </button>
-                    </form>
+            <form method="get" id="session-filter-form">
+                <!-- Mobile Filter Toggle -->
+                <div class="md:hidden mb-4">
+                    <button type="button" id="mobile-filter-toggle" 
+                            class="w-full flex justify-between items-center px-4 py-2 bg-gray-100 rounded-md">
+                        <span class="font-medium">{% trans "Filters & Search" %}</span>
+                        <i data-feather="sliders" class="h-5 w-5"></i>
+                    </button>
                 </div>
                 
-                <!-- Filters -->
-                <div class="flex flex-wrap gap-3">
-                    <select name="topic" id="topic-filter" class="border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="">{% trans "All Topics" %}</option>
-                        <option value="programming" {% if topic == 'programming' %}selected{% endif %}>{% trans "Programming" %}</option>
-                        <option value="design" {% if topic == 'design' %}selected{% endif %}>{% trans "Design" %}</option>
-                        <option value="marketing" {% if topic == 'marketing' %}selected{% endif %}>{% trans "Marketing" %}</option>
-                        <option value="business" {% if topic == 'business' %}selected{% endif %}>{% trans "Business" %}</option>
-                    </select>
+                <div id="filter-container" class="md:flex md:flex-wrap md:items-center md:justify-between hidden md:block">
+                    <!-- Search input -->
+                    <div class="w-full md:w-auto mb-4">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i data-feather="search" class="h-5 w-5 text-gray-400"></i>
+                            </div>
+                            <input type="text" name="q" value="{{ search_query }}" 
+                                placeholder="{% trans 'Search by title, topic, mentor...' %}" 
+                                class="pl-10 w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
                     
-                    <select name="sort" id="sort-filter" class="border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
-                        <option value="date" {% if sort == 'date' %}selected{% endif %}>{% trans "Date (Soonest)" %}</option>
-                        <option value="price-asc" {% if sort == 'price-asc' %}selected{% endif %}>{% trans "Price (Low to High)" %}</option>
-                        <option value="price-desc" {% if sort == 'price-desc' %}selected{% endif %}>{% trans "Price (High to Low)" %}</option>
-                        <option value="rating" {% if sort == 'rating' %}selected{% endif %}>{% trans "Rating" %}</option>
-                    </select>
+                    <!-- Tag filter -->
+                    <div class="mb-4 w-full md:w-auto">
+                        <label for="tag-filter" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Topic" %}</label>
+                        <select name="tag" id="tag-filter" 
+                                class="w-full md:w-auto border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">{% trans "All Topics" %}</option>
+                            {% for tag in all_tags %}
+                                <option value="{{ tag }}" {% if tag_filter == tag %}selected{% endif %}>{{ tag|title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Price range filter -->
+                    <div class="mb-4 w-full md:w-auto md:flex md:space-x-2">
+                        <div>
+                            <label for="min-price" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Min Price" %}</label>
+                            <input type="number" name="min_price" id="min-price" value="{{ min_price }}" min="0" 
+                                   placeholder="Min ₹" 
+                                   class="w-full md:w-24 border border-gray-300 rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="max-price" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Max Price" %}</label>
+                            <input type="number" name="max_price" id="max-price" value="{{ max_price }}" min="0" 
+                                   placeholder="Max ₹" 
+                                   class="w-full md:w-24 border border-gray-300 rounded-md px-4 py-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    
+                    <!-- Sort options -->
+                    <div class="mb-4 w-full md:w-auto">
+                        <label for="sort-filter" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Sort By" %}</label>
+                        <select name="sort" id="sort-filter" 
+                                class="w-full md:w-auto border border-gray-300 rounded-md px-4 py-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="date-asc" {% if sort == 'date-asc' %}selected{% endif %}>{% trans "Date (Soonest)" %}</option>
+                            <option value="price-asc" {% if sort == 'price-asc' %}selected{% endif %}>{% trans "Price (Low to High)" %}</option>
+                            <option value="price-desc" {% if sort == 'price-desc' %}selected{% endif %}>{% trans "Price (High to Low)" %}</option>
+                            <option value="rating-desc" {% if sort == 'rating-desc' %}selected{% endif %}>{% trans "Rating (Highest)" %}</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Filter buttons -->
+                    <div class="flex space-x-2 mb-4 md:mb-0">
+                        <button type="submit" 
+                                class="w-full md:w-auto bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition">
+                            {% trans "Apply Filters" %}
+                        </button>
+                        <a href="{% url 'session_list' %}" 
+                           class="w-full md:w-auto bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition text-center">
+                            {% trans "Clear Filters" %}
+                        </a>
+                    </div>
                 </div>
-            </div>
+            </form>
+            
+            <!-- Current filters display -->
+            {% if search_query or tag_filter or min_price or max_price %}
+                <div class="flex flex-wrap items-center mt-4 pt-3 border-t border-gray-200">
+                    <span class="text-sm text-gray-600 mr-2">{% trans "Active filters:" %}</span>
+                    {% if search_query %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 mr-2 mb-2">
+                            <span>{{ search_query }}</span>
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'q' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="ml-1.5 text-blue-600 hover:text-blue-900">
+                                <i data-feather="x" class="h-3 w-3"></i>
+                            </a>
+                        </span>
+                    {% endif %}
+                    
+                    {% if tag_filter %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 mr-2 mb-2">
+                            <span>{{ tag_filter }}</span>
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'tag' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="ml-1.5 text-green-600 hover:text-green-900">
+                                <i data-feather="x" class="h-3 w-3"></i>
+                            </a>
+                        </span>
+                    {% endif %}
+                    
+                    {% if min_price or max_price %}
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 mr-2 mb-2">
+                            <span>₹{% if min_price %}{{ min_price }}{% else %}0{% endif %} - ₹{% if max_price %}{{ max_price }}{% else %}∞{% endif %}</span>
+                            <a href="?{% for key, value in request.GET.items %}{% if key != 'min_price' and key != 'max_price' %}{{ key }}={{ value }}&{% endif %}{% endfor %}" class="ml-1.5 text-yellow-600 hover:text-yellow-900">
+                                <i data-feather="x" class="h-3 w-3"></i>
+                            </a>
+                        </span>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
         
         <!-- ML-powered Personalized Recommendations -->

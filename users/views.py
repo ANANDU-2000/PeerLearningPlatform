@@ -310,10 +310,14 @@ def learner_dashboard(request):
         is_approved=True
     ).order_by('-average_rating')[:6]
     
+    # Get today's date for session badge highlighting
+    today = timezone.now().date()
+    
     return render(request, 'dashboard/learner_dashboard.html', {
         'upcoming_bookings': upcoming_bookings,
         'recommended_sessions': recommended_sessions,
         'top_mentors': top_mentors,
+        'today': today,
     })
 
 

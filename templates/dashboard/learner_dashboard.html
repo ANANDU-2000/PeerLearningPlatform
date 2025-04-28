@@ -106,9 +106,10 @@
                             <h3 class="font-medium">{% trans "Need Help?" %}</h3>
                         </div>
                         <p class="text-sm text-blue-100 mb-3">{% trans "Our support team is available 24/7 to assist you." %}</p>
-                        <a href="{% url 'support' %}" class="inline-block w-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-center py-2 px-3 rounded-lg text-sm backdrop-filter backdrop-blur-sm transition-colors">
+                        <button onclick="openSupportModal()" 
+                                class="inline-block w-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-center py-2 px-3 rounded-lg text-sm backdrop-filter backdrop-blur-sm transition-colors">
                             {% trans "Contact Support" %}
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -133,11 +134,11 @@
                     <i data-feather="plus-circle" class="h-4 w-4 mr-2 text-blue-500"></i>
                     {% trans "Book Session" %}
                 </a>
-                <a href="{% url 'notifications' %}" 
-                   class="relative flex items-center justify-center w-10 h-10 bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200">
+                <button onclick="viewNotifications()" 
+                        class="relative flex items-center justify-center w-10 h-10 bg-white bg-opacity-70 backdrop-filter backdrop-blur-lg rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200">
                     <i data-feather="bell" class="h-5 w-5 text-gray-600"></i>
                     <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-xs text-white">3</span>
-                </a>
+                </button>
             </div>
         </div>
         
@@ -148,10 +149,10 @@
             
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold text-gray-800">{% trans "Your Learning Progress" %}</h2>
-                <a href="{% url 'learning_goals' %}" class="text-sm text-blue-600 hover:text-blue-800 flex items-center">
+                <button onclick="viewLearningGoals()" class="text-sm text-blue-600 hover:text-blue-800 flex items-center bg-transparent border-0 p-0 cursor-pointer">
                     <span>{% trans "View Goals" %}</span>
                     <i data-feather="chevron-right" class="h-4 w-4 ml-1"></i>
-                </a>
+                </button>
             </div>
             
             <div class="flex flex-col sm:flex-row items-center sm:items-start">
@@ -799,6 +800,27 @@
         
         // Update last visit time
         localStorage.setItem('lastDashboardVisit', now);
+    }
+    
+    // Support Button Click Handler
+    function openSupportModal() {
+        // Show a simple JavaScript alert for now
+        alert('Support feature is coming soon! Please check back later.');
+        // In a real implementation, this would open a modal dialog or redirect to a support page
+    }
+    
+    // Learning Goals Button Click Handler
+    function viewLearningGoals() {
+        // Show a simple JavaScript alert for now
+        alert('Learning Goals feature is coming soon! Please check back later.');
+        // In a real implementation, this would redirect to the learning goals page
+    }
+    
+    // Notifications Button Click Handler
+    function viewNotifications() {
+        // Show a simple JavaScript alert for now
+        alert('You have 3 new notifications. This feature will be fully implemented soon!');
+        // In a real implementation, this would open a notifications dropdown or redirect to notifications page
     }
 </script>
 {% endblock %}

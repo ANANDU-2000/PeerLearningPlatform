@@ -1,0 +1,49 @@
+NoReverseMatch at /dashboard/learner/
+Reverse for 'support' not found. 'support' is not a valid view function or pattern name.
+Request Method:	GET
+Request URL:	http://c04fd6df-be0d-492d-b2f8-d8a5ecbe079b-00-mp4il0lqopkm.riker.replit.dev/dashboard/learner/
+Django Version:	5.2
+Exception Type:	NoReverseMatch
+Exception Value:	
+Reverse for 'support' not found. 'support' is not a valid view function or pattern name.
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/urls/resolvers.py, line 831, in _reverse_with_prefix
+Raised during:	users.views.learner_dashboard
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.11.10
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/lc7qv2ldzrs1aq3hbyzmbgvn0h2w26pl-sitecustomize/lib/python/site-packages',
+ '/nix/store/dfg63lldbvcj207iyr9z0xw21d8ax02n-python3.11-pip-24.0/lib/python3.11/site-packages',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python311.zip',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/wblvmd5y7izx0z10d1w7ga7zc4apjxmb-python3.11-setuptools-75.1.1/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/setuptools/_vendor']
+Server time:	Mon, 28 Apr 2025 06:51:27 +0000
+Error during template rendering
+In template /home/runner/workspace/templates/dashboard/learner_dashboard.html, error at line 109
+
+Reverse for 'support' not found. 'support' is not a valid view function or pattern name.
+99	                </nav>
+100	                
+101	                <!-- Help & Support Section -->
+102	                <div class="mt-auto pt-6 px-4">
+103	                    <div class="bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl p-4 text-white shadow-lg">
+104	                        <div class="flex items-center mb-2">
+105	                            <i data-feather="help-circle" class="h-5 w-5 mr-2"></i>
+106	                            <h3 class="font-medium">{% trans "Need Help?" %}</h3>
+107	                        </div>
+108	                        <p class="text-sm text-blue-100 mb-3">{% trans "Our support team is available 24/7 to assist you." %}</p>
+109	                        <a href="{% url 'support' %}" class="inline-block w-full bg-white bg-opacity-20 hover:bg-opacity-30 text-white text-center py-2 px-3 rounded-lg text-sm backdrop-filter backdrop-blur-sm transition-colors">
+110	                            {% trans "Contact Support" %}
+111	                        </a>
+112	                    </div>
+113	                </div>
+114	            </div>
+115	        </div>
+116	    </div>
+117	
+118	    <!-- Main Content with improved layout -->
+119	    <div class="md:ml-72 

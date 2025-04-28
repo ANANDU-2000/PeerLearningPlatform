@@ -702,10 +702,17 @@
                 // Reset the audio to beginning
                 sound.currentTime = 0;
                 
-                // Play the sound
-                sound.play().catch(error => {
-                    console.error('Error playing sound:', error);
-                });
+                // Play the sound using promise with old-style then method
+                var playPromise = sound.play();
+                
+                // Handle errors for browsers that return a promise from play()
+                if (playPromise !== undefined) {
+                    playPromise.then(function() {
+                        // Playback started successfully
+                    }).catch(function(error) {
+                        console.error('Error playing sound:', error);
+                    });
+                }
             }
         }
         

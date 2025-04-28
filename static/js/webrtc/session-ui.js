@@ -754,7 +754,9 @@ class SessionUIController {
     /**
      * Toggle screen sharing
      */
-    async toggleScreenSharing() {
+    toggleScreenSharing: function() {
+        var self = this;
+        
         if (this.isScreenSharing) {
             this.stopScreenSharing();
             return;
@@ -762,65 +764,70 @@ class SessionUIController {
         
         try {
             // Get screen stream
-            this.screenStream = await navigator.mediaDevices.getDisplayMedia({
+            navigator.mediaDevices.getDisplayMedia({
                 video: {
                     cursor: 'always'
                 },
                 audio: false
-            });
-            
-            // Update button
-            if (this.screenShareButton) {
-                this.screenShareButton.innerHTML = '<i data-feather="monitor" class="h-5 w-5 text-red-500"></i>';
-                if (typeof feather !== 'undefined') {
-                    feather.replace();
-                }
-            }
-            
-            // Create a new video element for the screen share
-            const screenVideoContainer = document.createElement('div');
-            screenVideoContainer.className = 'video-container mentor bg-gray-900';
-            screenVideoContainer.id = 'screen-share-container';
-            
-            const screenVideo = document.createElement('video');
-            screenVideo.autoplay = true;
-            screenVideo.playsInline = true;
-            screenVideo.id = 'screen-share-video';
-            screenVideo.srcObject = this.screenStream;
-            
-            const screenLabel = document.createElement('div');
-            screenLabel.className = 'label';
-            screenLabel.textContent = 'Your Screen';
-            
-            screenVideoContainer.appendChild(screenVideo);
-            screenVideoContainer.appendChild(screenLabel);
-            
-            // Add to video grid
-            if (this.videoGrid) {
-                this.videoGrid.appendChild(screenVideoContainer);
+            }).then(function(stream) {
+                self.screenStream = stream;
                 
-                // Reorganize layout to accommodate screen share
-                this.videoGrid.className = 'grid grid-cols-2 gap-4 h-full';
-            }
-            
-            // Set flag
-            this.isScreenSharing = true;
-            
-            // Handle stream end
-            this.screenStream.getVideoTracks()[0].addEventListener('ended', () => {
-                this.stopScreenSharing();
-            });
-            
-            // Add a system message
-            this.addSystemMessage("You started sharing your screen.");
-            
-            // Send notification to other participants via signaling
-            if (this.rtc) {
-                this.rtc.sendSignalingMessage({
-                    type: 'screen_share',
-                    action: 'start'
+                // Update button
+                if (self.screenShareButton) {
+                    self.screenShareButton.innerHTML = '<i data-feather="monitor" class="h-5 w-5 text-red-500"></i>';
+                    if (typeof feather !== 'undefined') {
+                        feather.replace();
+                    }
+                }
+                
+                // Create a new video element for the screen share
+                var screenVideoContainer = document.createElement('div');
+                screenVideoContainer.className = 'video-container mentor bg-gray-900';
+                screenVideoContainer.id = 'screen-share-container';
+                
+                var screenVideo = document.createElement('video');
+                screenVideo.autoplay = true;
+                screenVideo.playsInline = true;
+                screenVideo.id = 'screen-share-video';
+                screenVideo.srcObject = self.screenStream;
+                
+                var screenLabel = document.createElement('div');
+                screenLabel.className = 'label';
+                screenLabel.textContent = 'Your Screen';
+                
+                screenVideoContainer.appendChild(screenVideo);
+                screenVideoContainer.appendChild(screenLabel);
+                
+                // Add to video grid
+                if (self.videoGrid) {
+                    self.videoGrid.appendChild(screenVideoContainer);
+                    
+                    // Reorganize layout to accommodate screen share
+                    self.videoGrid.className = 'grid grid-cols-2 gap-4 h-full';
+                }
+                
+                // Set flag
+                self.isScreenSharing = true;
+                
+                // Handle stream end
+                self.screenStream.getVideoTracks()[0].addEventListener('ended', function() {
+                    self.stopScreenSharing();
                 });
-            }
+                
+                // Add a system message
+                self.addSystemMessage("You started sharing your screen.");
+                
+                // Send notification to other participants via signaling
+                if (self.rtc) {
+                    self.rtc.sendSignalingMessage({
+                        type: 'screen_share',
+                        action: 'start'
+                    });
+                }
+            }).catch(function(error) {
+                console.error('Error starting screen share:', error);
+                self.showErrorMessage('Failed to start screen sharing. ' + error.message);
+            });
         } catch (error) {
             console.error('Error starting screen share:', error);
             this.showErrorMessage('Failed to start screen sharing. ' + error.message);
@@ -830,11 +837,14 @@ class SessionUIController {
     /**
      * Stop screen sharing
      */
-    stopScreenSharing() {
+    stopScreenSharing: function() {
         if (!this.isScreenSharing || !this.screenStream) return;
         
         // Stop all tracks
-        this.screenStream.getTracks().forEach(track => track.stop());
+        var tracks = this.screenStream.getTracks();
+        for (var i = 0; i < tracks.length; i++) {
+            tracks[i].stop();
+        }
         
         // Update button
         if (this.screenShareButton) {
@@ -845,7 +855,7 @@ class SessionUIController {
         }
         
         // Remove video element
-        const screenContainer = document.getElementById('screen-share-container');
+        var screenContainer = document.getElementById('screen-share-container');
         if (screenContainer && this.videoGrid) {
             this.videoGrid.removeChild(screenContainer);
             

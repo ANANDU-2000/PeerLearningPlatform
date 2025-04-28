@@ -1,0 +1,113 @@
+Feature	Current State	Requirement	Gap
+Real-Time Live Video	Not working (WebRTC issue).	Seamless video for both users.	Needs WebSocket and STUN server setup.
+Request/Response	Missing learner posts and mentor replies.	Full request/response system.	Entirely absent; needs new workflow.
+Timers/Reminders	No session timers or notifications.	Timers and reminders for sessions.	Missing; requires backend scheduling.
+Payments/Withdrawals	Payment fails; no withdrawal option.	Secure payments and withdrawals.	Payment integration broken; withdrawals absent.
+Progress Tracking	35% progress shown, no details.	Detailed progress (sessions, goals).	Lacks context and analytics.
+UI/UX	Basic design, no real-time updates.	Modern UI with real-time analytics.	Needs redesign and dynamic updates.
+In-Depth Solutions
+1. Real-Time Live Video: Ensuring It Works
+Objective: Enable seamless face-to-face video for learners and mentors.
+Requirements:
+WebRTC for peer-to-peer video.
+WebSocket for signaling between users.
+STUN/TURN servers for network traversal.
+Solution:
+Setup: Use a service like Google’s STUN server (stun:stun.l.google.com:19302) and a TURN server (e.g., via a third-party provider like Twilio) for reliable connections.
+Flow:
+Learner Perspective: Click "Join Session" → WebRTC initiates local stream → WebSocket signals mentor → Video connects.
+Mentor Perspective: Receive session request → Accept → Join via WebRTC → Video connects with learner.
+Technical Needs:
+Configure Django Channels with a Redis backend for WebSocket support.
+Ensure both users have browser permissions for camera/microphone.
+Real-Time Updates: Display "Live Now" badge and participant count on dashboards.
+Error Prevention: Test connections across networks, handle permission denials, and provide fallback messages (e.g., "Check camera settings").
+2. Request/Response System
+Objective: Enable learners to post requests and mentors to respond.
+Flow:
+Learner: Navigate to "My Posts" → Create a request (e.g., "Need Python help") → Submit → Request appears in mentor dashboard.
+Mentor: View requests → Respond with session details (date, price) → Learner receives notification → Accept or decline.
+Real-Time: Use WebSocket to notify mentors of new requests and learners of responses instantly.
+Solution:
+Add a "Posts" section on the learner dashboard and a "Requests" section on the mentor dashboard.
+Implement a notification system (e.g., pop-ups or emails) for responses.
+Actions: Learner accepts response → Session is booked; Mentor can cancel if no response within 24 hours.
+3. Timers and Reminders
+Objective: Notify users of session start/end times.
+Flow:
+Setup: Use a background task (e.g., Celery with Redis) to schedule reminders.
+Timeline:
+24 hours before: Email/SMS reminder.
+10 minutes before: Dashboard pop-up ("Session starts soon!").
+End time: Auto-mark session as "ended" and notify for feedback.
+Solution:
+Display a countdown timer on session cards (e.g., "Starts in: 04:46:53").
+Send reminders via a third-party service (e.g., Twilio for SMS, Django email for emails).
+Actions: Users can snooze reminders or join sessions directly from notifications.
+4. Payments and Withdrawals
+Objective: Ensure secure payments and enable mentor withdrawals.
+Flow:
+Payment:
+Learner books session → Added to Cart → Proceeds to Razorpay checkout → Payment confirmed → Session booked.
+Withdrawal:
+Mentor earns from sessions → Requests withdrawal → Admin approves → Funds transferred (e.g., via bank transfer).
+Solution:
+Payment: Debug Razorpay integration, test in sandbox mode, and log errors for troubleshooting.
+Withdrawal: Add a "Withdrawals" section on the mentor dashboard with a form for bank details and amount.
+Real-Time: Update balances on dashboards after each transaction.
+Actions: Learner retries payment if failed; Mentor submits withdrawal request with a 48-hour approval period.
+5. Progress Tracking
+Objective: Provide detailed progress for learners.
+Flow:
+Track completed sessions, hours spent, and goals (e.g., "Learn Python Basics").
+Display a dashboard widget with stats (e.g., "35% of 10 sessions completed").
+Solution:
+Calculate progress based on session completions and learner goals set during registration.
+Show a progress bar with milestones (e.g., "Next: 50% at 5 sessions").
+Actions: Learner can update goals; Progress updates after each session.
+Enhanced Web Flow and Page Design
+Best UI/UX Approach
+Design: Adopt a glassmorphism theme with cards, rounded corners, and subtle animations (e.g., fade-in for session updates).
+Real-Time Analytics: Use WebSocket to push live data (e.g., participant count, session status) to dashboards.
+Responsive: Stack cards vertically on mobile, with a hamburger menu for navigation.
+Page Structure and Content
+Landing Page (/)
+Show: Hero image, "Find Sessions" CTA, top mentors.
+Actions: Login/Register, Browse Sessions.
+Learner Dashboard (/dashboard/learner/)
+Show: Welcome message, progress (e.g., 35%, 3/10 sessions), upcoming sessions (with timers), recommendations, "My Posts" section, real-time analytics (e.g., "1 user live").
+Actions: Join session, create post, view progress, book sessions.
+Mentor Dashboard (/dashboard/mentor/)
+Show: Welcome message, scheduled sessions (with timers), requests, earnings, "Withdrawals" section, real-time analytics (e.g., "1 learner joined").
+Actions: Accept requests, start session, request withdrawal, view earnings.
+Find Sessions (/sessions/)
+Show: Session cards with thumbnails, search bar (expandable), filters (topic, price), real-time availability.
+Actions: Search, filter, book session.
+Session Detail (/session/<room_id>/)
+Show: Session title, mentor info, timer ("Starts in: 04:46:53"), "Join Session" button, payment status.
+Actions: Join session, share session, pay if pending.
+Cart (/cart/)
+Show: Items, total, payment status, error messages if failed.
+Actions: Remove item, retry payment, proceed to checkout.
+Posts (/posts/)
+Show: Create/edit posts, response history, real-time notifications.
+Actions: Submit post, accept/decline responses.
+Feedback Modal
+Show: Rating stars, text input, submit button.
+Actions: Submit feedback, view past feedback.
+Both Dashboards: Server-Side Real-Time Live Analysis
+Setup: Use Django Channels with WebSocket to push updates every 5 seconds.
+Data to Show:
+Learner Dashboard: Live session count, mentor availability, progress updates.
+Mentor Dashboard: Learner join status, session duration, earnings updates.
+Actions Flow:
+Learner joins → Mentor notified → Video starts → Both see real-time stats → Session ends → Feedback collected.
+Final Recommendations
+Best Way Forward
+Priority: Fix real-time video (WebRTC, WebSocket) first, as it’s the core feature.
+Implementation:
+Set up STUN/TURN servers and test video connections.
+Add request/response, timers, and payment/withdrawal flows next.
+Redesign UI with real-time analytics last.
+Testing: Conduct end-to-end tests for video, payments, and workflows across devices.
+Support: Provide a help center with guides for video setup and payment issues.

@@ -70,10 +70,10 @@ def cart_view(request):
                 # For development, just show the error but continue
                 messages.warning(request, _('Payment gateway integration error. Continuing in test mode.'))
         
-        # Prepare Razorpay options for the JavaScript
+        # Prepare Razorpay options for the JavaScript - ensure all values are simple types
         razorpay_options = {
             'key': settings.RAZORPAY_KEY_ID,
-            'amount': int(total * 100),
+            'amount': int(float(total) * 100),  # Convert Decimal to float then int
             'currency': settings.RAZORPAY_CURRENCY,
             'name': 'PeerLearn',
             'description': f'Payment for {len(cart_items)} session(s)',
@@ -82,8 +82,11 @@ def cart_view(request):
                 'email': request.user.email,
                 'name': request.user.get_full_name() or request.user.email.split('@')[0]
             },
-            'total': total  # Pass the total for handling free sessions
+            'total': float(total)  # Convert Decimal to float for JavaScript
         }
+        
+        # Convert to JSON to avoid Decimal serialization issues
+        razorpay_options_json = json.dumps(razorpay_options)
         
         context = {
             'cart_items': cart_items,
@@ -95,7 +98,7 @@ def cart_view(request):
             'razorpay_currency': settings.RAZORPAY_CURRENCY,
             'user_email': request.user.email,
             'user_name': request.user.get_full_name() or request.user.email.split('@')[0],
-            'razorpay_options': razorpay_options
+            'razorpay_options': razorpay_options_json
         }
         
         return render(request, 'payments/cart.html', context)

@@ -250,7 +250,7 @@
 <!-- Razorpay Settings -->
 <script>
     // Pass Razorpay options from the view to the payment.js
-    window.razorpayOptions = {{ razorpay_options|safe }};
+    window.razorpayOptions = JSON.parse('{{ razorpay_options|escapejs }}');
 </script>
 {% endblock %}
 

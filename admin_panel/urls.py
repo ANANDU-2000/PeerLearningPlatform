@@ -15,4 +15,5 @@ urlpatterns = [
     path('users/', views.user_management, name='user_management'),
     path('payments/', views.payment_management, name='payment_management'),
     path('analytics/', views.analytics, name='analytics'),
+    path('video-storage/', views.video_storage, name='video_storage'),
 ]

@@ -10,6 +10,8 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Count, Sum, Avg, F, Q
 from django.utils import timezone
 from datetime import timedelta
+import os
+import json
 
 from users.models import User, MentorProfile
 from learning_sessions.models import Session, Booking, Feedback
@@ -366,3 +368,70 @@ def analytics(request):
     }
     
     return render(request, 'admin_panel/analytics.html', context)
+
+
+@login_required
+@user_passes_test(is_admin)
+def video_storage(request):
+    """View for managing video storage."""
+    # Get action parameters
+    action = request.GET.get('action')
+    session_id = request.GET.get('session_id')
+    
+    # Handle video actions (delete, download, etc.)
+    if action and session_id:
+        session = get_object_or_404(Session, id=session_id)
+        
+        if action == 'delete':
+            # In a real app, this would delete the actual video file
+            messages.success(request, _(f'Video for session "{session.title}" has been deleted.'))
+        
+        elif action == 'download':
+            # In a real app, this would generate a download link
+            messages.info(request, _(f'Download initiated for session "{session.title}".'))
+    
+    # Get all sessions with recordings
+    # In a real app, this would filter sessions that have recordings
+    sessions_with_videos = Session.objects.filter(
+        status='completed'
+    ).select_related('mentor__user').order_by('-end_time')
+    
+    # Calculate storage stats
+    total_storage = 10 * 1024  # 10 GB in MB (example value)
+    used_storage = 3.2 * 1024  # 3.2 GB in MB (example value)
+    storage_percent = (used_storage / total_storage) * 100 if total_storage > 0 else 0
+    
+    # Calculate bandwidth stats
+    total_bandwidth = 100 * 1024  # 100 GB in MB (example value)
+    used_bandwidth = 45 * 1024   # 45 GB in MB (example value)
+    bandwidth_percent = (used_bandwidth / total_bandwidth) * 100 if total_bandwidth > 0 else 0
+    
+    # Mock video size and durations data
+    # In a real app, this would come from actual file metadata
+    video_data = {}
+    for session in sessions_with_videos:
+        # Generate a random size between 100-500 MB
+        size_mb = round((100 + (session.id * 137) % 400) / 10) * 10
+        
+        # Calculate duration based on session start/end times
+        duration_minutes = (session.end_time - session.start_time).total_seconds() / 60
+        
+        video_data[session.id] = {
+            'size_mb': size_mb,
+            'duration_minutes': int(duration_minutes),
+            'format': 'MP4',
+            'resolution': '720p',
+        }
+    
+    context = {
+        'sessions': sessions_with_videos,
+        'video_data': video_data,
+        'total_storage': total_storage,
+        'used_storage': used_storage,
+        'storage_percent': storage_percent,
+        'total_bandwidth': total_bandwidth,
+        'used_bandwidth': used_bandwidth,
+        'bandwidth_percent': bandwidth_percent,
+    }
+    
+    return render(request, 'admin_panel/video_storage.html', context)

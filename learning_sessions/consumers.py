@@ -70,65 +70,99 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
     
     async def receive(self, text_data):
         """Receive message from WebSocket."""
-        data = json.loads(text_data)
-        message_type = data.get('type')
-        
-        # Handle different message types
-        if message_type == 'offer':
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'webrtc_offer',
-                    'offer': data['offer'],
-                    'from_user_id': str(self.user.id),
-                    'to_user_id': data['to_user_id'],
-                }
-            )
-        
-        elif message_type == 'answer':
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'webrtc_answer',
-                    'answer': data['answer'],
-                    'from_user_id': str(self.user.id),
-                    'to_user_id': data['to_user_id'],
-                }
-            )
-        
-        elif message_type == 'candidate':
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'webrtc_candidate',
-                    'candidate': data['candidate'],
-                    'from_user_id': str(self.user.id),
-                    'to_user_id': data['to_user_id'],
-                }
-            )
-        
-        elif message_type == 'chat':
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    'message': data['message'],
-                    'from_user_id': str(self.user.id),
-                    'from_user_name': self.user.get_full_name(),
-                    'timestamp': timezone.now().isoformat(),
-                }
-            )
-        
-        elif message_type == 'raise_hand':
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'raise_hand',
-                    'user_id': str(self.user.id),
-                    'user_name': self.user.get_full_name(),
-                    'timestamp': timezone.now().isoformat(),
-                }
-            )
+        try:
+            data = json.loads(text_data)
+            message_type = data.get('type')
+            
+            print(f"WebSocket received message of type: {message_type} from user: {self.user.get_full_name()}")
+            
+            # Handle different message types
+            if message_type == 'offer':
+                print(f"Processing WebRTC offer from user ID: {self.user.id} to user ID: {data.get('to_user_id')}")
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'webrtc_offer',
+                        'offer': data['offer'],
+                        'from_user_id': str(self.user.id),
+                        'to_user_id': data['to_user_id'],
+                    }
+                )
+            
+            elif message_type == 'answer':
+                print(f"Processing WebRTC answer from user ID: {self.user.id} to user ID: {data.get('to_user_id')}")
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'webrtc_answer',
+                        'answer': data['answer'],
+                        'from_user_id': str(self.user.id),
+                        'to_user_id': data['to_user_id'],
+                    }
+                )
+            
+            elif message_type == 'candidate':
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'webrtc_candidate',
+                        'candidate': data['candidate'],
+                        'from_user_id': str(self.user.id),
+                        'to_user_id': data['to_user_id'],
+                    }
+                )
+            
+            elif message_type == 'chat':
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'chat_message',
+                        'message': data['message'],
+                        'from_user_id': str(self.user.id),
+                        'from_user_name': self.user.get_full_name(),
+                        'timestamp': timezone.now().isoformat(),
+                    }
+                )
+            
+            elif message_type == 'raise_hand':
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'raise_hand',
+                        'user_id': str(self.user.id),
+                        'user_name': self.user.get_full_name(),
+                        'timestamp': timezone.now().isoformat(),
+                    }
+                )
+            
+            elif message_type == 'connection_error':
+                # New message type for connection troubleshooting
+                print(f"WebRTC connection error reported by user {self.user.id}: {data.get('error')}")
+                # Notify other users about connection issues
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'connection_error',
+                        'user_id': str(self.user.id),
+                        'user_name': self.user.get_full_name(),
+                        'error': data.get('error', 'Unknown error'),
+                        'timestamp': timezone.now().isoformat(),
+                    }
+                )
+            
+            else:
+                print(f"Unknown WebSocket message type: {message_type} from user: {self.user.id}")
+            
+        except json.JSONDecodeError:
+            print(f"Invalid JSON received in WebSocket from user: {self.user.id}")
+        except Exception as e:
+            print(f"Error processing WebSocket message: {str(e)} from user: {self.user.id}")
+            # Send error back to client for debugging
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': f"Server error: {str(e)}",
+                'timestamp': timezone.now().isoformat(),
+            }))
     
     async def webrtc_offer(self, event):
         """Send offer to WebSocket."""

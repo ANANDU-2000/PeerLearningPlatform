@@ -446,25 +446,126 @@ class SessionUIController {
     }
 
     /**
-     * Show error message
+     * Show error message with better user feedback
      */
     showErrorMessage(message) {
-        // Create error element
-        const error = document.createElement('div');
-        error.className = 'fixed top-4 left-0 right-0 mx-auto w-80 bg-red-600 text-white py-2 px-4 rounded-md shadow-lg z-50 text-center';
-        error.style.maxWidth = '80%';
-        error.textContent = message;
+        console.error("WebRTC error:", message);
+        
+        // Parse the error message to provide more user-friendly information
+        let userMessage = '';
+        
+        // Customize message based on error type
+        if (typeof message === 'string') {
+            if (message.includes('camera') || message.includes('microphone') || 
+                message.includes('NotAllowedError') || message.includes('PermissionDeniedError')) {
+                userMessage = 'Camera or microphone access was denied. Please check your browser permissions and try again.';
+            } else if (message.includes('WebSocket') || message.includes('connection')) {
+                userMessage = 'Connection to the session server failed. Please check your internet connection and refresh the page.';
+            } else if (message.includes('ICE') || message.includes('peer')) {
+                userMessage = 'Failed to establish connection with other participants. This may be due to network restrictions or firewall settings.';
+            } else {
+                userMessage = message;
+            }
+        } else {
+            userMessage = 'An error occurred with the video connection. Please refresh the page to try again.';
+        }
+        
+        // Use the global notification system if available
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(userMessage, 'error', 8000);
+            return;
+        }
+        
+        // Create a more visually appealing error element
+        const errorContainer = document.createElement('div');
+        errorContainer.className = 'fixed top-4 left-0 right-0 mx-auto w-96 bg-red-600 text-white py-3 px-4 rounded-md shadow-lg z-50';
+        errorContainer.style.maxWidth = '90%';
+        
+        // Create inner content with icon
+        errorContainer.innerHTML = `
+            <div class="flex items-center">
+                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                </svg>
+                <div>
+                    <h3 class="font-bold">Connection Error</h3>
+                    <p class="text-sm">${userMessage}</p>
+                </div>
+            </div>
+            <button class="absolute top-2 right-2 text-white hover:text-gray-200" id="close-error">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        `;
         
         // Add to page
-        document.body.appendChild(error);
+        document.body.appendChild(errorContainer);
         
-        // Remove after 5 seconds
+        // Add error class to video container for visual indication
+        const localVideoContainer = document.querySelector('.video-container');
+        if (localVideoContainer) {
+            localVideoContainer.classList.add('connection-error');
+        }
+        
+        // Add event listener to close button
+        const closeButton = errorContainer.querySelector('#close-error');
+        if (closeButton) {
+            closeButton.addEventListener('click', () => {
+                errorContainer.classList.add('fade-out');
+                setTimeout(() => {
+                    if (errorContainer.parentNode) {
+                        document.body.removeChild(errorContainer);
+                    }
+                }, 300);
+            });
+        }
+        
+        // Auto-remove after 8 seconds
         setTimeout(() => {
-            error.classList.add('fade-out');
+            errorContainer.classList.add('fade-out');
             setTimeout(() => {
-                document.body.removeChild(error);
+                if (errorContainer.parentNode) {
+                    document.body.removeChild(errorContainer);
+                }
             }, 300);
-        }, 5000);
+        }, 8000);
+        
+        // Show a more subtle error message in the video grid as well
+        this.showInlineErrorMessage(userMessage);
+    }
+    
+    /**
+     * Show inline error message in the video grid
+     */
+    showInlineErrorMessage(message) {
+        // Only proceed if we have a video grid
+        if (!this.videoGrid) return;
+        
+        // Remove any existing inline error messages
+        const existingErrors = this.videoGrid.querySelectorAll('.inline-error-message');
+        existingErrors.forEach(el => el.remove());
+        
+        // Create inline error message
+        const inlineError = document.createElement('div');
+        inlineError.className = 'inline-error-message p-4 m-2 bg-red-50 border border-red-200 text-red-800 rounded-lg';
+        inlineError.innerHTML = `
+            <div class="flex items-center mb-2">
+                <svg class="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="font-medium">Connection Issue</span>
+            </div>
+            <p class="ml-7 text-sm">${message}</p>
+            <div class="mt-3 ml-7">
+                <button class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" onclick="location.reload()">
+                    Refresh Page
+                </button>
+            </div>
+        `;
+        
+        // Add to the video grid
+        this.videoGrid.insertBefore(inlineError, this.videoGrid.firstChild);
     }
 
     /**

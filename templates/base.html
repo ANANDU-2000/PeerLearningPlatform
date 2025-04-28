@@ -394,20 +394,31 @@
     <main class="pb-16 sm:pb-0">
         {% block content %}{% endblock %}
         
-        <!-- Welcome Message - Role-specific content -->
+        <!-- Welcome Message - Role-specific content with enhanced design and visibility -->
         {% if user.is_authenticated %}
-            <div class="welcome-message hidden" aria-live="polite" data-role="{{ user.role }}">
-                <button class="close-btn" aria-label="Close welcome message">×</button>
-                {% if user.role == 'mentor' %}
-                    <h3>{% trans "Welcome, Mentor!" %}</h3>
-                    <p>{% trans "Your mentor dashboard is ready. Create and manage your learning sessions!" %}</p>
-                {% elif user.role == 'learner' %}
-                    <h3>{% trans "Welcome, Learner!" %}</h3>
-                    <p>{% trans "Your learner dashboard is ready. Discover and join sessions!" %}</p>
-                {% else %}
-                    <h3>{% trans "Welcome to PeerLearn" %}</h3>
-                    <p>{% trans "Your dashboard is ready. Explore the features!" %}</p>
-                {% endif %}
+            <div class="welcome-message hidden fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg p-4 z-50 w-11/12 max-w-md border border-blue-100" aria-live="polite" data-role="{{ user.role }}">
+                <button class="close-btn absolute top-3 right-3 text-gray-500 hover:text-gray-800 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full h-8 w-8 flex items-center justify-center" aria-label="Close welcome message">
+                    <span class="text-lg font-medium">×</span>
+                </button>
+                <div class="flex items-center mb-2">
+                    <i data-feather="info" class="h-5 w-5 text-blue-500 mr-2"></i>
+                    {% if user.role == 'mentor' %}
+                        <h3 class="text-lg font-semibold text-gray-800">{% trans "Welcome, Mentor!" %}</h3>
+                    {% elif user.role == 'learner' %}
+                        <h3 class="text-lg font-semibold text-gray-800">{% trans "Welcome, Learner!" %}</h3>
+                    {% else %}
+                        <h3 class="text-lg font-semibold text-gray-800">{% trans "Welcome to PeerLearn" %}</h3>
+                    {% endif %}
+                </div>
+                <div class="ml-7">
+                    {% if user.role == 'mentor' %}
+                        <p class="text-gray-600">{% trans "Your mentor dashboard is ready. Create and manage your learning sessions!" %}</p>
+                    {% elif user.role == 'learner' %}
+                        <p class="text-gray-600">{% trans "Your learner dashboard is ready. Discover and join sessions!" %}</p>
+                    {% else %}
+                        <p class="text-gray-600">{% trans "Your dashboard is ready. Explore the features!" %}</p>
+                    {% endif %}
+                </div>
             </div>
         {% endif %}
     </main>

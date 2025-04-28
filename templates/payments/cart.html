@@ -249,18 +249,8 @@
 
 <!-- Razorpay Settings -->
 <script>
-    window.RAZORPAY_CONFIG = {
-        key_id: "{{ razorpay_key_id }}",
-        order_id: "{{ razorpay_order_id }}",
-        currency: "{{ razorpay_currency }}",
-        amount: {{ total|floatformat:"0" }} * 100, // In paisa
-        name: "PeerLearn",
-        description: "Session Booking",
-        prefill: {
-            name: "{{ user_name }}",
-            email: "{{ user_email }}"
-        }
-    };
+    // Pass Razorpay options from the view to the payment.js
+    window.razorpayOptions = {{ razorpay_options|safe }};
 </script>
 {% endblock %}
 

@@ -655,7 +655,7 @@ def secure_admin_logout(request):
     logout(request)
     
     messages.success(request, _("You have been securely logged out from the admin panel."))
-    return redirect('secure_admin_login')
+    return redirect('home')
 
 
 @login_required

@@ -24,6 +24,7 @@ class Session(models.Model):
     mentor = models.ForeignKey(MentorProfile, on_delete=models.CASCADE, related_name='sessions')
     title = models.CharField(_('title'), max_length=255)
     description = models.TextField(_('description'))
+    topics_to_cover = models.TextField(_('topics to cover'), blank=True, help_text=_("List of topics that will be covered in this session"))
     start_time = models.DateTimeField(_('start time'))
     end_time = models.DateTimeField(_('end time'))
     price = models.DecimalField(_('price'), max_digits=10, decimal_places=2)
@@ -31,6 +32,7 @@ class Session(models.Model):
     current_participants = models.PositiveIntegerField(_('current participants'), default=0)
     status = models.CharField(_('status'), max_length=20, choices=STATUS_CHOICES, default='scheduled')
     tags = models.CharField(_('tags'), max_length=255, blank=True, help_text=_("Comma-separated tags"))
+    thumbnail = models.ImageField(_('thumbnail'), upload_to='session_thumbnails/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

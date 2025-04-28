@@ -23,32 +23,69 @@ def session_list(request):
     if request.user.is_authenticated and request.user.role == 'mentor':
         return redirect('mentor_sessions')
     
-    # Get base queryset of upcoming sessions with approved mentors
-    queryset = Session.objects.filter(
-        status='scheduled',
-        start_time__gt=timezone.now(),
-        mentor__is_approved=True
-    ).select_related('mentor__user').order_by('start_time').distinct()
+    # Get current time for filtering
+    now = timezone.now()
     
-    # Simplified - no complex filtering, just ensure sessions have category tags
-    # for the client-side visual filtering to work
+    # Get live sessions (in progress right now)
+    live_sessions = Session.objects.filter(
+        status='in_progress',
+        mentor__is_approved=True
+    ).select_related('mentor', 'mentor__user').order_by('start_time').distinct()
+    
+    # Get upcoming sessions (scheduled for future)
+    upcoming_sessions = Session.objects.filter(
+        status='scheduled',
+        start_time__gt=now,
+        mentor__is_approved=True
+    ).select_related('mentor', 'mentor__user').order_by('start_time').distinct()
     
     # Extract categories for the visual filtering system
-    categories = ['programming', 'data-science', 'design']
+    categories = ['programming', 'data-science', 'design', 'web-development', 'mobile-development']
     
-    # Add ML-powered personalized recommendations for authenticated users
-    personalized_recommendations = []
+    # For authenticated learners, get their booked sessions
+    my_sessions = []
+    liked_sessions = []
+    
     if request.user.is_authenticated and request.user.role == 'learner':
-        from .ml_recommendations import get_personalized_recommendations
-        personalized_recommendations = get_personalized_recommendations(request.user, limit=4)
+        # Get bookings for this learner
+        my_bookings = Booking.objects.filter(
+            learner=request.user,
+            status='confirmed'
+        ).select_related('session', 'session__mentor', 'session__mentor__user')
+        
+        # Extract sessions from bookings
+        my_sessions = [booking.session for booking in my_bookings]
+        
+        # Get liked sessions (placeholder for future feature)
+        # liked_sessions = request.user.liked_sessions.all()
+    
+    # Get personalized recommendations for authenticated users
+    recommended_sessions = []
+    if request.user.is_authenticated and request.user.role == 'learner':
+        try:
+            from .ml_recommendations import get_personalized_recommendations
+            recommended_sessions = get_personalized_recommendations(request.user, limit=8)
+        except Exception as e:
+            # Fallback to random upcoming sessions if ML fails
+            recommended_sessions = upcoming_sessions.order_by('?')[:8]
+            # Log the error
+            print(f"Error getting recommendations: {str(e)}")
+    
+    # Add topics_list to all sessions for better display
+    for session in list(live_sessions) + list(upcoming_sessions) + recommended_sessions:
+        if hasattr(session, 'tags') and session.tags:
+            session.topics_list = [tag.strip() for tag in session.tags.split(',')][:3]  # Limit to 3 tags
     
     context = {
-        'sessions': queryset,
+        'live_sessions': live_sessions,
+        'upcoming_sessions': upcoming_sessions,
+        'my_sessions': my_sessions,
+        'liked_sessions': liked_sessions,
+        'recommended_sessions': recommended_sessions,
         'categories': categories,
-        'personalized_recommendations': personalized_recommendations,
     }
     
-    return render(request, 'sessions/session_list.html', context)
+    return render(request, 'sessions/session_list_updated.html', context)
 
 
 @login_required

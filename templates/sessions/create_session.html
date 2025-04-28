@@ -92,6 +92,20 @@
                             </p>
                         </div>
                         
+                        <!-- Topics to Cover -->
+                        <div class="mb-6">
+                            <label for="{{ form.topics_to_cover.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                {% trans "Topics to Cover" %}
+                            </label>
+                            {{ form.topics_to_cover }}
+                            {% if form.topics_to_cover.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.topics_to_cover.errors }}</p>
+                            {% endif %}
+                            <p class="mt-1 text-xs text-gray-500">
+                                {% trans "List the key topics you'll cover in this session. This helps learners understand what to expect." %}
+                            </p>
+                        </div>
+                        
                         <!-- Time and Duration -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <div>

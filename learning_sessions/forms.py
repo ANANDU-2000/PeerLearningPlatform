@@ -46,7 +46,7 @@ class SessionForm(forms.ModelForm):
     
     class Meta:
         model = Session
-        fields = ['title', 'description', 'start_time', 'end_time', 'price', 'max_participants', 'tags']
+        fields = ['title', 'description', 'topics_to_cover', 'start_time', 'end_time', 'price', 'max_participants', 'tags', 'thumbnail']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
@@ -55,6 +55,11 @@ class SessionForm(forms.ModelForm):
             'description': forms.Textarea(attrs={
                 'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
                 'placeholder': _('Describe what learners will gain from this session. Include skills they will acquire, any prerequisites, and your teaching approach.'),
+                'rows': 4
+            }),
+            'topics_to_cover': forms.Textarea(attrs={
+                'class': 'w-full px-4 py-2 rounded-lg border border-gray-300',
+                'placeholder': _('List the specific topics you will cover in this session (e.g., "1. Introduction to Python\n2. Data Types and Variables\n3. Control Flow Statements")'),
                 'rows': 4
             }),
             'start_time': forms.DateTimeInput(attrs={

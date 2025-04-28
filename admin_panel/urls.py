@@ -7,6 +7,11 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Secure admin access URLs
+    path('secure-login/', views.secure_admin_login, name='secure_admin_login'),
+    path('secure-logout/', views.secure_admin_logout, name='secure_admin_logout'),
+    
+    # Admin dashboard and features
     path('', views.admin_dashboard, name='admin_dashboard'),
     path('mentor-approval/', views.mentor_approval, name='mentor_approval'),
     path('mentor-approval/<int:mentor_id>/approve/', views.approve_mentor, name='approve_mentor'),

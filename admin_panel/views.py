@@ -27,15 +27,8 @@ from payments.models import Transaction, WithdrawalRequest
 # Create a logger for recording security events
 security_logger = logging.getLogger('admin_security')
 
-# Define the admin security key (in a real app, this would be in .env or settings)
-ADMIN_SECURITY_KEY = "YOUR_PRIVATE_KEY_HERE"
-
-# Define list of allowed IP addresses or ranges for admin access
-ALLOWED_ADMIN_IPS = [
-    '127.0.0.1',           # Localhost
-    '172.31.0.0/16',       # Example internal IP range
-    # Add your own IP addresses here
-]
+# Import our models
+from .models import AdminAccessKey, AdminAccessLog, AllowedIP
 
 
 def is_admin(user):
@@ -462,34 +455,62 @@ def secure_admin_login(request):
     Secure admin login view with multiple layers of protection.
     This is separate from Django's built-in admin and the regular user login.
     """
-    # Check for brute force attempts by using IP-based throttling
+    # Get client information
     client_ip = request.META.get('REMOTE_ADDR', '')
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
     
-    # Log access attempt
+    # Log access attempt in database
+    access_log = AdminAccessLog(
+        ip_address=client_ip,
+        action='login_attempt',
+        path=request.path,
+        status='pending',
+        user_agent=user_agent
+    )
+    access_log.save()
+    
+    # Log in security log file
     security_logger.info(f"Admin login attempt from IP: {client_ip}")
     
-    # Check if IP is in allowed list
+    # Check if IP is in allowed list from database
     ip_allowed = False
     try:
         client_ip_obj = ipaddress.ip_address(client_ip)
-        for allowed_ip in ALLOWED_ADMIN_IPS:
-            # Check if it's a network range or single IP
-            if '/' in allowed_ip:
-                network = ipaddress.ip_network(allowed_ip)
-                if client_ip_obj in network:
+        allowed_ips = AllowedIP.objects.filter(is_active=True)
+        
+        if not allowed_ips.exists():
+            # If no IPs are configured, temporarily allow all for first setup
+            ip_allowed = True
+        else:
+            for allowed_ip in allowed_ips:
+                # Check if it's a network range or single IP
+                if '/' in allowed_ip.ip_address:
+                    network = ipaddress.ip_network(allowed_ip.ip_address)
+                    if client_ip_obj in network:
+                        ip_allowed = True
+                        break
+                elif client_ip == allowed_ip.ip_address:
                     ip_allowed = True
                     break
-            elif client_ip == allowed_ip:
-                ip_allowed = True
-                break
     except ValueError:
         # Invalid IP format
         security_logger.warning(f"Invalid IP format in admin login: {client_ip}")
         ip_allowed = False
+        
+        # Update access log
+        access_log.status = 'failed'
+        access_log.details = 'Invalid IP format'
+        access_log.save()
     
     # Block if IP is not allowed
     if not ip_allowed:
         security_logger.warning(f"Admin login attempt from unauthorized IP: {client_ip}")
+        
+        # Update access log
+        access_log.status = 'blocked'
+        access_log.details = 'IP not in allowed list'
+        access_log.save()
+        
         # Don't explain the actual reason for security purposes
         messages.error(request, _("Access denied. Please contact the administrator."))
         return render(request, 'admin_panel/secure_login.html')
@@ -499,9 +520,38 @@ def secure_admin_login(request):
         password = request.POST.get('password')
         security_key = request.POST.get('security_key')
         
-        # Perform additional security key verification
-        if not security_key or not constant_time_compare(security_key, ADMIN_SECURITY_KEY):
+        # Attempt to find user first
+        try:
+            user = User.objects.get(username=username)
+            access_log.user = user
+            access_log.save()
+        except User.DoesNotExist:
+            # Don't update access log with user info to avoid revealing valid usernames
+            pass
+        
+        # Perform additional security key verification using database
+        key_valid = False
+        if security_key:
+            # Get active keys
+            active_keys = AdminAccessKey.objects.filter(is_active=True)
+            for key in active_keys:
+                # Skip expired keys
+                if key.is_expired:
+                    continue
+                    
+                # Check if provided key matches
+                if constant_time_compare(security_key, key.key_value):
+                    key_valid = True
+                    break
+        
+        if not security_key or not key_valid:
             security_logger.warning(f"Invalid security key provided from IP: {client_ip}")
+            
+            # Update access log
+            access_log.status = 'failed'
+            access_log.details = 'Invalid security key'
+            access_log.save()
+            
             messages.error(request, _("Invalid credentials. Please try again."))
             return render(request, 'admin_panel/secure_login.html')
         

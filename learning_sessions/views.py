@@ -19,6 +19,10 @@ from users.models import MentorProfile
 
 def session_list(request):
     """View for listing all available sessions."""
+    # Special handling for mentors - redirect to their sessions page
+    if request.user.is_authenticated and request.user.role == 'mentor':
+        return redirect('mentor_sessions')
+    
     # Get base queryset of upcoming, non-full sessions with approved mentors
     queryset = Session.objects.filter(
         status='scheduled',
@@ -73,6 +77,134 @@ def session_list(request):
     }
     
     return render(request, 'sessions/session_list.html', context)
+
+
+@login_required
+def mentor_sessions(request):
+    """View for mentors to manage their own sessions."""
+    if request.user.role != 'mentor':
+        messages.error(request, _('Only mentors can access this page.'))
+        return redirect('landing_page')
+    
+    mentor_profile = get_object_or_404(MentorProfile, user=request.user)
+    
+    # Get all sessions for this mentor
+    now = timezone.now()
+    
+    # Upcoming sessions (scheduled and not started yet)
+    upcoming_sessions = Session.objects.filter(
+        mentor=mentor_profile,
+        status='scheduled',
+        start_time__gt=now
+    ).order_by('start_time')
+    
+    # Live sessions (in progress)
+    live_sessions = Session.objects.filter(
+        mentor=mentor_profile,
+        status='in_progress'
+    ).order_by('start_time')
+    
+    # Mark sessions that start within the next hour
+    for session in upcoming_sessions:
+        time_until_start = session.start_time - now
+        session.starts_soon = time_until_start.total_seconds() < 3600  # 1 hour
+    
+    # Past sessions (completed or cancelled)
+    past_sessions = Session.objects.filter(
+        mentor=mentor_profile,
+        status__in=['completed', 'cancelled']
+    ).order_by('-start_time')[:10]  # Last 10 sessions
+    
+    # Add earnings and attendees to past sessions
+    for session in past_sessions:
+        # Get confirmed bookings
+        confirmed_bookings = session.bookings.filter(status='confirmed', payment_complete=True)
+        session.attendees = confirmed_bookings.count()
+        
+        # Calculate earnings (minus platform fees)
+        session.earnings = sum(booking.final_price * 0.8 for booking in confirmed_bookings)
+        
+        # Get average rating if any
+        feedback_ratings = Feedback.objects.filter(booking__session=session).values_list('rating', flat=True)
+        session.avg_rating = round(sum(feedback_ratings) / len(feedback_ratings), 1) if feedback_ratings else None
+    
+    # Recent activities (bookings, feedbacks, payments)
+    recent_activities = []
+    
+    # New bookings in the last 7 days
+    recent_bookings = Booking.objects.filter(
+        session__mentor=mentor_profile,
+        created_at__gte=now - timezone.timedelta(days=7)
+    ).select_related('session', 'learner').order_by('-created_at')[:5]
+    
+    for booking in recent_bookings:
+        recent_activities.append({
+            'type': 'booking',
+            'title': f"{booking.learner.get_full_name()} booked your session",
+            'description': booking.session.title,
+            'time_ago': get_time_ago(booking.created_at)
+        })
+    
+    # Recent feedback
+    recent_feedback = Feedback.objects.filter(
+        booking__session__mentor=mentor_profile,
+        created_at__gte=now - timezone.timedelta(days=7)
+    ).select_related('booking__session', 'booking__learner').order_by('-created_at')[:5]
+    
+    for feedback in recent_feedback:
+        recent_activities.append({
+            'type': 'feedback',
+            'title': f"{feedback.booking.learner.get_full_name()} rated your session {feedback.rating}/5",
+            'description': feedback.booking.session.title,
+            'time_ago': get_time_ago(feedback.created_at)
+        })
+    
+    # Sort recent activities by date
+    recent_activities.sort(key=lambda x: x['time_ago'])
+    
+    # Stats
+    upcoming_count = upcoming_sessions.count()
+    completed_count = Session.objects.filter(mentor=mentor_profile, status='completed').count()
+    
+    # Calculate total earnings
+    total_earnings = 0
+    completed_sessions = Session.objects.filter(mentor=mentor_profile, status='completed')
+    for session in completed_sessions:
+        confirmed_bookings = session.bookings.filter(status='confirmed', payment_complete=True)
+        session_earnings = sum(booking.final_price * 0.8 for booking in confirmed_bookings)  # 80% to mentor
+        total_earnings += session_earnings
+    
+    context = {
+        'mentor_profile': mentor_profile,
+        'upcoming_sessions': upcoming_sessions,
+        'live_sessions': live_sessions,
+        'past_sessions': past_sessions,
+        'recent_activities': recent_activities,
+        'upcoming_count': upcoming_count,
+        'completed_count': completed_count,
+        'total_earnings': round(total_earnings, 2),
+    }
+    
+    return render(request, 'sessions/mentor_sessions.html', context)
+
+
+def get_time_ago(timestamp):
+    """Helper function to get human-readable time ago string."""
+    now = timezone.now()
+    diff = now - timestamp
+    
+    if diff.days > 0:
+        return f"{diff.days} days ago"
+    
+    hours = diff.seconds // 3600
+    if hours > 0:
+        return f"{hours} hours ago"
+    
+    minutes = diff.seconds // 60
+    if minutes > 0:
+        return f"{minutes} minutes ago"
+    
+    return "Just now"
 
 
 def session_detail(request, session_id):

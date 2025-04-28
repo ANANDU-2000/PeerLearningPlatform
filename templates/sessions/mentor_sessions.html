@@ -1,0 +1,541 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "My Sessions" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Page Header -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4 md:mb-0">{% trans "My Sessions" %}</h1>
+            
+            <div class="flex space-x-3">
+                <!-- Add session button -->
+                <a href="{% url 'create_session' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    <i data-feather="plus" class="h-4 w-4 mr-1"></i>
+                    {% trans "Create Live Session" %}
+                </a>
+            </div>
+        </div>
+        
+        <!-- Sessions Overview Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+            <!-- Upcoming Sessions Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-blue-500 rounded-md p-3">
+                            <i data-feather="calendar" class="h-6 w-6 text-white"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    {% trans "Upcoming Sessions" %}
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900">{{ upcoming_count }}</div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <a href="#upcoming" class="font-medium text-blue-600 hover:text-blue-900">
+                            {% trans "View all" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Completed Sessions Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-green-500 rounded-md p-3">
+                            <i data-feather="check-circle" class="h-6 w-6 text-white"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    {% trans "Completed Sessions" %}
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900">{{ completed_count }}</div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <a href="#past" class="font-medium text-blue-600 hover:text-blue-900">
+                            {% trans "View all" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Total Earnings Card -->
+            <div class="bg-white overflow-hidden shadow rounded-lg">
+                <div class="p-5">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 bg-purple-500 rounded-md p-3">
+                            <i data-feather="dollar-sign" class="h-6 w-6 text-white"></i>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">
+                                    {% trans "Total Earnings" %}
+                                </dt>
+                                <dd>
+                                    <div class="text-lg font-medium text-gray-900">₹{{ total_earnings }}</div>
+                                </dd>
+                            </dl>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-5 py-3">
+                    <div class="text-sm">
+                        <a href="{% url 'withdrawal_request' %}" class="font-medium text-blue-600 hover:text-blue-900">
+                            {% trans "Manage earnings" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="bg-white shadow overflow-hidden sm:rounded-md mb-8">
+            <div class="flex items-center justify-between px-4 py-5 sm:px-6 bg-gray-50">
+                <h2 class="text-lg font-medium text-gray-900">{% trans "Recent Activity" %}</h2>
+                <span class="text-sm text-gray-500">{% trans "Last 7 days" %}</span>
+            </div>
+            
+            <ul class="divide-y divide-gray-200">
+                {% if recent_activities %}
+                    {% for activity in recent_activities %}
+                        <li>
+                            <div class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                                <div class="flex items-center">
+                                    {% if activity.type == 'booking' %}
+                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i data-feather="user-plus" class="h-5 w-5 text-blue-600"></i>
+                                        </div>
+                                    {% elif activity.type == 'feedback' %}
+                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
+                                            <i data-feather="star" class="h-5 w-5 text-yellow-600"></i>
+                                        </div>
+                                    {% elif activity.type == 'payment' %}
+                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i data-feather="dollar-sign" class="h-5 w-5 text-green-600"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="flex-shrink-0 h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                            <i data-feather="activity" class="h-5 w-5 text-gray-600"></i>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="ml-4 flex-1">
+                                        <div class="flex justify-between">
+                                            <p class="text-sm font-medium text-blue-600 truncate">{{ activity.title }}</p>
+                                            <p class="text-sm text-gray-500">{{ activity.time_ago }}</p>
+                                        </div>
+                                        <p class="text-sm text-gray-500">{{ activity.description }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                    {% endfor %}
+                {% else %}
+                    <li class="px-4 py-5 sm:px-6 text-center text-gray-500">
+                        {% trans "No recent activity to show" %}
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+        
+        <!-- Session Tabs -->
+        <div class="mb-6">
+            <div class="border-b border-gray-200">
+                <nav class="flex -mb-px">
+                    <button id="tab-upcoming" class="tab-btn border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                        {% trans "Upcoming Sessions" %}
+                    </button>
+                    <button id="tab-live" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ml-8">
+                        {% trans "Live Now" %}
+                    </button>
+                    <button id="tab-past" class="tab-btn border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ml-8">
+                        {% trans "Past Sessions" %}
+                    </button>
+                </nav>
+            </div>
+        </div>
+        
+        <!-- Tab Content: Upcoming Sessions -->
+        <div id="content-upcoming" class="tab-content">
+            <div class="overflow-hidden bg-white shadow sm:rounded-md">
+                {% if upcoming_sessions %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for session in upcoming_sessions %}
+                            <li>
+                                <div class="block hover:bg-gray-50">
+                                    <div class="flex items-center px-4 py-4 sm:px-6">
+                                        <div class="flex min-w-0 flex-1 items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                                    <i data-feather="calendar" class="h-6 w-6 text-blue-600"></i>
+                                                </div>
+                                            </div>
+                                            <div class="min-w-0 flex-1 px-4">
+                                                <div>
+                                                    <p class="truncate text-sm font-medium text-blue-600">{{ session.title }}</p>
+                                                    <p class="mt-1 flex text-sm text-gray-500">
+                                                        <span class="truncate">{{ session.start_time|date:"M j, Y • g:i A" }} - {{ session.end_time|date:"g:i A" }}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <!-- Bookings count -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+                                                <i data-feather="users" class="h-3 w-3 mr-1"></i>
+                                                {{ session.current_participants }}/{{ session.max_participants }}
+                                            </div>
+                                            
+                                            <!-- Session status -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full 
+                                                {% if session.is_full %}bg-red-50 text-red-700{% else %}bg-green-50 text-green-700{% endif %}">
+                                                {% if session.is_full %}
+                                                    {% trans "Full" %}
+                                                {% else %}
+                                                    {% trans "Available" %}
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Session timer (if starting soon) -->
+                                            {% if session.starts_soon %}
+                                                <div class="session-timer flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-50 text-yellow-700"
+                                                     data-start-time="{{ session.start_time|date:'c' }}">
+                                                    <i data-feather="clock" class="h-3 w-3 mr-1"></i>
+                                                    <span class="countdown-text">{% trans "Starting soon" %}</span>
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <!-- Session Actions -->
+                                            <div class="dropdown relative">
+                                                <button class="text-gray-500 hover:text-gray-700 focus:outline-none">
+                                                    <i data-feather="more-vertical" class="h-5 w-5"></i>
+                                                </button>
+                                                <div class="dropdown-content hidden absolute z-10 right-0 mt-2 bg-white rounded-md shadow-lg py-1 w-40">
+                                                    <a href="{% url 'session_detail' session.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                        {% trans "View Details" %}
+                                                    </a>
+                                                    
+                                                    {% if not session.is_past %}
+                                                        <a href="{% url 'edit_session' session.id %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                            {% trans "Edit Session" %}
+                                                        </a>
+                                                        
+                                                        {% if session.is_ongoing %}
+                                                            <a href="{% url 'session_room' session.id %}" class="block px-4 py-2 text-sm text-green-700 hover:bg-gray-100">
+                                                                {% trans "Join Session" %}
+                                                            </a>
+                                                        {% endif %}
+                                                        
+                                                        <button class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100" 
+                                                                onclick="cancelSession({{ session.id }})">
+                                                            {% trans "Cancel Session" %}
+                                                        </button>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="mx-auto h-12 w-12 text-gray-400">
+                            <i data-feather="calendar" class="h-full w-full"></i>
+                        </div>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">{% trans "No upcoming sessions" %}</h3>
+                        <p class="mt-1 text-sm text-gray-500">{% trans "Get started by creating a new session." %}</p>
+                        <div class="mt-6">
+                            <a href="{% url 'create_session' %}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                <i data-feather="plus" class="h-4 w-4 mr-1"></i>
+                                {% trans "Create Session" %}
+                            </a>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tab Content: Live Now Sessions -->
+        <div id="content-live" class="tab-content hidden">
+            <div class="overflow-hidden bg-white shadow sm:rounded-md">
+                {% if live_sessions %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for session in live_sessions %}
+                            <li>
+                                <div class="bg-green-50 border-l-4 border-green-500 block hover:bg-green-100 transition-colors duration-200">
+                                    <div class="flex items-center px-4 py-4 sm:px-6">
+                                        <div class="flex min-w-0 flex-1 items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="h-12 w-12 rounded-full bg-green-100 flex items-center justify-center">
+                                                    <div class="h-3 w-3 bg-green-600 rounded-full animate-pulse"></div>
+                                                </div>
+                                            </div>
+                                            <div class="min-w-0 flex-1 px-4">
+                                                <div>
+                                                    <p class="truncate text-sm font-medium text-green-700">{{ session.title }}</p>
+                                                    <p class="mt-1 flex text-sm text-green-600">
+                                                        <i data-feather="clock" class="h-4 w-4 mr-1"></i>
+                                                        <span>{% trans "Started at" %} {{ session.start_time|date:"g:i A" }}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <!-- Bookings count -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-green-200 text-green-800">
+                                                <i data-feather="users" class="h-3 w-3 mr-1"></i>
+                                                {{ session.current_participants }}/{{ session.max_participants }}
+                                            </div>
+                                            
+                                            <!-- Live indicator -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                                <span class="h-2 w-2 bg-red-600 rounded-full animate-pulse mr-1"></span>
+                                                {% trans "LIVE" %}
+                                            </div>
+                                            
+                                            <!-- Join button -->
+                                            <a href="{% url 'session_room' session.id %}" class="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700">
+                                                {% trans "Join Now" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="mx-auto h-12 w-12 text-gray-400">
+                            <i data-feather="video-off" class="h-full w-full"></i>
+                        </div>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">{% trans "No live sessions" %}</h3>
+                        <p class="mt-1 text-sm text-gray-500">{% trans "You don't have any sessions running right now." %}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Tab Content: Past Sessions -->
+        <div id="content-past" class="tab-content hidden">
+            <div class="overflow-hidden bg-white shadow sm:rounded-md">
+                {% if past_sessions %}
+                    <ul class="divide-y divide-gray-200">
+                        {% for session in past_sessions %}
+                            <li>
+                                <div class="block hover:bg-gray-50">
+                                    <div class="flex items-center px-4 py-4 sm:px-6">
+                                        <div class="flex min-w-0 flex-1 items-center">
+                                            <div class="flex-shrink-0">
+                                                <div class="h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center">
+                                                    <i data-feather="check" class="h-6 w-6 text-gray-600"></i>
+                                                </div>
+                                            </div>
+                                            <div class="min-w-0 flex-1 px-4">
+                                                <div>
+                                                    <p class="truncate text-sm font-medium text-gray-700">{{ session.title }}</p>
+                                                    <p class="mt-1 flex text-sm text-gray-500">
+                                                        <span class="truncate">{{ session.start_time|date:"M j, Y • g:i A" }} - {{ session.end_time|date:"g:i A" }}</span>
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center space-x-2">
+                                            <!-- Session status -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full
+                                                {% if session.status == 'completed' %}bg-green-50 text-green-700
+                                                {% elif session.status == 'cancelled' %}bg-red-50 text-red-700
+                                                {% else %}bg-gray-50 text-gray-700{% endif %}">
+                                                {% if session.status == 'completed' %}
+                                                    {% trans "Completed" %}
+                                                {% elif session.status == 'cancelled' %}
+                                                    {% trans "Cancelled" %}
+                                                {% else %}
+                                                    {{ session.status|title }}
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <!-- Earnings -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-purple-50 text-purple-700">
+                                                <i data-feather="dollar-sign" class="h-3 w-3 mr-1"></i>
+                                                ₹{{ session.earnings|default:"0.00" }}
+                                            </div>
+                                            
+                                            <!-- Attendees -->
+                                            <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700">
+                                                <i data-feather="users" class="h-3 w-3 mr-1"></i>
+                                                {{ session.attendees|default:"0" }}
+                                            </div>
+                                            
+                                            <!-- Session rating (if any) -->
+                                            {% if session.avg_rating %}
+                                                <div class="flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-50 text-yellow-700">
+                                                    <i data-feather="star" class="h-3 w-3 mr-1"></i>
+                                                    {{ session.avg_rating }}
+                                                </div>
+                                            {% endif %}
+                                            
+                                            <!-- View details -->
+                                            <a href="{% url 'session_detail' session.id %}" class="text-gray-500 hover:text-gray-700">
+                                                <i data-feather="external-link" class="h-5 w-5"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8">
+                        <div class="mx-auto h-12 w-12 text-gray-400">
+                            <i data-feather="archive" class="h-full w-full"></i>
+                        </div>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">{% trans "No past sessions" %}</h3>
+                        <p class="mt-1 text-sm text-gray-500">{% trans "You haven't conducted any sessions yet." %}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Session Modal -->
+<div id="cancel-modal" class="fixed inset-0 z-50 hidden">
+    <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+    
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="bg-white rounded-lg shadow-xl overflow-hidden max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">{% trans "Cancel Session" %}</h3>
+                    <button id="close-modal" class="text-gray-400 hover:text-gray-500 focus:outline-none">
+                        <i data-feather="x" class="h-5 w-5"></i>
+                    </button>
+                </div>
+                
+                <p class="mb-4 text-gray-600">{% trans "Are you sure you want to cancel this session? This will notify all registered learners and the session will no longer be available." %}</p>
+                
+                <form id="cancel-form" method="post" action="">
+                    {% csrf_token %}
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" id="cancel-close" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                            {% trans "No, Keep Session" %}
+                        </button>
+                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            {% trans "Yes, Cancel Session" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tabs functionality
+        const tabs = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Deactivate all tabs
+                tabs.forEach(t => {
+                    t.classList.remove('border-blue-500', 'text-blue-600');
+                    t.classList.add('border-transparent', 'text-gray-500');
+                });
+                
+                // Activate clicked tab
+                this.classList.remove('border-transparent', 'text-gray-500');
+                this.classList.add('border-blue-500', 'text-blue-600');
+                
+                // Hide all content
+                tabContents.forEach(content => {
+                    content.classList.add('hidden');
+                });
+                
+                // Show corresponding content
+                const contentId = this.id.replace('tab-', 'content-');
+                document.getElementById(contentId).classList.remove('hidden');
+            });
+        });
+        
+        // Session countdown timers
+        const timers = document.querySelectorAll('.session-timer');
+        timers.forEach(timer => {
+            const startTime = new Date(timer.getAttribute('data-start-time'));
+            const countdownText = timer.querySelector('.countdown-text');
+            
+            function updateCountdown() {
+                const now = new Date();
+                const diff = startTime - now;
+                
+                if (diff <= 0) {
+                    countdownText.textContent = "Starting now";
+                    return;
+                }
+                
+                const minutes = Math.floor(diff / 60000);
+                const seconds = Math.floor((diff % 60000) / 1000);
+                
+                if (minutes < 60) {
+                    countdownText.textContent = `Starts in ${minutes}m ${seconds}s`;
+                } else {
+                    const hours = Math.floor(minutes / 60);
+                    const mins = minutes % 60;
+                    countdownText.textContent = `Starts in ${hours}h ${mins}m`;
+                }
+            }
+            
+            // Initial update
+            updateCountdown();
+            
+            // Update every second
+            setInterval(updateCountdown, 1000);
+        });
+        
+        // Cancel session modal functionality
+        const cancelModal = document.getElementById('cancel-modal');
+        const cancelForm = document.getElementById('cancel-form');
+        const closeModal = document.getElementById('close-modal');
+        const cancelClose = document.getElementById('cancel-close');
+        
+        window.cancelSession = function(sessionId) {
+            cancelModal.classList.remove('hidden');
+            cancelForm.action = `/sessions/${sessionId}/cancel/`;
+        };
+        
+        function hideModal() {
+            cancelModal.classList.add('hidden');
+        }
+        
+        closeModal.addEventListener('click', hideModal);
+        cancelClose.addEventListener('click', hideModal);
+    });
+</script>
+{% endblock %}

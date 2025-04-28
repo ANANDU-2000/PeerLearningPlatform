@@ -12,6 +12,7 @@ urlpatterns = [
     path('<int:session_id>/', views.session_detail, name='session_detail'),
     
     # Session management (for mentors)
+    path('mentor/', views.mentor_sessions, name='mentor_sessions'),
     path('create/', views.create_session, name='create_session'),
     path('<int:session_id>/edit/', views.edit_session, name='edit_session'),
     path('<int:session_id>/cancel/', views.cancel_session, name='cancel_session'),

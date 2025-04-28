@@ -259,6 +259,17 @@
 {% endblock %}
 
 {% block content %}
+<!-- Pre-Session Countdown Overlay (hidden by default) -->
+<div id="pre-session-overlay" class="pre-session-overlay hidden">
+    <div class="countdown-timer" id="countdown-timer">00:00:00</div>
+    <div class="countdown-message" id="countdown-message">
+        {% trans "Your session will begin soon. Please make sure your camera and microphone are working." %}
+    </div>
+    <button id="ready-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+        {% trans "I'm Ready" %}
+    </button>
+</div>
+
 <div class="session-room bg-gray-100 flex flex-col md:flex-row">
     <!-- Main Content Area (Video + Whiteboard) - 70% width -->
     <div class="flex-grow md:w-[70%] flex flex-col p-4">
@@ -572,7 +583,194 @@
 <script src="{% static 'js/webrtc/webrtc.js' %}"></script>
 <script src="{% static 'js/webrtc/session-ui.js' %}"></script>
 
+<!-- Sound files for notifications -->
+<audio id="notification-5min" preload="auto">
+    <source src="{% static 'sounds/notification-5min.mp3' %}" type="audio/mpeg">
+</audio>
+<audio id="notification-1min" preload="auto">
+    <source src="{% static 'sounds/notification-1min.mp3' %}" type="audio/mpeg">
+</audio>
+<audio id="notification-10sec" preload="auto">
+    <source src="{% static 'sounds/notification-10sec.mp3' %}" type="audio/mpeg">
+</audio>
+<audio id="session-start" preload="auto">
+    <source src="{% static 'sounds/session-start.mp3' %}" type="audio/mpeg">
+</audio>
+
 <script>
+    // Notification System class
+    class NotificationSystem {
+        constructor() {
+            this.sounds = {
+                fiveMin: document.getElementById('notification-5min'),
+                oneMin: document.getElementById('notification-1min'), 
+                tenSec: document.getElementById('notification-10sec'),
+                sessionStart: document.getElementById('session-start')
+            };
+            
+            // Keep track of which alerts have been played
+            this.alertsPlayed = {
+                fiveMin: false,
+                oneMin: false,
+                tenSec: false,
+                sessionStart: false
+            };
+            
+            console.log("Notification system initialized");
+        }
+        
+        playSound(soundId) {
+            const sound = this.sounds[soundId];
+            if (sound) {
+                // Reset the audio to beginning
+                sound.currentTime = 0;
+                
+                // Play the sound
+                sound.play().catch(error => {
+                    console.error('Error playing sound:', error);
+                });
+            }
+        }
+        
+        // Check time remaining and play appropriate sounds
+        checkTimeAndNotify(timeToStart) {
+            // Convert milliseconds to seconds
+            const secondsToStart = Math.floor(timeToStart / 1000);
+            
+            // Play sounds at specific time intervals
+            if (secondsToStart <= 300 && secondsToStart > 60 && !this.alertsPlayed.fiveMin) {
+                this.playSound('fiveMin');
+                this.alertsPlayed.fiveMin = true;
+                console.log("5-minute notification played");
+            } else if (secondsToStart <= 60 && secondsToStart > 10 && !this.alertsPlayed.oneMin) {
+                this.playSound('oneMin');
+                this.alertsPlayed.oneMin = true;
+                console.log("1-minute notification played");
+            } else if (secondsToStart <= 10 && secondsToStart > 0 && !this.alertsPlayed.tenSec) {
+                this.playSound('tenSec');
+                this.alertsPlayed.tenSec = true;
+                console.log("10-second notification played");
+            } else if (secondsToStart <= 0 && !this.alertsPlayed.sessionStart) {
+                this.playSound('sessionStart');
+                this.alertsPlayed.sessionStart = true;
+                console.log("Session start notification played");
+            }
+        }
+    }
+    
+    // Session Timer class
+    class SessionTimer {
+        constructor(options) {
+            this.startTime = new Date(options.startTime);
+            this.endTime = new Date(options.endTime);
+            this.countdownEl = document.getElementById(options.countdownId);
+            this.countdownOverlay = document.getElementById(options.overlayId);
+            this.sessionTimerEl = document.getElementById(options.sessionTimerId);
+            this.notification = options.notificationSystem;
+            this.onSessionStart = options.onSessionStart;
+            this.onSessionEnd = options.onSessionEnd;
+            this.interval = null;
+            this.sessionStarted = false;
+            
+            // Initialize ready button if it exists
+            const readyBtn = document.getElementById('ready-btn');
+            if (readyBtn) {
+                readyBtn.addEventListener('click', () => {
+                    // Hide the overlay when user is ready
+                    if (this.countdownOverlay) {
+                        this.countdownOverlay.classList.add('hidden');
+                    }
+                });
+            }
+        }
+        
+        // Format time as HH:MM:SS
+        formatTime(time) {
+            const hours = Math.floor(time / 3600);
+            const minutes = Math.floor((time % 3600) / 60);
+            const seconds = time % 60;
+            
+            return [hours, minutes, seconds]
+                .map(v => v < 10 ? "0" + v : v)
+                .join(":");
+        }
+        
+        // Start the timer
+        start() {
+            this.interval = setInterval(() => this.update(), 1000);
+            this.update(); // Initial update
+        }
+        
+        // Stop the timer
+        stop() {
+            if (this.interval) {
+                clearInterval(this.interval);
+                this.interval = null;
+            }
+        }
+        
+        // Update timer displays
+        update() {
+            const now = new Date();
+            const timeToStart = this.startTime - now;
+            const timeToEnd = this.endTime - now;
+            
+            console.log("Session time data:", {
+                now: now.toISOString(),
+                startTime: this.startTime.toISOString(),
+                endTime: this.endTime.toISOString(),
+                timeToStart,
+                timeToEnd
+            });
+            
+            // Update countdown timer if session hasn't started
+            if (timeToStart > 0) {
+                // We're in pre-session state
+                const secondsToStart = Math.floor(timeToStart / 1000);
+                
+                // Show the countdown overlay if it exists
+                if (this.countdownOverlay && !this.countdownOverlay.classList.contains('hidden') === false) {
+                    this.countdownOverlay.classList.remove('hidden');
+                }
+                
+                // Update countdown display
+                if (this.countdownEl) {
+                    this.countdownEl.textContent = this.formatTime(secondsToStart);
+                }
+                
+                // Check for notifications
+                if (this.notification) {
+                    this.notification.checkTimeAndNotify(timeToStart);
+                }
+            } 
+            // Session has started but not ended
+            else if (timeToEnd > 0) {
+                // Hide countdown overlay if it exists
+                if (this.countdownOverlay && !this.countdownOverlay.classList.contains('hidden')) {
+                    this.countdownOverlay.classList.add('hidden');
+                }
+                
+                // Call onSessionStart callback once
+                if (!this.sessionStarted) {
+                    this.sessionStarted = true;
+                    if (this.onSessionStart) this.onSessionStart();
+                }
+                
+                // Update session timer
+                if (this.sessionTimerEl) {
+                    const secondsToEnd = Math.floor(timeToEnd / 1000);
+                    this.sessionTimerEl.textContent = this.formatTime(secondsToEnd);
+                }
+            } 
+            // Session has ended
+            else {
+                // Call onSessionEnd callback
+                if (this.onSessionEnd) this.onSessionEnd();
+                this.stop();
+            }
+        }
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize Feather icons
         feather.replace();
@@ -644,6 +842,67 @@
                 }
             };
         }
+        
+        // Initialize and start the session timer
+        const notificationSystem = new NotificationSystem();
+        const sessionTimer = new SessionTimer({
+            startTime: '{{ session.start_time|date:"c" }}',
+            endTime: '{{ session.end_time|date:"c" }}',
+            countdownId: 'countdown-timer',
+            overlayId: 'pre-session-overlay',
+            sessionTimerId: 'session-timer',
+            notificationSystem: notificationSystem,
+            onSessionStart: function() {
+                console.log('Session started!');
+                // Add any additional logic for when the session starts
+                
+                // Show system message in chat
+                const chatMessages = document.getElementById('chat-messages');
+                if (chatMessages) {
+                    const systemMessage = document.createElement('div');
+                    systemMessage.className = 'chat-message system';
+                    systemMessage.innerHTML = `
+                        <div class="chat-bubble system">
+                            {% trans "Session has officially started! Welcome everyone." %}
+                        </div>
+                    `;
+                    chatMessages.appendChild(systemMessage);
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
+            },
+            onSessionEnd: function() {
+                console.log('Session ended!');
+                
+                // Show end message and redirect options
+                const mainContent = document.querySelector('.session-room');
+                if (mainContent) {
+                    const sessionEndOverlay = document.createElement('div');
+                    sessionEndOverlay.className = 'pre-session-overlay';
+                    sessionEndOverlay.innerHTML = `
+                        <div class="text-2xl font-bold mb-4">{% trans "Session Ended" %}</div>
+                        <div class="countdown-message">
+                            {% trans "Thank you for participating in this session! We hope you found it valuable." %}
+                        </div>
+                        <div class="flex space-x-4 mt-6">
+                            <a href="{% if is_mentor %}{% url 'mentor_dashboard' %}{% else %}{% url 'learner_dashboard' %}{% endif %}" 
+                               class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                                {% trans "Back to Dashboard" %}
+                            </a>
+                            {% if not is_mentor %}
+                            <a href="{% url 'session_feedback' session.id %}" 
+                               class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition">
+                                {% trans "Leave Feedback" %}
+                            </a>
+                            {% endif %}
+                        </div>
+                    `;
+                    document.body.appendChild(sessionEndOverlay);
+                }
+            }
+        });
+        
+        // Start the timer
+        sessionTimer.start();
         
         // Tab switching for sidebar
         document.getElementById('topics-tab').addEventListener('click', function() {

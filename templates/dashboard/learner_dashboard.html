@@ -378,10 +378,26 @@
     
     // Function to update countdown timer
     function updateCountdown(timerElement) {
+        if (!timerElement) return;
+        
+        // Get session time data - use server time to avoid timezone issues
         const startTime = new Date(timerElement.getAttribute('data-start-time'));
         const endTime = new Date(timerElement.getAttribute('data-end-time'));
         const sessionId = timerElement.getAttribute('data-session-id');
+        
+        // Get current time and adjust for any time drift
         const now = new Date();
+        
+        // For debugging time issues
+        console.log("Session time data:", {
+            sessionId,
+            now: now.toISOString(),
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            nowMs: now.getTime(),
+            startMs: startTime.getTime(),
+            endMs: endTime.getTime()
+        });
         
         let timeLeft, isOngoing = false;
         
@@ -395,6 +411,7 @@
             if (parentCard) {
                 const actionButton = parentCard.querySelector('a[href*="session_detail"]');
                 if (actionButton && !actionButton.classList.contains('bg-red-600')) {
+                    // Update to Join Session button
                     actionButton.setAttribute('href', `/learning_sessions/session_room/${sessionId}/`);
                     actionButton.innerHTML = '<i data-feather="video" class="h-4 w-4 mr-2"></i> {% trans "Join Now" %}';
                     actionButton.classList.remove('border', 'border-gray-300', 'text-gray-700');
@@ -417,20 +434,42 @@
         } else {
             // Session has ended
             timerElement.innerHTML = '<div class="text-center text-gray-500">{% trans "Session ended" %}</div>';
+            
+            // Update card UI for ended session
+            const parentCard = timerElement.closest('.card-hover-effect');
+            if (parentCard) {
+                const actionButton = parentCard.querySelector('a');
+                if (actionButton) {
+                    actionButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    
+                    // Add completed badge if not present
+                    if (!parentCard.querySelector('.bg-gray-500')) {
+                        const badge = document.createElement('div');
+                        badge.className = 'absolute top-0 right-0 bg-gray-500 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider';
+                        badge.textContent = '{% trans "Completed" %}';
+                        parentCard.appendChild(badge);
+                    }
+                }
+            }
             return;
         }
         
-        // Calculate time components
+        // Calculate time components precisely
         const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
         const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
         const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
         
         // Update the display
-        timerElement.querySelector('.days').textContent = days;
-        timerElement.querySelector('.hours').textContent = hours < 10 ? '0' + hours : hours;
-        timerElement.querySelector('.minutes').textContent = minutes < 10 ? '0' + minutes : minutes;
-        timerElement.querySelector('.seconds').textContent = seconds < 10 ? '0' + seconds : seconds;
+        const daysElement = timerElement.querySelector('.days');
+        const hoursElement = timerElement.querySelector('.hours');
+        const minutesElement = timerElement.querySelector('.minutes');
+        const secondsElement = timerElement.querySelector('.seconds');
+        
+        if (daysElement) daysElement.textContent = days;
+        if (hoursElement) hoursElement.textContent = hours < 10 ? '0' + hours : hours;
+        if (minutesElement) minutesElement.textContent = minutes < 10 ? '0' + minutes : minutes;
+        if (secondsElement) secondsElement.textContent = seconds < 10 ? '0' + seconds : seconds;
         
         // Change label based on ongoing status
         const label = timerElement.previousElementSibling;
@@ -438,13 +477,25 @@
             label.textContent = isOngoing ? '{% trans "Ends in:" %}' : '{% trans "Starts in:" %}';
         }
         
-        // Show a notification when the session is about to start
-        if (!isOngoing && days === 0 && hours === 0 && minutes === 5 && seconds === 0) {
-            showSessionNotification(
-                '{% trans "Session Starting Soon" %}',
-                `{% trans "Your session will start in 5 minutes. Get ready!" %}`,
-                sessionId
-            );
+        // Show notifications for upcoming sessions
+        if (!isOngoing) {
+            // 5 minutes before
+            if (days === 0 && hours === 0 && minutes === 5 && seconds <= 1) {
+                showSessionNotification(
+                    '{% trans "Session Starting Soon" %}',
+                    `{% trans "Your session will start in 5 minutes. Get ready!" %}`,
+                    sessionId
+                );
+            }
+            
+            // 1 minute before
+            if (days === 0 && hours === 0 && minutes === 1 && seconds <= 1) {
+                showSessionNotification(
+                    '{% trans "Session Almost Starting" %}',
+                    `{% trans "Your session starts in just 1 minute. Join now!" %}`,
+                    sessionId
+                );
+            }
         }
     }
     

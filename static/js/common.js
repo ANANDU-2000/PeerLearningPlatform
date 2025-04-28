@@ -18,40 +18,52 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initWelcomeMessage() {
     const welcomeMsg = document.querySelector('.welcome-message');
-    const closeBtn = welcomeMsg?.querySelector('.close-btn');
     
     // Only proceed if welcome message exists
     if (!welcomeMsg) return;
     
+    const closeBtn = welcomeMsg.querySelector('.close-btn');
+    
     // Check if user has dismissed the message before
     const welcomeDismissed = localStorage.getItem('welcome_dismissed');
+    const currentPage = window.location.pathname;
+    const dashboardKey = currentPage + '_welcome_dismissed';
     
-    // Only show if not dismissed
-    if (!welcomeDismissed) {
+    // Only show if not dismissed on this specific page
+    if (!localStorage.getItem(dashboardKey)) {
         // Wait a moment before showing the message
         setTimeout(() => {
             welcomeMsg.classList.remove('hidden');
-        }, 1500);
+        }, 2000);
     }
     
     // Handle close button click
     if (closeBtn) {
         closeBtn.addEventListener('click', function() {
             hideWelcomeMessage(welcomeMsg);
-            // Remember that user dismissed the message
-            localStorage.setItem('welcome_dismissed', 'true');
+            // Remember that user dismissed the message for this specific page
+            localStorage.setItem(dashboardKey, 'true');
         });
     }
+    
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+        if (!welcomeMsg.classList.contains('hidden')) {
+            hideWelcomeMessage(welcomeMsg);
+        }
+    }, 10000);
 }
 
 /**
  * Hide welcome message with animation
  */
 function hideWelcomeMessage(welcomeMsg) {
+    if (!welcomeMsg) return;
+    
     welcomeMsg.style.opacity = '0';
     setTimeout(() => {
         welcomeMsg.classList.add('hidden');
-        welcomeMsg.style.opacity = '1';
+        welcomeMsg.style.opacity = '';
     }, 300);
 }
 

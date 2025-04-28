@@ -1,0 +1,96 @@
+full, clean planning breakdown for the Live Session Room you want:
+🔥 Live Session Room ( /session/<room_id>/ )
+
+Section	Features
+Top Section	Session Title + Time Left (Live Countdown Clock)
+Left Side	Live Video (Mentor & Learner Videos, 70% of screen width)
+Right Side (Sidebar)	Lecture Topics List (dynamic) + Chat + Transcript (Real-time)
+Controls Under Video	Mute/Unmute, Start/Stop Video, Share Screen, Raise Hand, Settings
+Voice Assistant (optional later)	Trigger voice-to-text commands
+Transcript	Auto-generated using WebRTC + Gemini API
+Participant Status	Small badges for "Active", "Disconnected", "Muted"
+Session Time Management	Only count time when both learner and mentor are active (if user leaves, timer pauses for that user)
+Exit and Rejoin Logic	Smooth reconnection if network drops (3 auto-retries), otherwise "Reconnect" button shows
+Error Handling	WebRTC server errors (ice failure, turn error, stun timeout) - nice popups: "Network issues detected. Trying to reconnect..."
+User Exit Handling	If user leaves early: Confirm popup → "Are you sure? Your session will be marked incomplete."
+Post-Session	Feedback Modal: Rating + Comments
+Popups & Modals	Toasts: "Network unstable", "Mic muted", "Camera off"
+🎯 UX & UI Details
+
+Area	Design
+Cards	Glassmorphism (blur 12px) background for sidebar and controls
+Hover Effects	Buttons gently glow, cards lift slightly
+Transitions	All panels open/close smoothly (0.3s ease-in-out)
+Animations	Lottie animation for "Connecting..." state
+Font	Poppins Bold for titles, Inter Regular for chat/text
+Colors	Soft gradients: Light Blue (#E0F7FA), Calm Gray (#F5F5F5)
+Mobile View	Full-width video, sidebar collapses to bottom drawer
+🚀 Advanced Real-Time Features
+WebRTC Video Streaming (using STUN + TURN servers)
+
+WebSocket via Django Channels for:
+
+Chat messages
+
+Participant join/leave events
+
+Whiteboard (future)
+
+Raise hand signals
+
+Video Recording with MediaRecorder API (optional saving to server /media/recordings/)
+
+Live Transcript using Gemini API → live updates in sidebar
+
+⚡ Error Handling Logic
+
+Error Type	Action
+ICE Failure	Auto-reconnect attempts (max 3) → then show error popup
+TURN Server Unavailable	Retry connection with lower quality
+Mic/Camera Access Denied	Show "Please allow camera/mic access to join the session"
+Network Drop	Show "Reconnecting…" with spinner
+Session End	"Session has ended" popup, redirect to feedback page
+🔥 Server Backend Requirements (Fast + Stable)
+Django Channels (WebSocket backend)
+
+Redis server for Channel Layer
+
+WebRTC Signaling (Offer/Answer exchange)
+
+Session Metadata Save:
+
+Start time
+
+End time
+
+Duration (active only, not full video)
+
+User join/leave events
+
+Save Chat History (optional)
+
+Save Transcript (optional)
+
+✅ User Journey (Minimal Steps)
+
+Step	Action
+1	Learner/mentor clicks Join Session button
+2	Browser asks for mic/camera permissions (only once)
+3	User enters live session — video starts in 2 seconds
+4	Sidebar shows Topics to Cover Today
+5	User can mute, chat, raise hand, etc.
+6	If network issue → Auto-reconnect
+7	After session end → Feedback popup appears
+8	Redirect to Dashboard with "Session Completed" badge
+✨ Recommendations to Make It World-Class
+Auto-scroll topics as mentor covers them (mentor marks "Topic Done" → moves to next)
+
+Real-Time Feedback ("Network stable", "Low bandwidth mode enabled")
+
+Dark Mode (important for long sessions)
+
+Mobile Rejoin Shortcut ("Tap to Rejoin" on session drop)
+
+Voice Notifications ("You are muted", "You have been disconnected" - optional)
+
+Instant Troubleshooting Tips popup ("Check your WiFi", "Refresh page if stuck")

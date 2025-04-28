@@ -1,0 +1,61 @@
+Plan for Smart Pre-Session Management (Your Request)
+🚀 1. Pre-Session Sound Alerts + Countdown Timer
+
+Feature	Action
+Timer Countdown	5 minutes before session, show countdown timer (e.g., "Session starts in 5:00")
+Sound Notification	1 gentle chime (like ding!) sound at 5 min, 1 min, and 10 sec left
+Pop-up Notification	Desktop/mobile push: "Your session is starting! Please join now."
+Auto-Focus Button	"Join Session" button becomes big, animated (glow effect)
+Urgent Mode (Last Minute)	Flashing "Join Now!" button + Auto-scroll to Join section
+✨ 2. Smart Auto-Join Feature (Optional Toggle)
+
+Feature	Action
+Auto-Join Enabled	If user is on PeerLearn website and session timer hits 0:00, automatically joins session
+Auto-Join Disabled	If user not ready, keep "Join Now" button active with sound alerts
+Fallback	If join fails due to network, show "Retry Join" popup automatically
+🔥 Extra: Mentor and Learner can both get "Session About to Start" reminder through a gentle voice notification if you want.
+
+⚡ 3. Real-Time Issues Handling (WebRTC + Server Side)
+Here is a full breakdown of all real-time failures and smart solutions we will implement:
+
+
+Issue	Smart Handling	Message
+WebRTC ICE Failure	3 retries → Auto re-connect → Else show "Click to Retry Connection"	"We're reconnecting you. Hang tight!"
+TURN Server Unavailable	Switch to lower bitrate streaming mode automatically	"Low bandwidth mode activated for stability."
+Camera/Mic Blocked	Prompt user to allow permissions again	"Please enable your mic/camera to join session."
+STUN Timeout	Try secondary server (fallback)	"Connection retrying on backup server…"
+User Closes Tab	Save exit event, prompt to rejoin session if within 2 minutes	"You left the session. Want to rejoin?"
+Mentor Leaves	Freeze session for learner, show "Mentor rejoining..." screen	"Mentor disconnected, please wait..."
+Learner Leaves	Notify mentor silently, timer pause, "Waiting for learner..." message	
+Internet Cut	Auto-reconnect tries 3x → After that, show "Network issue, please refresh" popup	
+Peer Connection Drop Mid-Session	Auto-attempt rejoin in 3 seconds (up to 3 attempts)	
+🛡️ 4. Real-Time Server Setup for Maximum Stability
+We need strong real-time server logic:
+
+
+Part	Requirement
+Django Channels	For WebSocket real-time messaging
+Redis Server	For managing live WebSocket connections
+STUN/TURN Servers	For WebRTC peer-to-peer signaling (Google STUN + Coturn TURN)
+MediaRecorder	For optional session recording locally
+WebSocket Health Check	Every 10 seconds ping-pong between client and server ("Alive?")
+Logs & Alerts	Send errors (disconnects, RTC drops) to server logs for monitoring
+API Rate Limits	To protect against abuse
+Mobile Optimization	Background join reminder if mobile screen is locked
+🌟 Smart Flow for Pre-Session:
+5 minutes before:
+→ Chime Sound
+→ Countdown visible
+→ "Join Now" button activated
+
+1 minute before:
+→ Louder chime
+→ Popup: "Get ready to join!"
+
+10 seconds before:
+→ Final chime
+→ If Auto-Join enabled → auto move into session.
+
+Session Start Time:
+→ If user joined, session starts
+→ If not, show "You missed your start, Join Now!" retry popup.

@@ -416,47 +416,98 @@
     <div class="hidden md:flex md:w-80 bg-white shadow-sm flex-col">
         <!-- Tabs -->
         <div class="flex border-b border-gray-200">
-            <div id="videos-tab" class="tab active border-blue-500 text-blue-600">
-                {% trans "Videos" %}
+            <div id="topics-tab" class="tab active border-blue-500 text-blue-600">
+                {% trans "Topics" %}
             </div>
             <div id="chat-tab" class="tab relative">
                 {% trans "Chat" %}
             </div>
-            <div id="whiteboard-tab" class="tab">
-                {% trans "Whiteboard" %}
+            <div id="transcript-tab" class="tab">
+                {% trans "Transcript" %}
             </div>
         </div>
         
         <!-- Tab Content -->
         <div class="flex-grow overflow-hidden">
-            <!-- Participants List (when Videos tab is active) -->
-            <div id="participants-list" class="p-4">
-                <h3 class="font-medium mb-3">{% trans "Participants" %}</h3>
-                <ul class="space-y-2">
-                    {% if is_mentor %}
-                        <li class="flex items-center p-2 bg-blue-50 rounded-md">
-                            <div class="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3">
-                                {{ user.first_name|first|upper }}
-                            </div>
-                            <div>
-                                <div class="font-medium">{{ user.get_full_name }}</div>
-                                <div class="text-xs text-blue-600">{% trans "Mentor" %}</div>
-                            </div>
-                        </li>
+            <!-- Topics List (when Topics tab is active) -->
+            <div id="topics-list" class="p-4">
+                <h3 class="font-medium mb-3">{% trans "Topics to Cover" %}</h3>
+                <ul class="space-y-2" id="session-topics">
+                    {% if session.description %}
+                        {% with topics=session.description|linebreaksbr|safe %}
+                            {% for line in topics|split_lines %}
+                                <li class="flex items-start p-2 rounded-md border border-gray-100">
+                                    <div class="flex-shrink-0 mt-0.5 mr-3">
+                                        <input type="checkbox" class="topic-checkbox h-5 w-5 rounded text-blue-600 focus:ring-blue-500" 
+                                              {% if is_mentor %}{% else %}disabled{% endif %}>
+                                    </div>
+                                    <div class="flex-grow">
+                                        <p class="text-sm">{{ line|trim }}</p>
+                                    </div>
+                                </li>
+                            {% empty %}
+                                <li class="p-2 text-sm text-gray-500">{% trans "No specific topics listed for this session." %}</li>
+                            {% endfor %}
+                        {% endwith %}
+                    {% else %}
+                        <li class="p-2 text-sm text-gray-500">{% trans "No specific topics listed for this session." %}</li>
                     {% endif %}
-                    
-                    {% for participant in participants %}
-                        <li class="flex items-center p-2 {% if participant.id == user.id %}bg-blue-50{% else %}hover:bg-gray-50{% endif %} rounded-md">
-                            <div class="h-8 w-8 rounded-full bg-gray-500 text-white flex items-center justify-center font-bold mr-3">
-                                {{ participant.first_name|first|upper }}
-                            </div>
-                            <div>
-                                <div class="font-medium">{{ participant.get_full_name }}</div>
-                                <div class="text-xs text-gray-500">{% trans "Learner" %}</div>
-                            </div>
-                        </li>
-                    {% endfor %}
                 </ul>
+                
+                <div class="mt-6">
+                    <h3 class="font-medium mb-3">{% trans "Participants" %}</h3>
+                    <ul class="space-y-2">
+                        {% if is_mentor %}
+                            <li class="flex items-center p-2 bg-blue-50 rounded-md">
+                                <div class="h-8 w-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3">
+                                    {{ user.first_name|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ user.get_full_name }}</div>
+                                    <div class="text-xs text-blue-600">{% trans "Mentor" %}</div>
+                                </div>
+                            </li>
+                        {% endif %}
+                        
+                        {% for participant in participants %}
+                            <li class="flex items-center p-2 {% if participant.id == user.id %}bg-blue-50{% else %}hover:bg-gray-50{% endif %} rounded-md">
+                                <div class="h-8 w-8 rounded-full bg-gray-500 text-white flex items-center justify-center font-bold mr-3">
+                                    {{ participant.first_name|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="font-medium">{{ participant.get_full_name }}</div>
+                                    <div class="text-xs text-gray-500">{% trans "Learner" %}</div>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Chat Panel (initially hidden) -->
+            <div id="chat-content" class="hidden h-full flex flex-col">
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Chat messages will be inserted here -->
+                    <div class="chat-message system">
+                        <div class="chat-bubble system bg-gray-200 text-center text-sm py-1">
+                            {% trans "Session started. Welcome!" %}
+                        </div>
+                    </div>
+                </div>
+                <form id="chat-form" class="chat-form">
+                    <input type="text" id="chat-input" class="chat-input" placeholder="{% trans 'Type your message...' %}">
+                    <button type="submit" class="chat-submit">
+                        <i data-feather="send" class="h-5 w-5"></i>
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Transcript Panel (initially hidden) -->
+            <div id="transcript-content" class="hidden h-full flex flex-col overflow-y-auto p-4">
+                <h3 class="font-medium mb-3">{% trans "Live Transcript" %}</h3>
+                <div id="transcript-container" class="flex-grow space-y-4">
+                    <p class="text-sm text-gray-500 italic">{% trans "Real-time transcript will appear here when speech is detected..." %}</p>
+                </div>
             </div>
         </div>
     </div>

@@ -255,7 +255,7 @@
                     <a href="{% url 'session_list' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
                         <i data-feather="search" class="h-4 w-4 mr-3"></i>
-                        <span>{% trans "All courses" %}</span>
+                        <span>{% trans "Live Sessions" %}</span>
                     </a>
                     <a href="{% url 'cart' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
@@ -267,8 +267,8 @@
                     
                     <a href="{% url 'transaction_history' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
-                        <i data-feather="book" class="h-4 w-4 mr-3"></i>
-                        <span>{% trans "My courses" %}</span>
+                        <i data-feather="video" class="h-4 w-4 mr-3"></i>
+                        <span>{% trans "My Live Sessions" %}</span>
                     </a>
                     <a href="{% url 'profile_settings' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
@@ -442,72 +442,27 @@
                     </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Sample mentor cards when no data -->
-                    <div class="flex flex-col items-center teacher-card">
-                        <div class="relative mb-2">
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xl teacher-avatar">
-                                A
-                            </div>
-                            <button class="absolute -top-1 -right-1 h-6 w-6 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100">
-                                <i data-feather="plus" class="h-3 w-3 text-blue-600"></i>
-                            </button>
+                    <!-- No mentors message when no data -->
+                    <div class="glass-card p-6 w-full text-center">
+                        <div class="mb-4">
+                            <i data-feather="users" class="h-12 w-12 mx-auto text-gray-300"></i>
                         </div>
-                        <p class="font-medium text-sm text-center">Alice Stewart</p>
-                        <p class="text-xs text-gray-500 text-center">Data Science</p>
-                    </div>
-                    
-                    <div class="flex flex-col items-center teacher-card">
-                        <div class="relative mb-2">
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 text-white flex items-center justify-center font-bold text-xl teacher-avatar">
-                                V
-                            </div>
-                            <button class="absolute -top-1 -right-1 h-6 w-6 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100">
-                                <i data-feather="plus" class="h-3 w-3 text-blue-600"></i>
-                            </button>
-                        </div>
-                        <p class="font-medium text-sm text-center">Volter Anderson</p>
-                        <p class="text-xs text-gray-500 text-center">Frontend Dev</p>
-                    </div>
-                    
-                    <div class="flex flex-col items-center teacher-card">
-                        <div class="relative mb-2">
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-yellow-500 to-red-500 text-white flex items-center justify-center font-bold text-xl teacher-avatar">
-                                M
-                            </div>
-                            <div class="absolute -bottom-1 -right-1 h-6 w-6 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100">
-                                <i data-feather="check" class="h-3 w-3 text-green-600"></i>
-                            </div>
-                        </div>
-                        <p class="font-medium text-sm text-center">Monica Peterson</p>
-                        <p class="text-xs text-gray-500 text-center">UX Designer</p>
-                    </div>
-                    
-                    <div class="flex flex-col items-center teacher-card">
-                        <div class="relative mb-2">
-                            <div class="w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white flex items-center justify-center font-bold text-xl teacher-avatar">
-                                A
-                            </div>
-                            <button class="absolute -top-1 -right-1 h-6 w-6 bg-white rounded-full shadow-md flex items-center justify-center border border-gray-100">
-                                <i data-feather="plus" class="h-3 w-3 text-blue-600"></i>
-                            </button>
-                        </div>
-                        <p class="font-medium text-sm text-center">Alice Miller</p>
-                        <p class="text-xs text-gray-500 text-center">ML Engineer</p>
-                    </div>
-                    
-                    <div class="flex items-center justify-center w-16 h-16 rounded-full border-2 border-dashed border-gray-300 text-gray-400 hover:text-blue-600 hover:border-blue-500 transition-colors">
-                        <i data-feather="plus" class="h-6 w-6"></i>
+                        <h3 class="text-lg font-medium text-gray-800 mb-1">{% trans "No mentors yet" %}</h3>
+                        <p class="text-sm text-gray-500 mb-4">{% trans "Join some live sessions to connect with mentors" %}</p>
+                        <a href="{% url 'session_list' %}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                            {% trans "Browse Live Sessions" %}
+                        </a>
                     </div>
                 {% endif %}
             </div>
         </div>
 
-        <!-- My courses / Upcoming Sessions -->
+        <!-- My Live Sessions / Upcoming Sessions -->
         <div class="mb-8">
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-lg font-bold text-gray-800">{% trans "My courses" %}</h2>
+                <h2 class="text-lg font-bold text-gray-800">{% trans "My Live Sessions" %}</h2>
                 <a href="#" class="text-sm text-blue-600 flex items-center">
-                    {% trans "All subjects" %}
+                    {% trans "All categories" %}
                     <i data-feather="chevron-down" class="h-4 w-4 ml-1"></i>
                 </a>
             </div>
@@ -590,107 +545,19 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Sample course cards for empty state -->
-                    <div class="glass-card course-card overflow-hidden">
-                        <div class="relative">
-                            <span class="session-label scheduled absolute top-3 right-3">May 3</span>
-                            <div class="h-36 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center p-4">
-                                <span class="text-xl font-bold text-blue-600">Python Data Science</span>
-                            </div>
+                    <!-- No sessions message when no data -->
+                    <div class="glass-card p-8 col-span-1 md:col-span-2 lg:col-span-3 text-center">
+                        <div class="mb-6">
+                            <i data-feather="video-off" class="h-16 w-16 mx-auto text-gray-300"></i>
                         </div>
-                        
-                        <div class="p-4">
-                            <div class="flex items-center mb-3">
-                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm mr-2">
-                                    A
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-800">Anna Stewart</p>
-                                    <p class="text-xs text-gray-500">Data Scientist</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center text-xs text-gray-700 mb-3">
-                                <div class="flex items-center">
-                                    <i data-feather="calendar" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>May 3, 2025</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i data-feather="clock" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>10:00 AM</span>
-                                </div>
-                            </div>
-                            
-                            <div class="relative pt-1 mb-3">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <span class="text-xs font-medium text-blue-600">{% trans "Progress" %}</span>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-xs font-medium text-blue-600">0%</span>
-                                    </div>
-                                </div>
-                                <div class="h-1.5 mt-1 w-full bg-gray-200 rounded-full">
-                                    <div class="h-1.5 rounded-full bg-blue-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            
-                            <a href="{% url 'session_list' %}" 
-                               class="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-indigo-600 transition-all text-sm">
-                                {% trans "View Details" %}
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="glass-card course-card overflow-hidden">
-                        <div class="relative">
-                            <span class="session-label live absolute top-3 right-3">Live Now</span>
-                            <div class="h-36 bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center p-4">
-                                <span class="text-xl font-bold text-red-600">Web Design Workshop</span>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4">
-                            <div class="flex items-center mb-3">
-                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-red-500 to-pink-500 text-white flex items-center justify-center font-bold text-sm mr-2">
-                                    M
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-800">Monica Peterson</p>
-                                    <p class="text-xs text-gray-500">UX Designer</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center text-xs text-gray-700 mb-3">
-                                <div class="flex items-center">
-                                    <i data-feather="calendar" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>Today</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i data-feather="clock" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>Now</span>
-                                </div>
-                            </div>
-                            
-                            <div class="relative pt-1 mb-3">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <span class="text-xs font-medium text-blue-600">{% trans "Progress" %}</span>
-                                    </div>
-                                    <div class="text-right">
-                                        <span class="text-xs font-medium text-blue-600">10%</span>
-                                    </div>
-                                </div>
-                                <div class="h-1.5 mt-1 w-full bg-gray-200 rounded-full">
-                                    <div class="h-1.5 rounded-full bg-blue-500" style="width: 10%"></div>
-                                </div>
-                            </div>
-                            
-                            <a href="{% url 'session_list' %}" 
-                               class="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-indigo-600 transition-all text-sm">
-                                {% trans "Join Now" %}
-                            </a>
-                        </div>
+                        <h3 class="text-xl font-medium text-gray-800 mb-2">{% trans "No Live Sessions Yet" %}</h3>
+                        <p class="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+                            {% trans "You don't have any upcoming sessions. Browse available live sessions and join now to start learning from expert mentors." %}
+                        </p>
+                        <a href="{% url 'session_list' %}" 
+                           class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-indigo-600 transition-all text-sm">
+                            {% trans "Find Live Sessions" %}
+                        </a>
                     </div>
                     
                     <div class="glass-card course-card overflow-hidden">
@@ -747,10 +614,10 @@
             </div>
         </div>
         
-        <!-- Recommended Courses Section -->
+        <!-- Recommended Live Sessions Section -->
         <div class="mb-8">
             <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-gray-800">{% trans "Popular courses" %}</h2>
+                <h2 class="text-lg font-bold text-gray-800">{% trans "Popular Live Sessions" %}</h2>
                 <div class="flex space-x-1">
                     <button id="prev-popular" class="p-1 rounded-full border border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-400">
                         <i data-feather="chevron-left" class="h-4 w-4"></i>
@@ -825,110 +692,20 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <!-- Sample Recommended Sessions -->
-                    <div class="glass-card course-card overflow-hidden">
-                        <div class="h-24 relative p-4 flex items-center justify-center">
-                            <div class="absolute inset-0" style="background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%);"></div>
-                            <div class="relative z-10">
-                                <h3 class="text-base font-bold text-center">Mathematics: Simple Terms</h3>
-                            </div>
+                    <!-- No recommendations message -->
+                    <div class="glass-card p-8 col-span-1 md:col-span-3 text-center">
+                        <div class="mb-6">
+                            <i data-feather="activity" class="h-16 w-16 mx-auto text-gray-300"></i>
                         </div>
-                        
-                        <div class="p-4">
-                            <div class="flex items-center mb-3">
-                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-sm mr-2">
-                                    V
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-800">Volter Anderson</p>
-                                    <p class="text-xs text-gray-500">Math Teacher</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center text-xs text-gray-700 mb-3">
-                                <div class="flex items-center">
-                                    <i data-feather="calendar" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>May 15</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i data-feather="clock" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>60 mins</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-bold text-blue-600">₹1,200</span>
-                                
-                                <div class="flex items-center text-amber-500">
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="h-3 w-3"></i>
-                                    <span class="text-xs text-gray-600 ml-1">4.0</span>
-                                </div>
-                            </div>
-                            
-                            <a href="{% url 'session_list' %}" 
-                               class="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-indigo-600 transition-all text-sm">
-                                {% trans "View Details" %}
-                            </a>
-                        </div>
+                        <h3 class="text-xl font-medium text-gray-800 mb-2">{% trans "No Recommended Sessions Yet" %}</h3>
+                        <p class="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+                            {% trans "Our recommendation system will suggest live sessions based on your interests and learning patterns once you've attended a few sessions." %}
+                        </p>
+                        <a href="{% url 'session_list' %}" 
+                           class="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-indigo-600 transition-all text-sm">
+                            {% trans "Explore Live Sessions" %}
+                        </a>
                     </div>
-                    
-                    <div class="glass-card course-card overflow-hidden">
-                        <div class="h-24 relative p-4 flex items-center justify-center">
-                            <div class="absolute inset-0" style="background: linear-gradient(135deg, #dcfce7 0%, #ecfdf5 100%);"></div>
-                            <div class="relative z-10">
-                                <h3 class="text-base font-bold text-center">Chemistry is Easy!</h3>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4">
-                            <div class="flex items-center mb-3">
-                                <div class="h-8 w-8 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white flex items-center justify-center font-bold text-sm mr-2">
-                                    A
-                                </div>
-                                <div>
-                                    <p class="text-xs font-medium text-gray-800">Alex Johnson</p>
-                                    <p class="text-xs text-gray-500">Chemistry Expert</p>
-                                </div>
-                            </div>
-                            
-                            <div class="flex justify-between items-center text-xs text-gray-700 mb-3">
-                                <div class="flex items-center">
-                                    <i data-feather="calendar" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>May 18</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <i data-feather="clock" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                    <span>45 mins</span>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-bold text-green-600">Free</span>
-                                
-                                <div class="flex items-center text-amber-500">
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <i data-feather="star" class="fill-current h-3 w-3"></i>
-                                    <span class="text-xs text-gray-600 ml-1">5.0</span>
-                                </div>
-                            </div>
-                            
-                            <a href="{% url 'session_list' %}" 
-                               class="w-full py-2 px-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium text-center hover:from-blue-600 hover:to-indigo-600 transition-all text-sm">
-                                {% trans "View Details" %}
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="glass-card course-card overflow-hidden">
-                        <div class="h-24 relative p-4 flex items-center justify-center">
-                            <div class="absolute inset-0" style="background: linear-gradient(135deg, #ffe4e6 0%, #fecdd3 100%);"></div>
                             <div class="relative z-10">
                                 <h3 class="text-base font-bold text-center">Economic Geography</h3>
                             </div>

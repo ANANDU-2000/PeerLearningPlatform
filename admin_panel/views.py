@@ -540,6 +540,9 @@ def secure_admin_login(request):
         # Perform additional security key verification using database
         key_valid = False
         if security_key:
+            # Hash the provided key
+            hashed_security_key = hashlib.sha256(security_key.encode()).hexdigest()
+            
             # Get active keys
             active_keys = AdminAccessKey.objects.filter(is_active=True)
             for key in active_keys:
@@ -547,8 +550,8 @@ def secure_admin_login(request):
                 if key.is_expired:
                     continue
                     
-                # Check if provided key matches
-                if constant_time_compare(security_key, key.key_value):
+                # Check if provided key matches the stored hashed value
+                if constant_time_compare(hashed_security_key, key.key_value):
                     key_valid = True
                     break
         
@@ -653,10 +656,11 @@ def generate_access_key(request):
         # Generate a secure random key
         plain_text_key = secrets.token_urlsafe(32)
         
-        # Create the key record
+        # Create the key record with hashed value
+        hashed_key = hashlib.sha256(plain_text_key.encode()).hexdigest()
         key_obj = AdminAccessKey.objects.create(
             key_name=key_name,
-            key_value=plain_text_key,
+            key_value=hashed_key,
             expires_at=expires_at,
             created_by=request.user
         )

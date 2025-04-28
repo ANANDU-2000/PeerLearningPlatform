@@ -106,7 +106,7 @@
 <!-- Featured Sessions Carousel (Netflix-style) -->
 <section class="py-20 bg-white">
     <div class="container mx-auto px-6">
-        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Trending Sessions" %}</h2>
+        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Upcoming Sessions" %}</h2>
         
         <div class="relative featured-carousel">
             <button class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 focus:outline-none" id="prev-button">
@@ -115,128 +115,58 @@
             
             <div class="carousel-container overflow-x-auto hide-scrollbar">
                 <div class="carousel-track flex space-x-6 transition-transform duration-500 ease-out">
-                    <!-- Will be populated with sessions from the database -->
-                    <!-- Example Session Cards -->
-                    <div class="carousel-item flex-none w-72">
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
-                            <div class="h-40 bg-blue-100 relative">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i data-feather="code" class="h-12 w-12 text-blue-500"></i>
-                                </div>
-                                <div class="absolute bottom-0 left-0 bg-blue-600 text-white px-3 py-1 text-sm font-bold">
-                                    {% trans "Programming" %}
+                    {% if upcoming_sessions %}
+                        {% for session in upcoming_sessions %}
+                            <div class="carousel-item flex-none w-72">
+                                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
+                                    <div class="h-40 bg-blue-100 relative">
+                                        {% if session.thumbnail %}
+                                            <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover">
+                                        {% else %}
+                                            <div class="absolute inset-0 flex items-center justify-center">
+                                                <i data-feather="book-open" class="h-12 w-12 text-blue-500"></i>
+                                            </div>
+                                        {% endif %}
+                                        {% if session.tags %}
+                                            <div class="absolute bottom-0 left-0 bg-blue-600 text-white px-3 py-1 text-sm font-bold">
+                                                {{ session.tags.split|first|title }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="p-4">
+                                        <h3 class="text-lg font-bold mb-2 text-gray-800 truncate">{{ session.title }}</h3>
+                                        <div class="flex items-center mb-2">
+                                            {% if session.mentor.user.profile_picture %}
+                                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="w-8 h-8 rounded-full object-cover mr-2">
+                                            {% else %}
+                                                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-2">
+                                                    {{ session.mentor.user.first_name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <span class="text-sm text-gray-600 truncate">{{ session.mentor.user.get_full_name }}</span>
+                                        </div>
+                                        <div class="text-xs text-gray-500 mb-2">
+                                            <i data-feather="calendar" class="inline h-3 w-3 mr-1"></i>
+                                            {{ session.start_time|date:"M j, Y • g:i A" }}
+                                        </div>
+                                        <div class="flex justify-between items-center mt-4">
+                                            {% if session.price > 0 %}
+                                                <span class="text-blue-600 font-bold">₹{{ session.price }}</span>
+                                            {% else %}
+                                                <span class="text-green-600 font-bold">{% trans "Free" %}</span>
+                                            {% endif %}
+                                            <a href="{% url 'session_detail' session.id %}" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Advanced React Patterns" %}</h3>
-                                <div class="flex items-center mb-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-                                    <span class="text-sm text-gray-600">Sarah Johnson</span>
-                                </div>
-                                <div class="flex justify-between items-center mt-4">
-                                    <span class="text-blue-600 font-bold">₹1,200</span>
-                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
-                                </div>
-                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Fallback if no sessions available -->
+                        <div class="carousel-item flex-none w-full text-center py-8">
+                            <p class="text-gray-500">{% trans "No upcoming sessions available at the moment." %}</p>
                         </div>
-                    </div>
-                    
-                    <!-- More example cards... -->
-                    <div class="carousel-item flex-none w-72">
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
-                            <div class="h-40 bg-green-100 relative">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i data-feather="bar-chart-2" class="h-12 w-12 text-green-500"></i>
-                                </div>
-                                <div class="absolute bottom-0 left-0 bg-green-600 text-white px-3 py-1 text-sm font-bold">
-                                    {% trans "Finance" %}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Investment Strategies 101" %}</h3>
-                                <div class="flex items-center mb-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-                                    <span class="text-sm text-gray-600">Michael Chen</span>
-                                </div>
-                                <div class="flex justify-between items-center mt-4">
-                                    <span class="text-blue-600 font-bold">₹1,500</span>
-                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="carousel-item flex-none w-72">
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
-                            <div class="h-40 bg-red-100 relative">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i data-feather="camera" class="h-12 w-12 text-red-500"></i>
-                                </div>
-                                <div class="absolute bottom-0 left-0 bg-red-600 text-white px-3 py-1 text-sm font-bold">
-                                    {% trans "Photography" %}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Portrait Photography Masterclass" %}</h3>
-                                <div class="flex items-center mb-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-                                    <span class="text-sm text-gray-600">Emma Wilson</span>
-                                </div>
-                                <div class="flex justify-between items-center mt-4">
-                                    <span class="text-blue-600 font-bold">₹900</span>
-                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="carousel-item flex-none w-72">
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
-                            <div class="h-40 bg-purple-100 relative">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i data-feather="trending-up" class="h-12 w-12 text-purple-500"></i>
-                                </div>
-                                <div class="absolute bottom-0 left-0 bg-purple-600 text-white px-3 py-1 text-sm font-bold">
-                                    {% trans "Marketing" %}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Digital Marketing Strategy" %}</h3>
-                                <div class="flex items-center mb-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-                                    <span class="text-sm text-gray-600">David Lopez</span>
-                                </div>
-                                <div class="flex justify-between items-center mt-4">
-                                    <span class="text-blue-600 font-bold">₹1,800</span>
-                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="carousel-item flex-none w-72">
-                        <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
-                            <div class="h-40 bg-yellow-100 relative">
-                                <div class="absolute inset-0 flex items-center justify-center">
-                                    <i data-feather="edit-3" class="h-12 w-12 text-yellow-500"></i>
-                                </div>
-                                <div class="absolute bottom-0 left-0 bg-yellow-600 text-white px-3 py-1 text-sm font-bold">
-                                    {% trans "Writing" %}
-                                </div>
-                            </div>
-                            <div class="p-4">
-                                <h3 class="text-lg font-bold mb-2 text-gray-800">{% trans "Creative Writing Workshop" %}</h3>
-                                <div class="flex items-center mb-2">
-                                    <div class="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
-                                    <span class="text-sm text-gray-600">Priya Singh</span>
-                                </div>
-                                <div class="flex justify-between items-center mt-4">
-                                    <span class="text-blue-600 font-bold">₹1,000</span>
-                                    <a href="#" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
             </div>
             
@@ -250,6 +180,78 @@
                 {% trans "View All Sessions" %}
                 <i data-feather="arrow-right" class="ml-2 h-4 w-4"></i>
             </a>
+        </div>
+    </div>
+</section>
+
+<!-- Live Now Sessions -->
+{% if live_sessions %}
+<section class="py-16 bg-gray-50">
+    <div class="container mx-auto px-6">
+        <div class="flex items-center mb-10">
+            <h2 class="text-3xl font-bold text-gray-800">{% trans "Live Now" %}</h2>
+            <div class="ml-3 px-3 py-1 bg-red-100 text-red-700 rounded-full flex items-center">
+                <span class="h-2 w-2 bg-red-600 rounded-full mr-2 animate-pulse"></span>
+                <span class="text-sm font-bold">{% trans "LIVE" %}</span>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {% for session in live_sessions %}
+                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full border-2 border-red-400">
+                    <div class="h-40 bg-red-50 relative">
+                        {% if session.thumbnail %}
+                            <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover">
+                        {% else %}
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <i data-feather="video" class="h-12 w-12 text-red-500"></i>
+                            </div>
+                        {% endif %}
+                        <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
+                            <span class="h-2 w-2 bg-white rounded-full mr-1 animate-pulse"></span>
+                            {% trans "LIVE NOW" %}
+                        </div>
+                    </div>
+                    <div class="p-4">
+                        <h3 class="text-lg font-bold mb-2 text-gray-800 truncate">{{ session.title }}</h3>
+                        <div class="flex items-center mb-3">
+                            {% if session.mentor.user.profile_picture %}
+                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="w-8 h-8 rounded-full object-cover mr-2">
+                            {% else %}
+                                <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold mr-2">
+                                    {{ session.mentor.user.first_name|first|upper }}
+                                </div>
+                            {% endif %}
+                            <span class="text-sm text-gray-600 truncate">{{ session.mentor.user.get_full_name }}</span>
+                        </div>
+                        <a href="{% url 'session_room' session.id %}" class="block w-full bg-red-600 hover:bg-red-700 text-white text-center py-2 rounded-md font-bold">
+                            {% trans "Join Now" %}
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Popular Topics -->
+{% if popular_topics %}
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-6">
+        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Popular Topics" %}</h2>
+        
+        <div class="flex flex-wrap gap-4 justify-center">
+            {% for topic, count in popular_topics %}
+                <a href="{% url 'session_list' %}?tag={{ topic }}" class="inline-block px-6 py-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-full transition-all transform hover:scale-105">
+                    <span class="font-medium">{{ topic|title }}</span>
+                    <span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-xs">{{ count }}</span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
         </div>
     </div>
 </section>

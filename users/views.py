@@ -41,10 +41,41 @@ def landing_page(request):
     # Get some featured mentors for the showcase section
     featured_mentors = MentorProfile.objects.filter(
         is_approved=True
-    ).order_by('-average_rating')[:6]
+    ).order_by('-average_rating')[:8]
+    
+    # Get upcoming featured sessions
+    from learning_sessions.models import Session
+    upcoming_sessions = Session.objects.filter(
+        status='scheduled',
+        start_time__gt=timezone.now(),
+        mentor__is_approved=True
+    ).select_related('mentor__user').order_by('start_time')[:8]
+    
+    # Get currently live sessions
+    live_sessions = Session.objects.filter(
+        status='in_progress',
+        mentor__is_approved=True
+    ).select_related('mentor__user')[:4]
+    
+    # Get popular session categories/topics based on tags
+    popular_topics = []
+    all_tags = {}
+    
+    for session in Session.objects.filter(mentor__is_approved=True):
+        if session.tags:
+            tags = [tag.strip() for tag in session.tags.split(',')]
+            for tag in tags:
+                if tag:
+                    all_tags[tag] = all_tags.get(tag, 0) + 1
+    
+    # Sort by popularity and take top 8
+    popular_topics = sorted(all_tags.items(), key=lambda x: x[1], reverse=True)[:8]
     
     return render(request, 'landing.html', {
         'featured_mentors': featured_mentors,
+        'upcoming_sessions': upcoming_sessions,
+        'live_sessions': live_sessions,
+        'popular_topics': popular_topics,
     })
 
 

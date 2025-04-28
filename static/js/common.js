@@ -68,7 +68,8 @@ function initWelcomeMessage() {
     
     // Auto-hide after 10 seconds
     setTimeout(() => {
-        if (!welcomeMsg.classList.contains('hidden')) {
+        // Check if welcomeMsg still exists in the DOM
+        if (welcomeMsg && document.body.contains(welcomeMsg) && !welcomeMsg.classList.contains('hidden')) {
             hideWelcomeMessage(welcomeMsg);
         }
     }, 10000);
@@ -91,56 +92,102 @@ function hideWelcomeMessage(welcomeMsg) {
  * Initialize dropdown menus with proper accessibility
  */
 function initDropdowns() {
-    const dropdownToggles = document.querySelectorAll('.dropdown button');
-    
-    dropdownToggles.forEach(toggle => {
-        toggle.addEventListener('click', function(e) {
-            e.stopPropagation();
+    try {
+        const dropdownToggles = document.querySelectorAll('.dropdown button');
+        if (!dropdownToggles || dropdownToggles.length === 0) return;
+        
+        dropdownToggles.forEach(toggle => {
+            if (!toggle) return;
             
-            const content = this.nextElementSibling;
-            const isExpanded = this.getAttribute('aria-expanded') === 'true';
-            
-            // Close all other dropdowns first
-            dropdownToggles.forEach(otherToggle => {
-                if (otherToggle !== toggle) {
-                    otherToggle.setAttribute('aria-expanded', 'false');
-                    otherToggle.nextElementSibling.classList.add('hidden');
+            toggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                try {
+                    const content = this.nextElementSibling;
+                    if (!content) return;
+                    
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    
+                    // Close all other dropdowns first
+                    dropdownToggles.forEach(otherToggle => {
+                        if (!otherToggle || otherToggle === toggle) return;
+                        
+                        try {
+                            otherToggle.setAttribute('aria-expanded', 'false');
+                            const otherContent = otherToggle.nextElementSibling;
+                            if (otherContent && otherContent.classList) {
+                                otherContent.classList.add('hidden');
+                            }
+                        } catch (err) {
+                            console.error('Error closing other dropdown:', err);
+                        }
+                    });
+                    
+                    // Toggle current dropdown
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    content.classList.toggle('hidden');
+                    
+                    // Add focus trap for keyboard users
+                    if (content.classList && !content.classList.contains('hidden')) {
+                        const focusableElements = content.querySelectorAll('a, button');
+                        if (focusableElements.length) {
+                            setTimeout(() => focusableElements[0].focus(), 100);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error in dropdown click handler:', err);
                 }
             });
-            
-            // Toggle current dropdown
-            this.setAttribute('aria-expanded', !isExpanded);
-            content.classList.toggle('hidden');
-            
-            // Add focus trap for keyboard users
-            if (!content.classList.contains('hidden')) {
-                const focusableElements = content.querySelectorAll('a, button');
-                if (focusableElements.length) {
-                    setTimeout(() => focusableElements[0].focus(), 100);
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            try {
+                if (!e.target.closest('.dropdown')) {
+                    dropdownToggles.forEach(toggle => {
+                        if (!toggle) return;
+                        
+                        try {
+                            toggle.setAttribute('aria-expanded', 'false');
+                            const content = toggle.nextElementSibling;
+                            if (content && content.classList) {
+                                content.classList.add('hidden');
+                            }
+                        } catch (err) {
+                            console.error('Error closing dropdown on outside click:', err);
+                        }
+                    });
                 }
+            } catch (err) {
+                console.error('Error in document click handler:', err);
             }
         });
-    });
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.dropdown')) {
-            dropdownToggles.forEach(toggle => {
-                toggle.setAttribute('aria-expanded', 'false');
-                toggle.nextElementSibling.classList.add('hidden');
-            });
-        }
-    });
-    
-    // Close dropdowns on Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            dropdownToggles.forEach(toggle => {
-                toggle.setAttribute('aria-expanded', 'false');
-                toggle.nextElementSibling.classList.add('hidden');
-            });
-        }
-    });
+        
+        // Close dropdowns on Escape key
+        document.addEventListener('keydown', function(e) {
+            try {
+                if (e.key === 'Escape') {
+                    dropdownToggles.forEach(toggle => {
+                        if (!toggle) return;
+                        
+                        try {
+                            toggle.setAttribute('aria-expanded', 'false');
+                            const content = toggle.nextElementSibling;
+                            if (content && content.classList) {
+                                content.classList.add('hidden');
+                            }
+                        } catch (err) {
+                            console.error('Error closing dropdown on escape:', err);
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Error in escape key handler:', err);
+            }
+        });
+    } catch (err) {
+        console.error('Error initializing dropdowns:', err);
+    }
 }
 
 /**

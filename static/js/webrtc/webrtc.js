@@ -280,9 +280,24 @@ class PeerLearnRTC {
         
         // WebSocket reconnection settings
         this.wsReconnectAttempts = 0;
-        this.wsMaxReconnectAttempts = 5;
+        this.wsMaxReconnectAttempts = 7; // Increased for better resilience
         this.wsReconnectInterval = 2000; // Start with 2 seconds
         this.wsReconnecting = false;
+        
+        // Heartbeat and connection monitoring
+        this.heartbeatInterval = null;
+        this.heartbeatTimeout = null;
+        this.connectionTimeout = null;
+        this.reconnectTimeout = null;
+        this.lastConnectionTime = null;
+        this.cachedPeerConnections = null;
+        
+        // Setup network status event listeners
+        window.addEventListener('offline', () => {
+            console.warn("Device went offline");
+            this.onError("Network connection lost. Waiting for connection to resume...");
+            // We'll reconnect when the online event fires
+        });
         
         console.log("Connecting to WebSocket:", wsUrl);
         this.connectWebSocket(wsUrl);
@@ -293,19 +308,82 @@ class PeerLearnRTC {
      */
     connectWebSocket(wsUrl) {
         try {
+            // Clear any previous connection attempt timeouts
+            if (this.reconnectTimeout) {
+                clearTimeout(this.reconnectTimeout);
+                this.reconnectTimeout = null;
+            }
+            
+            // Check for network connectivity before attempting connection
+            if (!navigator.onLine) {
+                console.warn("Device appears to be offline. Will attempt connection when online.");
+                this.onError("No internet connection detected. Please check your network.");
+                
+                // Listen for online event to retry automatically
+                window.addEventListener('online', () => {
+                    console.log("Device is back online, attempting to reconnect...");
+                    this.onError("Internet connection restored. Reconnecting to session...");
+                    setTimeout(() => this.connectWebSocket(wsUrl), 1000);
+                }, { once: true });
+                return;
+            }
+            
+            // Create new WebSocket connection
             this.socket = new WebSocket(wsUrl);
+            
+            // Track connection timeout to detect slow connections
+            this.connectionStartTime = Date.now();
+            this.connectionTimeout = setTimeout(() => {
+                if (this.socket && this.socket.readyState !== WebSocket.OPEN) {
+                    console.warn("WebSocket connection taking too long, initiating reconnect");
+                    // Force close and reconnect
+                    if (this.socket) {
+                        this.socket.close();
+                    }
+                }
+            }, 10000); // 10 second timeout for initial connection
             
             this.socket.onopen = () => {
                 console.log("WebSocket connection established successfully");
                 
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                
+                // Calculate connection time for diagnostics
+                const connectionTime = Date.now() - this.connectionStartTime;
+                console.log(`Connection established in ${connectionTime}ms`);
+                
                 // Reset reconnection counters on successful connection
                 this.wsReconnectAttempts = 0;
                 this.wsReconnectInterval = 2000;
+                this.lastConnectionTime = Date.now();
                 
                 // If we were reconnecting, notify that we're back online
                 if (this.wsReconnecting) {
                     this.onError("Connection re-established successfully!");
                     this.wsReconnecting = false;
+                    
+                    // For each peer connection that was active before disconnection, try to reestablish
+                    if (this.cachedPeerConnections) {
+                        setTimeout(() => {
+                            console.log("Attempting to restore previous connections");
+                            Object.keys(this.cachedPeerConnections).forEach(userId => {
+                                if (!this.peerConnections[userId]) {
+                                    const peerInfo = this.cachedPeerConnections[userId];
+                                    console.log(`Attempting to restore connection with ${peerInfo.userName} (${userId})`);
+                                    this.createPeerConnection(userId, peerInfo.userName);
+                                    if (this.userId < userId || this.isMentor) {
+                                        this.createOffer(userId);
+                                    }
+                                }
+                            });
+                            // Clear cached connections after restoration attempt
+                            this.cachedPeerConnections = null;
+                        }, 1000);
+                    }
                 }
                 
                 // Send join message to the server
@@ -313,28 +391,77 @@ class PeerLearnRTC {
                     type: 'join',
                     user_id: this.userId,
                     user_name: this.userName,
-                    is_mentor: this.isMentor
+                    is_mentor: this.isMentor,
+                    client_info: {
+                        reconnect_count: this.wsReconnectAttempts,
+                        connection_time_ms: connectionTime,
+                        user_agent: navigator.userAgent,
+                        timestamp: Date.now()
+                    }
                 });
+                
+                // Start heartbeat to detect silent connection failures
+                this.startHeartbeat();
             };
             
             this.socket.onmessage = (event) => {
                 try {
+                    // Reset heartbeat timer on any message received
+                    this.resetHeartbeatTimer();
+                    
                     const data = JSON.parse(event.data);
+                    
+                    // Handle ping messages for connection health checks
+                    if (data.type === 'ping') {
+                        this.sendSignalingMessage({ type: 'pong', timestamp: Date.now() });
+                        return;
+                    }
+                    
                     console.log("WebSocket message received:", data.type);
                     this.handleSignalingMessage(data);
                 } catch (err) {
-                    console.error("Error parsing WebSocket message:", err);
-                    this.onError("Failed to process signaling message: " + err.message);
+                    console.error("Error parsing WebSocket message:", err, event.data);
+                    this.onError("Failed to process message: " + err.message);
                 }
             };
             
             this.socket.onclose = (event) => {
                 console.warn(`WebSocket connection closed: ${event.code} ${event.reason}`);
                 
+                // Clear heartbeat timer
+                this.stopHeartbeat();
+                
+                // Clear connection timeout if it exists
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                
+                // Cache current active peer connections before attempting reconnect
+                this.cachedPeerConnections = {};
+                for (const userId in this.peerConnections) {
+                    this.cachedPeerConnections[userId] = {
+                        userId: userId,
+                        userName: document.getElementById(`video-${userId}`)?.getAttribute('data-username') || 'Unknown User',
+                        active: true,
+                        timestamp: Date.now()
+                    };
+                }
+                
                 // Don't attempt to reconnect if this was a normal closure
-                if (event.code === 1000) {
+                if (event.code === 1000 || event.code === 1001) {
                     console.log("WebSocket closed normally, not reconnecting");
                     return;
+                }
+                
+                // Calculate how long the connection was stable before disconnecting
+                const connectionDuration = Date.now() - (this.lastConnectionTime || Date.now());
+                const wasStableConnection = connectionDuration > 30000; // 30 seconds or more is considered stable
+                
+                // If connection was stable, we reset the retry count to give more chances
+                if (wasStableConnection && this.wsReconnectAttempts > 0) {
+                    console.log("Previous connection was stable, reducing retry counter to improve reconnection chances");
+                    this.wsReconnectAttempts = Math.max(0, this.wsReconnectAttempts - 1);
                 }
                 
                 // Attempt to reconnect with exponential backoff
@@ -343,28 +470,53 @@ class PeerLearnRTC {
                 if (this.wsReconnectAttempts <= this.wsMaxReconnectAttempts) {
                     this.wsReconnecting = true;
                     
-                    // Use exponential backoff for reconnection attempts
-                    const reconnectDelay = Math.min(30000, this.wsReconnectInterval * Math.pow(1.5, this.wsReconnectAttempts - 1));
+                    // Use exponential backoff with jitter for reconnection attempts
+                    // Adding jitter helps prevent reconnection stampedes from multiple clients
+                    const base = this.wsReconnectInterval * Math.pow(1.5, this.wsReconnectAttempts - 1);
+                    const jitter = Math.random() * 1000; // Random jitter up to 1 second
+                    const reconnectDelay = Math.min(30000, base + jitter);
                     
                     console.log(`Attempting to reconnect in ${reconnectDelay/1000} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
                     
-                    // Show reconnection status to user after the first attempt
+                    // Show reconnection status to user
                     if (this.wsReconnectAttempts > 1) {
                         this.onError(`Connection lost. Reconnecting in ${Math.round(reconnectDelay/1000)} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
+                    } else {
+                        // First disconnect, show a more subtle message
+                        this.onError(`Connection temporarily interrupted. Reconnecting automatically...`);
                     }
                     
-                    setTimeout(() => {
+                    // Set reconnect timeout
+                    this.reconnectTimeout = setTimeout(() => {
                         console.log(`Reconnecting to WebSocket (Attempt ${this.wsReconnectAttempts})`);
                         this.connectWebSocket(wsUrl);
                     }, reconnectDelay);
                 } else {
-                    this.onError("Unable to reconnect after multiple attempts. Please refresh the page to try again.");
+                    // We've exceeded max reconnection attempts
+                    this.onError("Unable to reconnect after multiple attempts. The session may have ended or there may be network issues. Please refresh the page to try again.");
+                    
+                    // Listen for online events in case user was disconnected due to network
+                    window.addEventListener('online', () => {
+                        console.log("Device is back online, attempting to reconnect...");
+                        this.onError("Internet connection restored. Reconnecting to session...");
+                        
+                        // Reset reconnect attempts since we have a new network condition
+                        this.wsReconnectAttempts = 0;
+                        setTimeout(() => this.connectWebSocket(wsUrl), 1000);
+                    }, { once: true });
                 }
             };
             
             this.socket.onerror = (error) => {
                 console.error("WebSocket error:", error);
-                // We don't need to take action here as onclose will be called
+                // Most WebSocket implementations will call onclose after onerror
+                // We log here but take action in onclose
+                
+                // If we haven't exceeded attempts, we'll try to reconnect in onclose
+                // If the error is about network connectivity, we might need to check that
+                if (!navigator.onLine) {
+                    this.onError("Network connectivity issue detected.");
+                }
             };
         } catch (err) {
             console.error("Error setting up WebSocket:", err);
@@ -372,12 +524,67 @@ class PeerLearnRTC {
             
             // Also attempt to reconnect on initial connection error
             if (this.wsReconnectAttempts < this.wsMaxReconnectAttempts) {
-                setTimeout(() => {
+                this.reconnectTimeout = setTimeout(() => {
                     this.wsReconnectAttempts++;
                     console.log(`Attempting to reconnect... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
                     this.connectWebSocket(wsUrl);
                 }, this.wsReconnectInterval);
+            } else {
+                // We've exhausted reconnection attempts
+                this.onError("Unable to establish a connection. Please check your internet connection and refresh the page.");
             }
+        }
+    }
+    
+    /**
+     * Start heartbeat to detect silent connection failures
+     */
+    startHeartbeat() {
+        // Clear any existing heartbeat
+        this.stopHeartbeat();
+        
+        // Set heartbeat interval
+        this.heartbeatInterval = setInterval(() => {
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                // Send heartbeat message
+                this.sendSignalingMessage({ type: 'heartbeat', timestamp: Date.now() });
+            }
+        }, 30000); // Send heartbeat every 30 seconds
+        
+        // Set timeout to detect missed heartbeats
+        this.resetHeartbeatTimer();
+    }
+    
+    /**
+     * Reset heartbeat timeout timer
+     */
+    resetHeartbeatTimer() {
+        if (this.heartbeatTimeout) {
+            clearTimeout(this.heartbeatTimeout);
+        }
+        
+        // If no messages received within 60 seconds, consider connection dead
+        this.heartbeatTimeout = setTimeout(() => {
+            console.warn("No response from server for too long, considering connection dead");
+            if (this.socket) {
+                // Force close the socket to trigger reconnection
+                this.socket.close(4000, "Heartbeat timeout");
+            }
+        }, 60000);
+    }
+    
+    /**
+     * Stop heartbeat timers
+     */
+    stopHeartbeat() {
+        if (this.heartbeatInterval) {
+            clearInterval(this.heartbeatInterval);
+            this.heartbeatInterval = null;
+        }
+        
+        if (this.heartbeatTimeout) {
+            clearTimeout(this.heartbeatTimeout);
+            this.heartbeatTimeout = null;
         }
     }
 

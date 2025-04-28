@@ -1,0 +1,561 @@
+{% extends 'admin_panel/base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Payment Management" %} | {% trans "Admin Panel" %}{% endblock %}
+{% block header_title %}{% trans "Payment Management" %}{% endblock %}
+
+{% block content %}
+<div class="container px-6 mx-auto">
+    <h2 class="my-6 text-2xl font-semibold text-gray-700">
+        {% trans "Payment Management" %}
+    </h2>
+    
+    <!-- Filter Form -->
+    <div class="mb-8 p-4 bg-white rounded-lg shadow-xs glassmorphism">
+        <h3 class="text-lg font-medium text-gray-700 mb-3">{% trans "Filter Transactions" %}</h3>
+        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Status" %}</label>
+                <select name="status" id="status" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        onchange="this.form.submit()">
+                    <option value="">{% trans "All Statuses" %}</option>
+                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>{% trans "Pending" %}</option>
+                    <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>{% trans "Completed" %}</option>
+                    <option value="failed" {% if status_filter == 'failed' %}selected{% endif %}>{% trans "Failed" %}</option>
+                    <option value="refunded" {% if status_filter == 'refunded' %}selected{% endif %}>{% trans "Refunded" %}</option>
+                    <option value="withdrawal_pending" {% if status_filter == 'withdrawal_pending' %}selected{% endif %}>{% trans "Withdrawal Pending" %}</option>
+                    <option value="withdrawal_completed" {% if status_filter == 'withdrawal_completed' %}selected{% endif %}>{% trans "Withdrawal Completed" %}</option>
+                </select>
+            </div>
+            <div>
+                <label for="type" class="block text-sm font-medium text-gray-700 mb-1">{% trans "Type" %}</label>
+                <select name="type" id="type" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                        onchange="this.form.submit()">
+                    <option value="">{% trans "All Types" %}</option>
+                    <option value="payment" {% if type_filter == 'payment' %}selected{% endif %}>{% trans "Payments" %}</option>
+                    <option value="withdrawal" {% if type_filter == 'withdrawal' %}selected{% endif %}>{% trans "Withdrawals" %}</option>
+                </select>
+            </div>
+            <div>
+                <label for="date_from" class="block text-sm font-medium text-gray-700 mb-1">{% trans "From Date" %}</label>
+                <input type="date" name="date_from" id="date_from" value="{{ date_from }}" 
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div>
+                <label for="date_to" class="block text-sm font-medium text-gray-700 mb-1">{% trans "To Date" %}</label>
+                <input type="date" name="date_to" id="date_to" value="{{ date_to }}" 
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+            </div>
+            <div class="md:col-span-2 lg:col-span-4 flex justify-end">
+                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <i class="fas fa-filter mr-2"></i>
+                    {% trans "Apply Filters" %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Transactions Table -->
+    <div class="w-full overflow-hidden rounded-lg shadow-xs glassmorphism mb-8">
+        <div class="w-full overflow-x-auto">
+            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-700">{% trans "Transactions" %}</h3>
+                <div class="text-sm text-gray-500">
+                    {% trans "Total" %}: {{ transactions.count }} {% trans "transactions" %}
+                </div>
+            </div>
+            
+            {% if transactions %}
+            <table class="w-full whitespace-no-wrap">
+                <thead>
+                    <tr class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b bg-gray-50">
+                        <th class="px-4 py-3">{% trans "ID" %}</th>
+                        <th class="px-4 py-3">{% trans "User" %}</th>
+                        <th class="px-4 py-3">{% trans "Type" %}</th>
+                        <th class="px-4 py-3">{% trans "Amount" %}</th>
+                        <th class="px-4 py-3">{% trans "Status" %}</th>
+                        <th class="px-4 py-3">{% trans "Date" %}</th>
+                        <th class="px-4 py-3">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y">
+                    {% for transaction in transactions %}
+                    <tr class="text-gray-700">
+                        <td class="px-4 py-3">
+                            <div class="text-sm">{{ transaction.external_id|default:transaction.id }}</div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm font-semibold">
+                                {% if transaction.booking %}
+                                    {% if transaction.status.startswith 'withdrawal' %}
+                                        {{ transaction.booking.session.mentor.user.get_full_name }}
+                                        <div class="text-xs text-gray-500">{{ transaction.booking.session.mentor.user.email }}</div>
+                                    {% else %}
+                                        {{ transaction.booking.learner.get_full_name }}
+                                        <div class="text-xs text-gray-500">{{ transaction.booking.learner.email }}</div>
+                                    {% endif %}
+                                {% else %}
+                                    {% trans "No user" %}
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3">
+                            <div class="text-sm">
+                                {% if transaction.status.startswith 'withdrawal' %}
+                                    <span class="font-medium text-purple-600">{% trans "Withdrawal" %}</span>
+                                {% else %}
+                                    <span class="font-medium text-green-600">{% trans "Payment" %}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            ₹{{ transaction.amount }}
+                        </td>
+                        <td class="px-4 py-3 text-xs">
+                            <span class="px-2 py-1 font-semibold leading-tight rounded-full 
+                                {% if transaction.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif transaction.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif transaction.status == 'failed' %}bg-red-100 text-red-800
+                                {% elif transaction.status == 'refunded' %}bg-purple-100 text-purple-800
+                                {% elif transaction.status == 'withdrawal_pending' %}bg-blue-100 text-blue-800
+                                {% elif transaction.status == 'withdrawal_completed' %}bg-indigo-100 text-indigo-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {% if transaction.status == 'completed' %}{% trans "Completed" %}
+                                {% elif transaction.status == 'pending' %}{% trans "Pending" %}
+                                {% elif transaction.status == 'failed' %}{% trans "Failed" %}
+                                {% elif transaction.status == 'refunded' %}{% trans "Refunded" %}
+                                {% elif transaction.status == 'withdrawal_pending' %}{% trans "Withdrawal Pending" %}
+                                {% elif transaction.status == 'withdrawal_completed' %}{% trans "Withdrawal Completed" %}
+                                {% else %}{{ transaction.status }}{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {{ transaction.created_at|date:"Y-m-d H:i" }}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <div class="flex items-center space-x-2">
+                                <button class="text-blue-500 hover:underline" onclick="showTransactionDetails({{ transaction.id }})">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                
+                                {% if transaction.status == 'pending' %}
+                                <button class="text-green-500 hover:underline" onclick="confirmMarkAsCompleted({{ transaction.id }})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                
+                                {% if transaction.status == 'completed' and not transaction.status.startswith 'withdrawal' %}
+                                <button class="text-purple-500 hover:underline" onclick="confirmRefund({{ transaction.id }})">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-4 text-center text-gray-500">
+                {% trans "No transactions match your filters." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Withdrawal Requests -->
+    <div class="w-full overflow-hidden rounded-lg shadow-xs glassmorphism mb-8">
+        <div class="w-full overflow-x-auto">
+            <div class="px-4 py-3 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h3 class="text-lg font-medium text-gray-700">{% trans "Withdrawal Requests" %}</h3>
+                <div class="text-sm text-gray-500">
+                    {% trans "Total" %}: {{ withdrawals.count }} {% trans "requests" %}
+                </div>
+            </div>
+            
+            {% if withdrawals %}
+            <table class="w-full whitespace-no-wrap">
+                <thead>
+                    <tr class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b bg-gray-50">
+                        <th class="px-4 py-3">{% trans "Mentor" %}</th>
+                        <th class="px-4 py-3">{% trans "Amount" %}</th>
+                        <th class="px-4 py-3">{% trans "Bank Details" %}</th>
+                        <th class="px-4 py-3">{% trans "Status" %}</th>
+                        <th class="px-4 py-3">{% trans "Requested" %}</th>
+                        <th class="px-4 py-3">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y">
+                    {% for withdrawal in withdrawals %}
+                    <tr class="text-gray-700">
+                        <td class="px-4 py-3">
+                            <div class="text-sm font-semibold">
+                                {{ withdrawal.mentor.user.get_full_name }}
+                                <div class="text-xs text-gray-500">{{ withdrawal.mentor.user.email }}</div>
+                            </div>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            ₹{{ withdrawal.amount }}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <button class="text-blue-500 hover:underline" onclick="showBankDetails({{ withdrawal.id }})">
+                                {% trans "View Details" %}
+                            </button>
+                        </td>
+                        <td class="px-4 py-3 text-xs">
+                            <span class="px-2 py-1 font-semibold leading-tight rounded-full 
+                                {% if withdrawal.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif withdrawal.status == 'processed' %}bg-green-100 text-green-800
+                                {% elif withdrawal.status == 'rejected' %}bg-red-100 text-red-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {% if withdrawal.status == 'pending' %}{% trans "Pending" %}
+                                {% elif withdrawal.status == 'processed' %}{% trans "Processed" %}
+                                {% elif withdrawal.status == 'rejected' %}{% trans "Rejected" %}
+                                {% else %}{{ withdrawal.status }}{% endif %}
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            {{ withdrawal.created_at|date:"Y-m-d H:i" }}
+                        </td>
+                        <td class="px-4 py-3 text-sm">
+                            <div class="flex items-center space-x-2">
+                                {% if withdrawal.status == 'pending' %}
+                                <button class="text-green-500 hover:underline" onclick="confirmProcessWithdrawal({{ withdrawal.id }})">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="text-red-500 hover:underline" onclick="confirmRejectWithdrawal({{ withdrawal.id }})">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-4 text-center text-gray-500">
+                {% trans "No pending withdrawal requests." %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Transaction Details Modal (hidden by default) -->
+<div id="transactionDetailsModal" class="fixed inset-0 z-30 hidden">
+    <div class="fixed inset-0 bg-black opacity-50"></div>
+    <div class="relative z-40 max-w-lg mx-auto mt-20 p-6 bg-white rounded-lg shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold" id="modalTitle">{% trans "Transaction Details" %}</h3>
+            <button onclick="hideTransactionDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="transactionDetailsContent" class="mb-6">
+            <!-- Content will be inserted here via JavaScript -->
+            <div class="flex justify-center items-center h-32">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <button onclick="hideTransactionDetailsModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+                {% trans "Close" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Bank Details Modal (hidden by default) -->
+<div id="bankDetailsModal" class="fixed inset-0 z-30 hidden">
+    <div class="fixed inset-0 bg-black opacity-50"></div>
+    <div class="relative z-40 max-w-lg mx-auto mt-20 p-6 bg-white rounded-lg shadow-xl">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold" id="bankModalTitle">{% trans "Bank Details" %}</h3>
+            <button onclick="hideBankDetailsModal()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="bankDetailsContent" class="mb-6">
+            <!-- Content will be inserted here via JavaScript -->
+            <div class="flex justify-center items-center h-32">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            </div>
+        </div>
+        <div class="flex justify-end">
+            <button onclick="hideBankDetailsModal()" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+                {% trans "Close" %}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal (hidden by default) -->
+<div id="confirmationModal" class="fixed inset-0 z-30 hidden">
+    <div class="fixed inset-0 bg-black opacity-50"></div>
+    <div class="relative z-40 max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-xl">
+        <div class="mb-4">
+            <h3 class="text-lg font-semibold" id="confirmationTitle">{% trans "Confirm Action" %}</h3>
+        </div>
+        <div id="confirmationMessage" class="mb-6">
+            <!-- Message will be inserted here via JavaScript -->
+        </div>
+        <div class="flex justify-end space-x-3">
+            <button id="cancelButton" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">
+                {% trans "Cancel" %}
+            </button>
+            <button id="confirmButton" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+                {% trans "Confirm" %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Show transaction details modal
+    function showTransactionDetails(transactionId) {
+        document.getElementById('transactionDetailsModal').classList.remove('hidden');
+        
+        // In a real app, this would fetch transaction details via AJAX
+        // For now, we'll just show a mockup
+        setTimeout(() => {
+            const mockTransactionDetails = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Transaction ID" %}</p>
+                            <p class="font-medium">TXNID-${transactionId}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "External ID" %}</p>
+                            <p class="font-medium">RZPY-${Math.random().toString(36).substring(7).toUpperCase()}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Amount" %}</p>
+                            <p class="font-medium">₹1500.00</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Status" %}</p>
+                            <p class="font-medium"><span class="px-2 py-1 font-semibold leading-tight rounded-full bg-green-100 text-green-800">Completed</span></p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Date" %}</p>
+                            <p class="font-medium">2025-04-26 14:30</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Payment Method" %}</p>
+                            <p class="font-medium">Credit Card</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-500 mb-2">{% trans "Related Session" %}</p>
+                        <div class="space-y-2">
+                            <p class="text-sm"><span class="font-medium">{% trans "Session" %}:</span> Advanced Python Programming</p>
+                            <p class="text-sm"><span class="font-medium">{% trans "Mentor" %}:</span> Jane Doe</p>
+                            <p class="text-sm"><span class="font-medium">{% trans "Learner" %}:</span> John Smith</p>
+                            <p class="text-sm"><span class="font-medium">{% trans "Date" %}:</span> 2025-04-28 15:00 - 16:00</p>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-500 mb-2">{% trans "Payment Breakdown" %}</p>
+                        <div class="space-y-2">
+                            <p class="text-sm flex justify-between"><span>{% trans "Session Fee" %}:</span> <span>₹1500.00</span></p>
+                            <p class="text-sm flex justify-between"><span>{% trans "Platform Fee" %}:</span> <span>₹150.00</span></p>
+                            <p class="text-sm flex justify-between"><span>{% trans "Taxes" %}:</span> <span>₹75.00</span></p>
+                            <p class="text-sm flex justify-between font-semibold"><span>{% trans "Total" %}:</span> <span>₹1725.00</span></p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('transactionDetailsContent').innerHTML = mockTransactionDetails;
+        }, 500);
+    }
+    
+    // Hide transaction details modal
+    function hideTransactionDetailsModal() {
+        document.getElementById('transactionDetailsModal').classList.add('hidden');
+    }
+    
+    // Show bank details modal
+    function showBankDetails(withdrawalId) {
+        document.getElementById('bankDetailsModal').classList.remove('hidden');
+        
+        // In a real app, this would fetch bank details via AJAX
+        // For now, we'll just show a mockup
+        setTimeout(() => {
+            const mockBankDetails = `
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Account Holder" %}</p>
+                            <p class="font-medium">Jane Doe</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Bank Name" %}</p>
+                            <p class="font-medium">State Bank of India</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Account Number" %}</p>
+                            <p class="font-medium">XXXX XXXX XXXX 1234</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "IFSC Code" %}</p>
+                            <p class="font-medium">SBIN0001234</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "Account Type" %}</p>
+                            <p class="font-medium">Savings</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">{% trans "PAN Number" %}</p>
+                            <p class="font-medium">AAAAA1234A</p>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-gray-200">
+                        <p class="text-sm text-gray-500 mb-2">{% trans "Withdrawal Request Details" %}</p>
+                        <div class="space-y-2">
+                            <p class="text-sm"><span class="font-medium">{% trans "Requested Amount" %}:</span> ₹${withdrawalId * 1000 + 500}</p>
+                            <p class="text-sm"><span class="font-medium">{% trans "Request Date" %}:</span> 2025-04-25</p>
+                            <p class="text-sm"><span class="font-medium">{% trans "Status" %}:</span> <span class="px-2 py-1 font-semibold leading-tight rounded-full bg-yellow-100 text-yellow-800">Pending</span></p>
+                            <p class="text-sm"><span class="font-medium">{% trans "Comments" %}:</span> Monthly payment for conducted sessions</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('bankDetailsContent').innerHTML = mockBankDetails;
+        }, 500);
+    }
+    
+    // Hide bank details modal
+    function hideBankDetailsModal() {
+        document.getElementById('bankDetailsModal').classList.add('hidden');
+    }
+    
+    // Confirm mark as completed
+    function confirmMarkAsCompleted(transactionId) {
+        const modal = document.getElementById('confirmationModal');
+        const message = document.getElementById('confirmationMessage');
+        const confirmButton = document.getElementById('confirmButton');
+        const cancelButton = document.getElementById('cancelButton');
+        
+        message.innerHTML = `{% trans "Are you sure you want to mark transaction" %} TXNID-${transactionId} {% trans "as completed?" %}`;
+        confirmButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+        confirmButton.classList.add('bg-green-600', 'hover:bg-green-700');
+        confirmButton.textContent = '{% trans "Mark as Completed" %}';
+        
+        modal.classList.remove('hidden');
+        
+        confirmButton.onclick = function() {
+            // In a real app, this would submit the form or make an AJAX request
+            modal.classList.add('hidden');
+            alert('Transaction marked as completed');
+            
+            // Reload the page to reflect changes
+            // window.location.reload();
+        };
+        
+        cancelButton.onclick = function() {
+            modal.classList.add('hidden');
+        };
+    }
+    
+    // Confirm refund transaction
+    function confirmRefund(transactionId) {
+        const modal = document.getElementById('confirmationModal');
+        const message = document.getElementById('confirmationMessage');
+        const confirmButton = document.getElementById('confirmButton');
+        const cancelButton = document.getElementById('cancelButton');
+        
+        message.innerHTML = `{% trans "Are you sure you want to refund transaction" %} TXNID-${transactionId}? {% trans "This action cannot be undone." %}`;
+        confirmButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+        confirmButton.classList.add('bg-red-600', 'hover:bg-red-700');
+        confirmButton.textContent = '{% trans "Refund Transaction" %}';
+        
+        modal.classList.remove('hidden');
+        
+        confirmButton.onclick = function() {
+            // In a real app, this would submit the form or make an AJAX request
+            modal.classList.add('hidden');
+            alert('Transaction refunded');
+            
+            // Reload the page to reflect changes
+            // window.location.reload();
+        };
+        
+        cancelButton.onclick = function() {
+            modal.classList.add('hidden');
+        };
+    }
+    
+    // Confirm process withdrawal
+    function confirmProcessWithdrawal(withdrawalId) {
+        const modal = document.getElementById('confirmationModal');
+        const message = document.getElementById('confirmationMessage');
+        const confirmButton = document.getElementById('confirmButton');
+        const cancelButton = document.getElementById('cancelButton');
+        
+        message.innerHTML = `{% trans "Are you sure you want to process withdrawal request" %} #${withdrawalId}?`;
+        confirmButton.classList.remove('bg-red-600', 'hover:bg-red-700');
+        confirmButton.classList.add('bg-green-600', 'hover:bg-green-700');
+        confirmButton.textContent = '{% trans "Process Withdrawal" %}';
+        
+        modal.classList.remove('hidden');
+        
+        confirmButton.onclick = function() {
+            // In a real app, this would submit the form or make an AJAX request
+            modal.classList.add('hidden');
+            alert('Withdrawal processed');
+            
+            // Reload the page to reflect changes
+            // window.location.reload();
+        };
+        
+        cancelButton.onclick = function() {
+            modal.classList.add('hidden');
+        };
+    }
+    
+    // Confirm reject withdrawal
+    function confirmRejectWithdrawal(withdrawalId) {
+        const modal = document.getElementById('confirmationModal');
+        const message = document.getElementById('confirmationMessage');
+        const confirmButton = document.getElementById('confirmButton');
+        const cancelButton = document.getElementById('cancelButton');
+        
+        message.innerHTML = `{% trans "Are you sure you want to reject withdrawal request" %} #${withdrawalId}? {% trans "Please provide a reason:" %}
+            <textarea id="rejectionReason" class="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" rows="3" placeholder="{% trans 'Reason for rejection' %}"></textarea>`;
+        confirmButton.classList.remove('bg-green-600', 'hover:bg-green-700');
+        confirmButton.classList.add('bg-red-600', 'hover:bg-red-700');
+        confirmButton.textContent = '{% trans "Reject Withdrawal" %}';
+        
+        modal.classList.remove('hidden');
+        
+        confirmButton.onclick = function() {
+            // In a real app, this would submit the form or make an AJAX request
+            const reason = document.getElementById('rejectionReason').value;
+            if (!reason) {
+                alert('{% trans "Please provide a reason for rejection." %}');
+                return;
+            }
+            
+            modal.classList.add('hidden');
+            alert('Withdrawal rejected');
+            
+            // Reload the page to reflect changes
+            // window.location.reload();
+        };
+        
+        cancelButton.onclick = function() {
+            modal.classList.add('hidden');
+        };
+    }
+</script>
+{% endblock %}

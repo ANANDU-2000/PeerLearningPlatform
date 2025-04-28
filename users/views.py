@@ -285,11 +285,25 @@ def learner_dashboard(request):
         status='confirmed'
     ).order_by('session__start_time')
     
-    # Get ML-powered personalized session recommendations
-    from learning_sessions.ml_recommendations import get_personalized_recommendations
+    # Initialize recommended_sessions as an empty list in case ML fails
+    recommended_sessions = []
     
-    # Get personalized recommendations using our ML algorithms
-    recommended_sessions = get_personalized_recommendations(request.user, limit=6)
+    try:
+        # Try to get ML-powered personalized session recommendations
+        from learning_sessions.ml_recommendations import get_personalized_recommendations
+        
+        # Get personalized recommendations using our ML algorithms
+        recommended_sessions = get_personalized_recommendations(request.user, limit=6)
+    except Exception as e:
+        # Log the error for debugging
+        print(f"ML recommendation error: {str(e)}")
+        
+        # Fallback to getting some upcoming sessions
+        recommended_sessions = Session.objects.filter(
+            start_time__gt=timezone.now(),
+            status='scheduled',
+            mentor__is_approved=True
+        ).order_by('start_time')[:6]
     
     # Get top-rated mentors
     top_mentors = MentorProfile.objects.filter(

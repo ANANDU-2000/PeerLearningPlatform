@@ -8,6 +8,9 @@ dependencies = [
     "channels-redis>=4.2.1",
     "daphne>=4.1.2",
     "django>=5.2",
+    "numpy>=2.2.5",
+    "pandas>=2.2.3",
     "pillow>=11.2.1",
     "razorpay>=1.4.2",
+    "scikit-learn>=1.6.1",
 ]

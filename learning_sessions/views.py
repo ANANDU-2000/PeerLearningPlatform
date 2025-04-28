@@ -690,3 +690,46 @@ def submit_feedback(request, booking_id):
     }
     
     return render(request, 'sessions/submit_feedback.html', context)
+
+
+@login_required
+def my_booked_sessions(request):
+    """View for learners to see all their booked sessions."""
+    # Check if user is a learner
+    if request.user.role != 'learner':
+        messages.error(request, _('This page is only for learners.'))
+        return redirect('landing_page')
+    
+    # Get current time for filtering
+    now = timezone.now()
+    
+    # Get upcoming booked sessions (confirmed bookings for future sessions)
+    upcoming_sessions = Booking.objects.filter(
+        learner=request.user,
+        status='confirmed',
+        payment_complete=True,
+        session__end_time__gt=now
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('session__start_time')
+    
+    # Get past sessions (completed bookings for past sessions)
+    past_sessions = Booking.objects.filter(
+        learner=request.user,
+        status='confirmed',
+        payment_complete=True,
+        session__end_time__lte=now
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('-session__start_time')
+    
+    # Get pending bookings (in cart, not paid yet)
+    pending_bookings = Booking.objects.filter(
+        learner=request.user,
+        status='pending',
+        payment_complete=False
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('session__start_time')
+    
+    context = {
+        'upcoming_sessions': upcoming_sessions,
+        'past_sessions': past_sessions,
+        'pending_bookings': pending_bookings,
+    }
+    
+    return render(request, 'sessions/my_booked_sessions.html', context)

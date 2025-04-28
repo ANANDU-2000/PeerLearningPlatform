@@ -23,4 +23,7 @@ urlpatterns = [
     
     # Feedback
     path('feedback/<int:booking_id>/', views.submit_feedback, name='submit_feedback'),
+    
+    # Learner session management
+    path('my-booked-sessions/', views.my_booked_sessions, name='my_booked_sessions'),
 ]

@@ -1,0 +1,330 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load custom_filters %}
+
+{% block title %}{% trans "My Booked Sessions" %} | PeerLearn{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/components.css' %}">
+<style>
+    /* Glass Morphism Effects */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
+        transition: all 0.3s ease;
+    }
+    
+    .glass-card:hover {
+        box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+        transform: translateY(-3px);
+    }
+    
+    /* Background */
+    .knowledge-bg {
+        background: linear-gradient(to bottom right, #EFF6FF, #F5F9FF, #F3F4FF);
+    }
+    
+    /* Session status labels */
+    .session-label {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        font-size: 12px;
+    }
+    
+    .session-label.live {
+        background-color: rgba(239, 68, 68, 0.15);
+        color: rgb(185, 28, 28);
+    }
+    
+    .session-label.soon {
+        background-color: rgba(245, 158, 11, 0.15);
+        color: rgb(146, 64, 14);
+    }
+    
+    .session-label.scheduled {
+        background-color: rgba(59, 130, 246, 0.15);
+        color: rgb(30, 64, 175);
+    }
+    
+    .session-label.completed {
+        background-color: rgba(16, 185, 129, 0.15);
+        color: rgb(6, 95, 70);
+    }
+    
+    .session-label.pending {
+        background-color: rgba(107, 114, 128, 0.15);
+        color: rgb(55, 65, 81);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen knowledge-bg py-8">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex flex-col">
+            <!-- Page Header -->
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{% trans "My Booked Sessions" %}</h1>
+                <p class="text-gray-600">{% trans "Manage all your learning sessions in one place" %}</p>
+            </div>
+            
+            <!-- Main Content Tabs -->
+            <div class="mb-6">
+                <div class="border-b border-gray-200">
+                    <nav class="-mb-px flex" aria-label="Tabs">
+                        <button class="tab-button active py-4 px-6 border-b-2 border-blue-500 font-medium text-blue-600" data-tab="upcoming">
+                            {% trans "Upcoming" %}
+                            {% if upcoming_sessions %}<span class="ml-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ upcoming_sessions|length }}</span>{% endif %}
+                        </button>
+                        <button class="tab-button py-4 px-6 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="past">
+                            {% trans "Past Sessions" %}
+                            {% if past_sessions %}<span class="ml-2 bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ past_sessions|length }}</span>{% endif %}
+                        </button>
+                        <button class="tab-button py-4 px-6 border-b-2 border-transparent font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="pending">
+                            {% trans "Pending Bookings" %}
+                            {% if pending_bookings %}<span class="ml-2 bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ pending_bookings|length }}</span>{% endif %}
+                        </button>
+                    </nav>
+                </div>
+            </div>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="upcoming">
+                {% if upcoming_sessions %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for booking in upcoming_sessions %}
+                            <div class="glass-card p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ booking.session.title }}</h3>
+                                    
+                                    {% if booking.session.is_live %}
+                                        <span class="session-label live">{% trans "Live Now" %}</span>
+                                    {% elif booking.session.starts_soon %}
+                                        <span class="session-label soon">{% trans "Starting Soon" %}</span>
+                                    {% else %}
+                                        <span class="session-label scheduled">{% trans "Upcoming" %}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="flex items-center mb-4">
+                                    {% if booking.session.mentor.user.profile_picture %}
+                                        <img src="{{ booking.session.mentor.user.profile_picture.url }}" alt="{{ booking.session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                    {% else %}
+                                        <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3">
+                                            {{ booking.session.mentor.user.first_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <p class="text-sm font-medium">{{ booking.session.mentor.user.get_full_name }}</p>
+                                        <p class="text-xs text-gray-500">{{ booking.session.mentor.specialty }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-6 space-y-2">
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="calendar" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">{{ booking.session.start_time|date:"F j, Y" }}</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="clock" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">{{ booking.session.start_time|date:"g:i A" }} - {{ booking.session.end_time|date:"g:i A" }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    {% if booking.session.is_live %}
+                                        <a href="{% url 'session_room' session_id=booking.session.id %}" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-center font-medium">
+                                            {% trans "Join Now" %}
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'session_detail' session_id=booking.session.id %}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center font-medium">
+                                            {% trans "View Details" %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="glass-card p-8 text-center">
+                        <div class="mb-4 text-blue-500">
+                            <i data-feather="calendar" class="h-12 w-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">{% trans "No upcoming sessions" %}</h3>
+                        <p class="text-gray-600 mb-6">{% trans "You don't have any upcoming sessions scheduled. Browse our available sessions to book one." %}</p>
+                        <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium">
+                            {% trans "Browse Sessions" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="tab-content hidden" id="past">
+                {% if past_sessions %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for booking in past_sessions %}
+                            <div class="glass-card p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ booking.session.title }}</h3>
+                                    <span class="session-label completed">{% trans "Completed" %}</span>
+                                </div>
+                                
+                                <div class="flex items-center mb-4">
+                                    {% if booking.session.mentor.user.profile_picture %}
+                                        <img src="{{ booking.session.mentor.user.profile_picture.url }}" alt="{{ booking.session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                    {% else %}
+                                        <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3">
+                                            {{ booking.session.mentor.user.first_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <p class="text-sm font-medium">{{ booking.session.mentor.user.get_full_name }}</p>
+                                        <p class="text-xs text-gray-500">{{ booking.session.mentor.specialty }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-6 space-y-2">
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="calendar" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">{{ booking.session.start_time|date:"F j, Y" }}</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="clock" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">{{ booking.session.start_time|date:"g:i A" }} - {{ booking.session.end_time|date:"g:i A" }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    {% if not booking.feedback %}
+                                        <a href="{% url 'submit_feedback' booking_id=booking.id %}" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-center font-medium">
+                                            {% trans "Leave Feedback" %}
+                                        </a>
+                                    {% else %}
+                                        <div class="flex-1 bg-gray-100 text-gray-700 py-2 px-4 rounded-lg text-center font-medium">
+                                            {% trans "Feedback Submitted" %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="glass-card p-8 text-center">
+                        <div class="mb-4 text-blue-500">
+                            <i data-feather="check-circle" class="h-12 w-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">{% trans "No past sessions" %}</h3>
+                        <p class="text-gray-600 mb-6">{% trans "You haven't attended any sessions yet. Your completed sessions will appear here." %}</p>
+                        <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium">
+                            {% trans "Browse Sessions" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="tab-content hidden" id="pending">
+                {% if pending_bookings %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for booking in pending_bookings %}
+                            <div class="glass-card p-6">
+                                <div class="flex justify-between items-start mb-4">
+                                    <h3 class="text-lg font-bold text-gray-900">{{ booking.session.title }}</h3>
+                                    <span class="session-label pending">{% trans "Pending Payment" %}</span>
+                                </div>
+                                
+                                <div class="flex items-center mb-4">
+                                    {% if booking.session.mentor.user.profile_picture %}
+                                        <img src="{{ booking.session.mentor.user.profile_picture.url }}" alt="{{ booking.session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                    {% else %}
+                                        <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-3">
+                                            {{ booking.session.mentor.user.first_name|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <p class="text-sm font-medium">{{ booking.session.mentor.user.get_full_name }}</p>
+                                        <p class="text-xs text-gray-500">{{ booking.session.mentor.specialty }}</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-6 space-y-2">
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="calendar" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">{{ booking.session.start_time|date:"F j, Y" }}</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600">
+                                        <i data-feather="clock" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">{{ booking.session.start_time|date:"g:i A" }} - {{ booking.session.end_time|date:"g:i A" }}</span>
+                                    </div>
+                                    <div class="flex items-center text-gray-600 font-medium">
+                                        <i data-feather="tag" class="h-4 w-4 mr-2"></i>
+                                        <span class="text-sm">₹{{ booking.session.price }}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'cart' %}" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-center font-medium">
+                                        {% trans "Complete Payment" %}
+                                    </a>
+                                    <a href="{% url 'remove_from_cart' booking_id=booking.id %}" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg text-center font-medium">
+                                        {% trans "Remove" %}
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="glass-card p-8 text-center">
+                        <div class="mb-4 text-blue-500">
+                            <i data-feather="shopping-cart" class="h-12 w-12 mx-auto"></i>
+                        </div>
+                        <h3 class="text-xl font-bold mb-2">{% trans "Your cart is empty" %}</h3>
+                        <p class="text-gray-600 mb-6">{% trans "You don't have any pending bookings. Browse our available sessions to book one." %}</p>
+                        <a href="{% url 'session_list' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-lg font-medium">
+                            {% trans "Browse Sessions" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching functionality
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Remove active class from all buttons and content
+                tabButtons.forEach(btn => btn.classList.remove('active', 'border-blue-500', 'text-blue-600'));
+                tabButtons.forEach(btn => btn.classList.add('border-transparent', 'text-gray-500'));
+                tabContents.forEach(content => content.classList.add('hidden'));
+                
+                // Add active class to clicked button
+                this.classList.remove('border-transparent', 'text-gray-500');
+                this.classList.add('active', 'border-blue-500', 'text-blue-600');
+                
+                // Show corresponding content
+                const tabId = this.getAttribute('data-tab');
+                document.getElementById(tabId).classList.remove('hidden');
+            });
+        });
+        
+        // Initialize Feather icons
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    });
+</script>
+{% endblock %}

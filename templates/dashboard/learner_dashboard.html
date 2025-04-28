@@ -260,15 +260,20 @@
                     <a href="{% url 'cart' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
                         <i data-feather="shopping-cart" class="h-4 w-4 mr-3"></i>
-                        <span>{% trans "My cart" %}</span>
+                        <span>{% trans "My Cart" %}</span>
                     </a>
                     
                     <p class="text-xs font-medium text-gray-400 uppercase tracking-wider mt-6 mb-2 px-3">My Learning</p>
                     
-                    <a href="{% url 'transaction_history' %}" 
+                    <a href="{% url 'my_booked_sessions' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
                         <i data-feather="video" class="h-4 w-4 mr-3"></i>
-                        <span>{% trans "My Live Sessions" %}</span>
+                        <span>{% trans "My Booked Sessions" %}</span>
+                    </a>
+                    <a href="{% url 'transaction_history' %}" 
+                       class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">
+                        <i data-feather="credit-card" class="h-4 w-4 mr-3"></i>
+                        <span>{% trans "Purchase History" %}</span>
                     </a>
                     <a href="{% url 'profile_settings' %}" 
                        class="flex items-center py-2 px-3 text-gray-700 hover:bg-gray-50 rounded-lg font-medium text-sm">

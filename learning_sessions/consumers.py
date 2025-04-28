@@ -3,6 +3,8 @@ WebSocket consumers for real-time session functionality.
 """
 
 import json
+import asyncio
+import time
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.utils import timezone
@@ -20,6 +22,8 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         self.user = self.scope["user"]
         self.session_id = self.scope['url_route']['kwargs']['session_id']
         self.room_group_name = f'session_{self.session_id}'
+        self.ping_task = None
+        self.last_ping_time = None
         
         # Check if user is authorized to join this session
         is_authorized = await self._check_user_session_permission()
@@ -36,6 +40,9 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
         
         await self.accept()
         
+        # Start periodic ping
+        self.ping_task = asyncio.create_task(self.periodic_ping())
+        
         # Send message that a new user has joined
         await self.channel_layer.group_send(
             self.room_group_name,
@@ -50,6 +57,17 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
     
     async def disconnect(self, close_code):
         """Handle disconnection from WebSocket."""
+        
+        # Cancel periodic ping task if running
+        if self.ping_task and not self.ping_task.done():
+            self.ping_task.cancel()
+            try:
+                await self.ping_task
+            except asyncio.CancelledError:
+                print(f"Ping task for user {self.user.id} cancelled successfully")
+            except Exception as e:
+                print(f"Error cancelling ping task: {str(e)}")
+        
         if hasattr(self, 'room_group_name'):
             # Send message that user has left
             await self.channel_layer.group_send(
@@ -213,7 +231,12 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                         'is_mentor': self.user.role == 'mentor',
                     }
                     
-                    print(f"User {self.user.id} ({user_data['user_name']}) joining session")
+                    # Extract client info if available for diagnostics
+                    client_info = data.get('client_info', {})
+                    if client_info:
+                        print(f"User {self.user.id} joining session with diagnostics: {client_info}")
+                    else:
+                        print(f"User {self.user.id} ({user_data['user_name']}) joining session")
                     
                     # No need to broadcast - this happens in the connect handler
                     # Just acknowledge receipt
@@ -221,6 +244,47 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                         'type': 'join_ack',
                         'message': 'Successfully joined session',
                         'timestamp': timezone.now().isoformat(),
+                    }))
+                
+                elif message_type == 'heartbeat':
+                    # Client is sending a heartbeat to keep the connection alive
+                    # Just log for debugging and respond with a pong
+                    timestamp = data.get('timestamp', 0)
+                    current_time = timezone.now().timestamp() * 1000
+                    latency = int(current_time - timestamp) if timestamp else 0
+                    
+                    if latency > 0:
+                        print(f"Heartbeat from user {self.user.id} - latency: {latency}ms")
+                    
+                    # Respond with a pong directly (no need to broadcast)
+                    await self.send(text_data=json.dumps({
+                        'type': 'pong',
+                        'timestamp': int(current_time),
+                        'server_time': timezone.now().isoformat(),
+                    }))
+                
+                elif message_type == 'pong':
+                    # Client is responding to our ping
+                    # Just log for debugging
+                    timestamp = data.get('timestamp', 0)
+                    current_time = timezone.now().timestamp() * 1000
+                    latency = int(current_time - timestamp) if timestamp else 0
+                    
+                    if latency > 1000:  # Only log high latency
+                        print(f"High latency detected for user {self.user.id}: {latency}ms")
+                
+                elif message_type == 'get_room_state':
+                    # Client is requesting current room state (after reconnection)
+                    print(f"User {self.user.id} requesting room state (likely after reconnection)")
+                    
+                    # Send a room state update to the requesting client
+                    # This is a simplified version - in a real implementation, you'd query
+                    # your database or in-memory state for active participants
+                    await self.send(text_data=json.dumps({
+                        'type': 'room_state',
+                        'message': 'Room state retrieved',
+                        'timestamp': timezone.now().isoformat(),
+                        # This would include active participants, current session status, etc.
                     }))
                 
                 else:
@@ -372,6 +436,45 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
             except:
                 # If even that fails, just log it
                 print("Failed to send simplified error message")
+    
+    async def periodic_ping(self):
+        """Send periodic pings to detect connection problems."""
+        try:
+            ping_interval = 30  # seconds
+            while True:
+                # Wait for ping interval
+                await asyncio.sleep(ping_interval)
+                
+                # Ensure WebSocket is still open before sending ping
+                if not hasattr(self, 'scope') or self.scope.get('session_closed', False):
+                    print("Session is closed, stopping ping task")
+                    break
+                
+                try:
+                    # Record when we're sending this ping
+                    self.last_ping_time = time.time() * 1000
+                    
+                    # Send ping
+                    await self.send(text_data=json.dumps({
+                        'type': 'ping',
+                        'timestamp': int(self.last_ping_time),
+                        'server_time': timezone.now().isoformat(),
+                    }))
+                    
+                    # Log for debugging
+                    print(f"Sent ping to user {self.user.id}")
+                    
+                except Exception as e:
+                    # If there's an error sending the ping, the connection might be dead
+                    print(f"Error sending ping to user {self.user.id}: {str(e)}")
+                    # Break the loop to stop pinging
+                    break
+        except asyncio.CancelledError:
+            # Task was cancelled, clean up
+            print(f"Ping task cancelled for user {self.user.id}")
+        except Exception as e:
+            # Catch any other exceptions
+            print(f"Unexpected error in ping task for user {self.user.id}: {str(e)}")
     
     @database_sync_to_async
     def _check_user_session_permission(self):

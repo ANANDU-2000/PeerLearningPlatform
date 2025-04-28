@@ -1,0 +1,25 @@
+FieldError at /admin-panel/secure-login/
+Cannot resolve keyword 'username' into field. Choices are: added_allowed_ips, admin_access_logs, bookings, created_access_keys, date_joined, email, first_name, groups, id, is_active, is_staff, is_superuser, last_login, last_name, learner_profile, logentry, mentor_profile, password, profile_picture, role, two_factor_enabled, user_permissions
+Request Method:	POST
+Request URL:	http://c04fd6df-be0d-492d-b2f8-d8a5ecbe079b-00-mp4il0lqopkm.riker.replit.dev/admin-panel/secure-login/
+Django Version:	5.2
+Exception Type:	FieldError
+Exception Value:	
+Cannot resolve keyword 'username' into field. Choices are: added_allowed_ips, admin_access_logs, bookings, created_access_keys, date_joined, email, first_name, groups, id, is_active, is_staff, is_superuser, last_login, last_name, learner_profile, logentry, mentor_profile, password, profile_picture, role, two_factor_enabled, user_permissions
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/db/models/sql/query.py, line 1802, in names_to_path
+Raised during:	admin_panel.views.secure_admin_login
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.11.10
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/lc7qv2ldzrs1aq3hbyzmbgvn0h2w26pl-sitecustomize/lib/python/site-packages',
+ '/nix/store/dfg63lldbvcj207iyr9z0xw21d8ax02n-python3.11-pip-24.0/lib/python3.11/site-packages',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python311.zip',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/wblvmd5y7izx0z10d1w7ga7zc4apjxmb-python3.11-setuptools-75.1.1/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/setuptools/_vendor']
+Server time:	Mon, 28 Apr 2025 18:21:25 +0000
+Traceback Switch to copy-and-paste view

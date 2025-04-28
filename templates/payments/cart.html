@@ -260,44 +260,51 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Apply cart coupon
-        const couponForm = document.getElementById('coupon-form');
-        const couponInput = document.getElementById('cart-coupon-code');
-        const couponMessage = document.getElementById('coupon-message');
+        var couponForm = document.getElementById('coupon-form');
+        var couponInput = document.getElementById('cart-coupon-code');
+        var couponMessage = document.getElementById('coupon-message');
         
         if (couponForm) {
             couponForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                const couponCode = couponInput.value.trim();
+                var couponCode = couponInput.value.trim();
                 
                 if (!couponCode) {
                     showCouponMessage('Please enter a coupon code', 'error');
                     return;
                 }
                 
-                // Make API request to apply coupon
-                fetch('{% url "apply_coupon" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    },
-                    body: `coupon_code=${couponCode}`
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showCouponMessage(data.message, 'success');
-                        // Reload the page to update the cart totals
-                        window.location.reload();
-                    } else {
-                        showCouponMessage(data.error, 'error');
+                // Make API request to apply coupon using XMLHttpRequest
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '{% url "apply_coupon" %}', true);
+                xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4) {
+                        if (xhr.status === 200) {
+                            try {
+                                var data = JSON.parse(xhr.responseText);
+                                if (data.success) {
+                                    showCouponMessage(data.message, 'success');
+                                    // Reload the page to update the cart totals
+                                    window.location.reload();
+                                } else {
+                                    showCouponMessage(data.error, 'error');
+                                }
+                            } catch (e) {
+                                showCouponMessage('An error occurred. Please try again.', 'error');
+                                console.error('Error parsing JSON:', e);
+                            }
+                        } else {
+                            showCouponMessage('An error occurred. Please try again.', 'error');
+                            console.error('Server error:', xhr.status);
+                        }
                     }
-                })
-                .catch(error => {
-                    showCouponMessage('An error occurred. Please try again.', 'error');
-                    console.error('Error:', error);
-                });
+                };
+                
+                xhr.send('coupon_code=' + encodeURIComponent(couponCode));
             });
         }
         

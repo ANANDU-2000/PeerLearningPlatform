@@ -6,7 +6,7 @@
 function initializeRazorpay(options) {
     console.log("Initializing Razorpay");
     
-    const rzp = new Razorpay(options);
+    var rzp = new Razorpay(options);
     
     rzp.on('payment.success', function(response) {
         // Handle successful payment
@@ -24,34 +24,44 @@ function initializeRazorpay(options) {
 function handlePaymentSuccess(response) {
     console.log("Payment successful", response);
     
-    // Send payment verification to backend
-    fetch('/payments/payment-callback/', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_signature: response.razorpay_signature
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.status === 'success') {
-            // Redirect to success page
-            window.location.href = '/payments/payment-success/';
-        } else {
-            // Show error message
-            alert('Payment verification failed: ' + data.message);
-            window.location.href = '/payments/payment-failed/';
+    // Create XHR for older browser compatibility instead of fetch
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/payments/payment-callback/', true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var data = JSON.parse(xhr.responseText);
+                    if (data.status === 'success') {
+                        // Redirect to success page
+                        window.location.href = '/payments/payment-success/';
+                    } else {
+                        // Show error message
+                        alert('Payment verification failed: ' + data.message);
+                        window.location.href = '/payments/payment-failed/';
+                    }
+                } catch (e) {
+                    console.error('Error parsing JSON:', e);
+                    alert('An error occurred during payment verification.');
+                    window.location.href = '/payments/payment-failed/';
+                }
+            } else {
+                console.error('Server error:', xhr.status);
+                alert('An error occurred during payment verification.');
+                window.location.href = '/payments/payment-failed/';
+            }
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('An error occurred during payment verification.');
-        window.location.href = '/payments/payment-failed/';
+    };
+    
+    var payload = JSON.stringify({
+        razorpay_payment_id: response.razorpay_payment_id,
+        razorpay_order_id: response.razorpay_order_id,
+        razorpay_signature: response.razorpay_signature
     });
+    
+    xhr.send(payload);
 }
 
 function handlePaymentError(response) {
@@ -63,13 +73,13 @@ function handlePaymentError(response) {
 // Document ready
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize checkout button
-    const checkoutButton = document.getElementById('checkout-button');
+    var checkoutButton = document.getElementById('checkout-button');
     if (checkoutButton) {
         checkoutButton.addEventListener('click', function() {
-            const options = window.razorpayOptions || {};
+            var options = window.razorpayOptions || {};
             
             if (options.order_id) {
-                const rzp = initializeRazorpay(options);
+                var rzp = initializeRazorpay(options);
                 rzp.open();
             } else if (options.total === 0) {
                 // Handle free sessions
@@ -83,26 +93,35 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Handle free checkout
     function handleFreeCheckout() {
-        fetch('/payments/payment-callback/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                free_checkout: true
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                window.location.href = '/payments/payment-success/';
-            } else {
-                alert('Error: ' + data.message);
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/payments/payment-callback/', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    try {
+                        var data = JSON.parse(xhr.responseText);
+                        if (data.status === 'success') {
+                            window.location.href = '/payments/payment-success/';
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    } catch (e) {
+                        console.error('Error parsing JSON:', e);
+                        alert('An error occurred during checkout.');
+                    }
+                } else {
+                    console.error('Server error:', xhr.status);
+                    alert('An error occurred during checkout.');
+                }
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred during checkout.');
+        };
+        
+        var payload = JSON.stringify({
+            free_checkout: true
         });
+        
+        xhr.send(payload);
     }
 });

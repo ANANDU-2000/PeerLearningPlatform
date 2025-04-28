@@ -11,22 +11,23 @@
     </h2>
     
     <!-- Cards -->
-    <div class="grid gap-6 mb-8 md:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-3 mb-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <!-- Card: Total Users -->
         <div class="flex items-center p-4 bg-white rounded-lg shadow-xs glassmorphism">
             <div class="p-3 mr-4 text-blue-500 bg-blue-100 rounded-full">
                 <i class="fas fa-users"></i>
             </div>
             <div>
-                <p class="mb-2 text-sm font-medium text-gray-600">
+                <p class="mb-1 text-sm font-medium text-gray-600">
                     {% trans "Total Users" %}
                 </p>
                 <p class="text-lg font-semibold text-gray-700">
                     {{ total_users }}
                 </p>
-                <p class="text-sm text-gray-500">
-                    {{ total_learners }} {% trans "learners" %}, {{ total_mentors }} {% trans "mentors" %}
-                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span>{{ total_learners }} {% trans "learners" %}, {{ total_mentors }} {% trans "mentors" %}</span>
+                    <span class="text-green-500">+{{ new_users_today }} {% trans "today" %}</span>
+                </div>
             </div>
         </div>
         
@@ -36,15 +37,16 @@
                 <i class="fas fa-calendar-alt"></i>
             </div>
             <div>
-                <p class="mb-2 text-sm font-medium text-gray-600">
+                <p class="mb-1 text-sm font-medium text-gray-600">
                     {% trans "Total Sessions" %}
                 </p>
                 <p class="text-lg font-semibold text-gray-700">
                     {{ total_sessions }}
                 </p>
-                <p class="text-sm text-gray-500">
-                    {{ total_bookings }} {% trans "confirmed bookings" %}
-                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span>{{ total_bookings }} {% trans "bookings" %}</span>
+                    <span class="text-blue-500">{{ active_sessions }} {% trans "active now" %}</span>
+                </div>
             </div>
         </div>
         
@@ -54,15 +56,16 @@
                 <i class="fas fa-rupee-sign"></i>
             </div>
             <div>
-                <p class="mb-2 text-sm font-medium text-gray-600">
+                <p class="mb-1 text-sm font-medium text-gray-600">
                     {% trans "Total Revenue" %}
                 </p>
                 <p class="text-lg font-semibold text-gray-700">
                     ₹{{ total_revenue }}
                 </p>
-                <p class="text-sm text-gray-500">
-                    {% trans "All time" %}
-                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span>{% trans "All time" %}</span>
+                    <span class="text-green-500">₹{{ revenue_today }} {% trans "today" %}</span>
+                </div>
             </div>
         </div>
         
@@ -72,15 +75,88 @@
                 <i class="fas fa-user-check"></i>
             </div>
             <div>
-                <p class="mb-2 text-sm font-medium text-gray-600">
+                <p class="mb-1 text-sm font-medium text-gray-600">
                     {% trans "Pending Approvals" %}
                 </p>
                 <p class="text-lg font-semibold text-gray-700">
-                    {{ pending_mentors.count }}
+                    {{ pending_count }}
                 </p>
-                <p class="text-sm text-gray-500">
-                    <a href="{% url 'mentor_approval' %}" class="text-blue-500 hover:underline">{% trans "View all" %}</a>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <a href="{% url 'mentor_approval' %}" class="text-blue-500 hover:underline">{% trans "View all pending mentors" %}</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card: Withdrawals -->
+        <div class="flex items-center p-4 bg-white rounded-lg shadow-xs glassmorphism">
+            <div class="p-3 mr-4 text-yellow-500 bg-yellow-100 rounded-full">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div>
+                <p class="mb-1 text-sm font-medium text-gray-600">
+                    {% trans "Pending Withdrawals" %}
                 </p>
+                <p class="text-lg font-semibold text-gray-700">
+                    {{ pending_withdrawal_count }}
+                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span class="text-yellow-500">₹{{ pending_withdrawal_amount }}</span>
+                    <a href="{% url 'payment_management' %}" class="text-blue-500 hover:underline">{% trans "Process withdrawals" %}</a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card: Avg Session Price -->
+        <div class="flex items-center p-4 bg-white rounded-lg shadow-xs glassmorphism">
+            <div class="p-3 mr-4 text-indigo-500 bg-indigo-100 rounded-full">
+                <i class="fas fa-tags"></i>
+            </div>
+            <div>
+                <p class="mb-1 text-sm font-medium text-gray-600">
+                    {% trans "Avg. Session Price" %}
+                </p>
+                <p class="text-lg font-semibold text-gray-700">
+                    ₹{{ avg_session_price }}
+                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span>{% trans "Per session" %}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card: Satisfaction Rate -->
+        <div class="flex items-center p-4 bg-white rounded-lg shadow-xs glassmorphism">
+            <div class="p-3 mr-4 text-teal-500 bg-teal-100 rounded-full">
+                <i class="fas fa-smile"></i>
+            </div>
+            <div>
+                <p class="mb-1 text-sm font-medium text-gray-600">
+                    {% trans "Satisfaction Rate" %}
+                </p>
+                <p class="text-lg font-semibold text-gray-700">
+                    {{ satisfaction_rate }}%
+                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span class="text-teal-500">{{ feedback_count }} {% trans "reviews" %}</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card: Active Learners -->
+        <div class="flex items-center p-4 bg-white rounded-lg shadow-xs glassmorphism">
+            <div class="p-3 mr-4 text-orange-500 bg-orange-100 rounded-full">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <div>
+                <p class="mb-1 text-sm font-medium text-gray-600">
+                    {% trans "Active Learners" %}
+                </p>
+                <p class="text-lg font-semibold text-gray-700">
+                    {{ active_learners }}
+                </p>
+                <div class="flex flex-col text-xs text-gray-500">
+                    <span>{% trans "In last 7 days" %}</span>
+                </div>
             </div>
         </div>
     </div>
@@ -92,7 +168,9 @@
             <h4 class="mb-4 font-semibold text-gray-800">
                 {% trans "Revenue (Last 30 Days)" %}
             </h4>
-            <canvas id="revenue-chart" class="w-full"></canvas>
+            <div class="h-64 md:h-72">
+                <canvas id="revenue-chart" class="w-full h-full"></canvas>
+            </div>
         </div>
         
         <!-- Pending Items -->
@@ -367,7 +445,8 @@
                 }],
             },
             options: {
-                maintainAspectRatio: false,
+                maintainAspectRatio: true,
+                aspectRatio: 2, // More rectangular shape
                 responsive: true,
                 plugins: {
                     tooltip: {

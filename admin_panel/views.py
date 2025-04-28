@@ -42,20 +42,62 @@ def is_admin(user):
 @user_passes_test(is_admin)
 def admin_dashboard(request):
     """Admin dashboard view."""
+    # Get today's date for calculations
+    today = timezone.now().date()
+    
     # Get counts for overview stats
     total_users = User.objects.count()
     total_learners = User.objects.filter(role='learner').count()
     total_mentors = User.objects.filter(role='mentor').count()
     total_admins = User.objects.filter(role='admin').count()
+    
+    # Get new users registered today
+    new_users_today = User.objects.filter(date_joined__date=today).count()
+    
+    # Get active users (logged in within last 7 days)
+    active_learners = User.objects.filter(
+        role='learner',
+        last_login__gte=timezone.now() - timedelta(days=7)
+    ).count()
+    
+    # Get sessions data
     total_sessions = Session.objects.count()
     total_bookings = Booking.objects.filter(status='confirmed').count()
+    
+    # Get active sessions (currently ongoing)
+    now = timezone.now()
+    active_sessions = Session.objects.filter(
+        start_time__lte=now,
+        end_time__gte=now
+    ).count()
+    
+    # Get revenue data
     total_revenue = Transaction.objects.filter(status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Get today's revenue
+    revenue_today = Transaction.objects.filter(
+        status='completed',
+        created_at__date=today
+    ).aggregate(Sum('amount'))['amount__sum'] or 0
     
     # Get pending mentor approvals
     pending_mentors = MentorProfile.objects.filter(is_approved=False).select_related('user')
+    pending_count = pending_mentors.count()
     
     # Get pending withdrawal requests
     pending_withdrawals = WithdrawalRequest.objects.filter(status='pending').select_related('mentor__user')
+    pending_withdrawal_count = pending_withdrawals.count()
+    pending_withdrawal_amount = pending_withdrawals.aggregate(Sum('amount'))['amount__sum'] or 0
+    
+    # Get average session price
+    avg_session_price = Session.objects.aggregate(Avg('price'))['price__avg'] or 0
+    avg_session_price = round(avg_session_price, 2)
+    
+    # Get user satisfaction (feedback ratings)
+    feedback_count = Feedback.objects.count()
+    satisfaction_rate = 0
+    if feedback_count > 0:
+        satisfaction_rate = round(Feedback.objects.aggregate(Avg('rating'))['rating__avg'] * 20 or 0)  # Convert 5-star to percentage
     
     # Get all admin users
     admin_users = User.objects.filter(role='admin').order_by('-date_joined')
@@ -90,11 +132,21 @@ def admin_dashboard(request):
         'total_learners': total_learners,
         'total_mentors': total_mentors,
         'total_admins': total_admins,
+        'new_users_today': new_users_today,
+        'active_learners': active_learners,
         'total_sessions': total_sessions,
         'total_bookings': total_bookings,
+        'active_sessions': active_sessions,
         'total_revenue': total_revenue,
+        'revenue_today': revenue_today,
         'pending_mentors': pending_mentors,
+        'pending_count': pending_count,
         'pending_withdrawals': pending_withdrawals,
+        'pending_withdrawal_count': pending_withdrawal_count,
+        'pending_withdrawal_amount': pending_withdrawal_amount,
+        'avg_session_price': avg_session_price,
+        'satisfaction_rate': satisfaction_rate,
+        'feedback_count': feedback_count,
         'chart_labels': chart_labels,
         'chart_data': chart_data,
         'recent_sessions': recent_sessions,

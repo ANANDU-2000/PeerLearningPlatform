@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'admin_panel/base_minimal.html' %}
 {% load static %}
 {% load i18n %}
 
@@ -14,7 +14,7 @@
         box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
     }
     .admin-bg {
-        background-image: url('{% static "img/admin-bg.jpg" %}');
+        background: linear-gradient(135deg, #6366F1 0%, #3B82F6 100%);
         background-size: cover;
         background-position: center;
     }
@@ -55,11 +55,11 @@
                     <form method="post" class="space-y-6">
                         {% csrf_token %}
                         <div>
-                            <label for="username" class="block text-sm font-medium text-gray-700">
+                            <label for="email" class="block text-sm font-medium text-gray-700">
                                 {% trans "Email" %}
                             </label>
                             <div class="mt-1">
-                                <input id="username" name="username" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
                         </div>
 

@@ -524,7 +524,7 @@ def secure_admin_login(request):
         return render(request, 'admin_panel/secure_login.html')
     
     if request.method == 'POST':
-        email = request.POST.get('username')  # Form field still named 'username' in template
+        email = request.POST.get('email')  # Form field now named 'email'
         password = request.POST.get('password')
         security_key = request.POST.get('security_key')
         

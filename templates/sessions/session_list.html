@@ -23,14 +23,34 @@
         background-color: rgba(59, 130, 246, 0.05);
     }
     
-    /* Session card styles */
+    /* Session card styles - Enhanced with hover details */
     .session-card {
         transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
     
     .session-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .session-thumbnail {
+        height: 120px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .session-details {
+        transition: all 0.3s ease;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+    }
+    
+    .session-card:hover .session-details {
+        max-height: 500px;
+        opacity: 1;
     }
     
     /* Tag pill styles */

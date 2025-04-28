@@ -1,0 +1,117 @@
+**PeerLearn Learner Dashboard – Live-Session-Only Design Master Prompt**
+
+**Role:** You are **PeerLearn UX/UI Strategist**, crafting a premium, live-session–centric Learner Dashboard that reflects PeerLearn’s singular focus on one-to-one live mentoring sessions.
+
+**Objective:**
+Design a **Learner Dashboard** that:
+- Showcases **only live sessions** (upcoming, in-progress, and history) without a course catalogue.
+- Provides all learner features (session schedule, join controls, agenda, chat, transcript, feedback) in a **single unified view**.
+- Ensures **real-time interactivity**, premium UI/UX, and seamless, error-free flows across web and mobile.
+
+---
+
+### 1. Layout & Navigation
+
+#### Desktop Top Bar
+- **Logo** (Top-left) → Home
+- **Primary Tabs:** Dashboard, Tasks, Projects, Calendar
+- **Action Button:** “+ New Session Request” opens session booking modal
+- **User Menu:** Avatar → Profile, Notifications, Settings, Log out
+- **Search Box:** Command-palette style to find upcoming sessions or chat threads
+
+#### Mobile Bottom Bar
+- **Icons Only:** Home, Sessions Calendar, Chat, Notifications, Profile
+- **Floating Join Button:** Center “Join Next Session” appears when live
+
+---
+
+### 2. Core Panels & Sections
+
+#### A. Upcoming Session Card (Hero Area)
+- **Countdown Timer:** shows days/hours/minutes until next session
+- **Session Title & Mentor Info:** photo, name, specialty tag
+- **Join Button:** prominent, pulsing when <5 minutes to start
+- **Sound & Visual Alerts:** bell icon flashes, optional chime on reminder
+- **Session Agenda Toggle:** expands to show topics list, each topic status (pending, done)
+
+#### B. Live-in-Progress Panel
+- **Active Video Preview:** thumbnail of mentor’s video feed
+- **Controls:** Mute/Unmute, Camera On/Off, Share Screen, Raise Hand
+- **Transcript Snippet:** last 3 lines of AI-generated live transcript
+- **Quick Comments:** typed or voice notes linked to timestamp
+
+#### C. Session History & Records (Accordion)
+- **Past Sessions List:** sortable by date, with status (Completed, Missed)
+- **Details Button:** opens modal with recording playback, full transcript, feedback summary
+- **Feedback Status:** shows star rating given or pending review
+
+#### D. Personalized Task List
+- **Action Items:** tasks derived from past sessions (e.g., “Practice topic X”)
+- **Checkbox & Due Date:** mark done, deadline countdown
+- **Add Custom Note:** textarea for learner’s own tasks
+
+#### E. Calendar Snapshot
+- **Mini-Calendar:** highlights days with scheduled sessions or tasks
+- **Tap Date:** opens full calendar view with session entries
+
+#### F. Notifications & Alerts Sidebar
+- **Real-Time Toasts:** new chat messages, session reminders, network warnings
+- **Notifications List:** unread counts, filter by type (Reminder, System, Chat)
+
+---
+
+### 3. UI/UX & Visual Design
+
+- **Glassmorphism Panels:** backdrop-filter: blur(12px); rounded-2xl; soft shadows
+- **Active Session Highlight:** glowing border (animated gradient) around hero card
+- **Hover Effects:** lift and shadow increase on cards; smooth 0.25s transitions
+- **Pulsing Join Button:** scale animation when session imminent
+- **Micro-Interactions:** ripple on button click, confetti on feedback submission
+- **Dark/Light Mode Toggle:** icon in user menu; state persisted
+
+---
+
+### 4. Real-Time Data & Logic
+
+- **WebSocket Updates** for:
+  - Session status changes (scheduled → in-progress → ended)
+  - Live transcript streaming
+  - Chat messages
+  - Task completions
+- **Error Handling**:
+  - Auto-reconnect logic for video (3 retries, fallback quality)
+  - Permission prompts for mic/camera if blocked
+  - Offline banner with reconnection countdown
+
+---
+
+### 5. Accessibility & Responsiveness
+
+- **WCAG AA Compliance:** color contrast, focus outlines, aria-labels on icons
+- **Keyboard Navigation:** tab order through hero card, join button, accordions
+- **Responsive Breakpoints:**
+  - Mobile (≤640px): stacked panels, bottom bar
+  - Tablet (641–1024px): two-column layout
+  - Desktop (>1024px): three-column grid
+
+---
+
+### 6. Streamlined User Flow (≤3 clicks)
+
+1. **Landing on Dashboard** → Next session hero visible
+2. **Click Join** → mic/camera permission prompt (if first time) → session room
+3. **Post-Session** → feedback stars modal → return to history panel
+
+---
+
+### 7. Additional Enhancements & Suggestions
+
+- **AI Study Coach:** chat widget suggests preparatory resources before session
+- **Progress Insights:** simple KPI cards (sessions attended, average feedback score)
+- **Voice Commands:** “Start next session” or “Show history” via microphone icon
+- **Offline Mode:** cache next session details and transcript for review
+
+---
+
+**Use this prompt** to align the Learner Dashboard with your live-session–only offering, ensuring UI/UX cohesiveness, functional depth, and a world-class learner experience.
+

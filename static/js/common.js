@@ -81,10 +81,14 @@ function initWelcomeMessage() {
 function hideWelcomeMessage(welcomeMsg) {
     if (!welcomeMsg) return;
     
+    // First set opacity to 0 (fade out)
     welcomeMsg.style.opacity = '0';
+    
+    // After the fade-out transition completes, hide the element
     setTimeout(() => {
         welcomeMsg.classList.add('hidden');
-        welcomeMsg.style.opacity = '';
+        welcomeMsg.style.opacity = ''; // Reset the inline style
+        console.log('Welcome message hidden');
     }, 300);
 }
 

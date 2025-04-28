@@ -321,11 +321,47 @@ def learner_dashboard(request):
     # Get today's date for session badge highlighting
     today = timezone.now().date()
     
+    # Get the mentors this learner has booked sessions with
+    mentor_ids = upcoming_bookings.values_list('session__mentor', flat=True).distinct()
+    mentors = MentorProfile.objects.filter(id__in=mentor_ids).select_related('user')
+    
+    # If no mentors, use the top rated ones instead
+    if not mentors.exists():
+        mentors = top_mentors
+    
+    # Add statistics for the dashboard
+    stats = {
+        'total_learning_hours': 0,
+        'completed_sessions_count': 0,
+        'learning_streak': 7,  # Default 7 days
+    }
+    
+    # Count completed bookings
+    completed_count = Booking.objects.filter(
+        learner=request.user,
+        status='completed'
+    ).count()
+    
+    if completed_count:
+        stats['completed_sessions_count'] = completed_count
+        
+        # Sum up total hours (each session duration in minutes / 60)
+        from django.db.models import Sum
+        total_mins = Booking.objects.filter(
+            learner=request.user,
+            status='completed'
+        ).aggregate(total=Sum('session__duration_minutes'))
+        
+        if total_mins['total']:
+            stats['total_learning_hours'] = round(total_mins['total'] / 60, 1)
+    
     return render(request, 'dashboard/learner_dashboard.html', {
         'upcoming_bookings': upcoming_bookings,
         'recommended_sessions': recommended_sessions,
         'top_mentors': top_mentors,
+        'mentors': mentors,
         'today': today,
+        'stats': stats,
     })
 
 

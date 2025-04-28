@@ -557,8 +557,11 @@ def secure_admin_login(request):
             messages.error(request, _("Invalid credentials. Please try again."))
             return render(request, 'admin_panel/secure_login.html')
         
-        # Verify admin user
-        user = authenticate(username=email, password=password)
+        # Verify admin user - using Django's built-in authenticate with proper backend
+        # Because of the custom User model using email as USERNAME_FIELD,
+        # the first parameter for authenticate should be 'email' not 'username'
+        user = authenticate(email=email, password=password)
+        
         if user is not None and user.is_active and user.role == 'admin':
             login(request, user)
             
@@ -683,7 +686,7 @@ def activate_access_key(request, key_id):
         key.save()
         
         # Log the action
-        security_logger.info(f"Admin access key '{key.key_name}' activated by {request.user.username}")
+        security_logger.info(f"Admin access key '{key.key_name}' activated by {request.user.email}")
         
         # Record in access log
         AdminAccessLog.objects.create(
@@ -711,7 +714,7 @@ def deactivate_access_key(request, key_id):
         key.save()
         
         # Log the action
-        security_logger.info(f"Admin access key '{key.key_name}' deactivated by {request.user.username}")
+        security_logger.info(f"Admin access key '{key.key_name}' deactivated by {request.user.email}")
         
         # Record in access log
         AdminAccessLog.objects.create(
@@ -739,7 +742,7 @@ def delete_access_key(request, key_id):
         key.delete()
         
         # Log the action
-        security_logger.info(f"Admin access key '{key_name}' deleted by {request.user.username}")
+        security_logger.info(f"Admin access key '{key_name}' deleted by {request.user.email}")
         
         # Record in access log
         AdminAccessLog.objects.create(
@@ -784,7 +787,7 @@ def add_allowed_ip(request):
             )
             
             # Log the action
-            security_logger.info(f"Allowed IP '{ip_address}' added by {request.user.username}")
+            security_logger.info(f"Allowed IP '{ip_address}' added by {request.user.email}")
             
             # Record in access log
             AdminAccessLog.objects.create(
@@ -815,7 +818,7 @@ def activate_allowed_ip(request, ip_id):
         ip.save()
         
         # Log the action
-        security_logger.info(f"Allowed IP '{ip.ip_address}' activated by {request.user.username}")
+        security_logger.info(f"Allowed IP '{ip.ip_address}' activated by {request.user.email}")
         
         # Record in access log
         AdminAccessLog.objects.create(
@@ -843,7 +846,7 @@ def deactivate_allowed_ip(request, ip_id):
         ip.save()
         
         # Log the action
-        security_logger.info(f"Allowed IP '{ip.ip_address}' deactivated by {request.user.username}")
+        security_logger.info(f"Allowed IP '{ip.ip_address}' deactivated by {request.user.email}")
         
         # Record in access log
         AdminAccessLog.objects.create(
@@ -871,7 +874,7 @@ def delete_allowed_ip(request, ip_id):
         ip.delete()
         
         # Log the action
-        security_logger.info(f"Allowed IP '{ip_address}' deleted by {request.user.username}")
+        security_logger.info(f"Allowed IP '{ip_address}' deleted by {request.user.email}")
         
         # Record in access log
         AdminAccessLog.objects.create(
@@ -887,6 +890,71 @@ def delete_allowed_ip(request, ip_id):
         messages.success(request, _(f"IP address '{ip_address}' has been deleted."))
     
     return redirect('security_management')
+
+
+@login_required
+@user_passes_test(is_admin)
+def create_admin_account(request):
+    """Create a new admin account."""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        password = request.POST.get('password')
+        
+        if not email or not password:
+            messages.error(request, _("Email and password are required."))
+            return redirect('admin_dashboard')
+        
+        # Check if user already exists
+        if User.objects.filter(email=email).exists():
+            messages.error(request, _("A user with this email already exists."))
+            return redirect('admin_dashboard')
+        
+        # Create admin user using UserManager
+        try:
+            admin_user = User.objects.create_user(
+                email=email,
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                role='admin',
+                is_staff=True,
+                is_superuser=True
+            )
+            
+            # Log the action
+            security_logger.info(f"New admin account created for {email} by {request.user.email}")
+            
+            # Record in access log
+            AdminAccessLog.objects.create(
+                user=request.user,
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                action='create_admin',
+                path=request.path,
+                status='success',
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                details=f"Created admin account: {email}"
+            )
+            
+            messages.success(request, _(f"Admin account for {email} created successfully."))
+            
+        except Exception as e:
+            messages.error(request, _(f"Error creating admin account: {str(e)}"))
+            security_logger.error(f"Error creating admin account for {email}: {str(e)}")
+            
+            # Record in access log
+            AdminAccessLog.objects.create(
+                user=request.user,
+                ip_address=request.META.get('REMOTE_ADDR', ''),
+                action='create_admin',
+                path=request.path,
+                status='failed',
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                details=f"Failed to create admin account: {str(e)}"
+            )
+    
+    return redirect('admin_dashboard')
 
 
 def constant_time_compare(val1, val2):

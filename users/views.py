@@ -278,19 +278,34 @@ def learner_dashboard(request):
     # Import here to avoid circular imports
     from learning_sessions.models import Session, Booking
     
-    # Get upcoming bookings for this learner (without duplicates)
+    # Get all bookings for this learner, categorized by status
     from django.db.models import Min
     
-    # Get the earliest booking for each session
-    booking_ids = Booking.objects.filter(
+    # Live/ongoing sessions
+    live_session_bookings = Booking.objects.filter(
+        learner=request.user,
+        session__status='in_progress',
+        status='confirmed'
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('session__start_time')
+    
+    # Upcoming confirmed bookings
+    upcoming_bookings = Booking.objects.filter(
         learner=request.user,
         session__start_time__gt=timezone.now(),
+        session__status='scheduled',
         status='confirmed'
-    ).values('session').annotate(min_id=Min('id')).values_list('min_id', flat=True)
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('session__start_time')
     
-    # Then get those specific bookings with all related data
-    upcoming_bookings = Booking.objects.filter(
-        id__in=booking_ids
+    # Completed sessions
+    completed_bookings = Booking.objects.filter(
+        learner=request.user,
+        status='completed'
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('-session__end_time')
+    
+    # All confirmed bookings (for backward compatibility)
+    confirmed_bookings = Booking.objects.filter(
+        learner=request.user,
+        status='confirmed'
     ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('session__start_time')
     
     # Initialize recommended_sessions as an empty list in case ML fails
@@ -356,7 +371,10 @@ def learner_dashboard(request):
             stats['total_learning_hours'] = round(total_mins['total'] / 60, 1)
     
     return render(request, 'dashboard/learner_dashboard.html', {
+        'upcoming_bookings': upcoming_bookings,  # For backwards compatibility
+        'live_session_bookings': live_session_bookings,
         'upcoming_bookings': upcoming_bookings,
+        'completed_bookings': completed_bookings,
         'recommended_sessions': recommended_sessions,
         'top_mentors': top_mentors,
         'mentors': mentors,

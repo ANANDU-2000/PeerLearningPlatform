@@ -20,59 +20,64 @@ document.addEventListener('DOMContentLoaded', function() {
  * - Page-specific persistence with localStorage
  */
 function initWelcomeMessage() {
-    // Only show welcome message on dashboard pages
+    // Only show welcome message on dashboard pages, never on admin pages
     const currentPath = window.location.pathname;
     const isDashboardPage = currentPath.includes('/dashboard/');
+    const isAdminPage = currentPath.includes('/admin-panel/') || currentPath.includes('/admin/');
     
-    if (!isDashboardPage) return;
+    if (!isDashboardPage || isAdminPage) return;
     
-    // Get role-specific welcome message
-    const welcomeMsg = document.querySelector('.welcome-message');
-    
-    // Only proceed if welcome message exists
-    if (!welcomeMsg) return;
-    
-    const userRole = welcomeMsg.getAttribute('data-role');
-    const closeBtn = welcomeMsg.querySelector('.close-btn');
-    
-    // Create unique key for this path and role
-    const storageKey = `${currentPath}_${userRole}_dismissed`;
-    
-    console.log("Welcome message check:", {
-        path: currentPath,
-        role: userRole,
-        storageKey: storageKey,
-        isDismissed: localStorage.getItem(storageKey)
-    });
-    
-    // Only show if not dismissed for this specific path and role
-    if (!localStorage.getItem(storageKey)) {
-        // Wait a moment before showing the message
-        setTimeout(() => {
-            // Check for duplicate welcome messages and only show one
-            const visibleWelcomeMessages = document.querySelectorAll('.welcome-message:not(.hidden)');
-            if (visibleWelcomeMessages.length === 0) {
-                welcomeMsg.classList.remove('hidden');
-            }
-        }, 2000);
-    }
-    
-    // Handle close button click
-    if (closeBtn) {
-        closeBtn.addEventListener('click', function() {
-            hideWelcomeMessage(welcomeMsg);
-            // Remember that user dismissed the message for this specific page and role
-            localStorage.setItem(storageKey, 'true');
+    try {
+        // Get role-specific welcome message
+        const welcomeMsg = document.querySelector('.welcome-message');
+        
+        // Only proceed if welcome message exists
+        if (!welcomeMsg) return;
+        
+        const userRole = welcomeMsg.getAttribute('data-role');
+        const closeBtn = welcomeMsg.querySelector('.close-btn');
+        
+        // Create unique key for this path and role
+        const storageKey = `${currentPath}_${userRole}_dismissed`;
+        
+        console.log("Welcome message check:", {
+            path: currentPath,
+            role: userRole,
+            storageKey: storageKey,
+            isDismissed: localStorage.getItem(storageKey)
         });
-    }
-    
-    // Auto-hide after 10 seconds
-    setTimeout(() => {
-        // Check if welcomeMsg still exists in the DOM
-        if (welcomeMsg && document.body.contains(welcomeMsg) && !welcomeMsg.classList.contains('hidden')) {
-            hideWelcomeMessage(welcomeMsg);
+        
+        // Only show if not dismissed for this specific path and role
+        if (!localStorage.getItem(storageKey)) {
+            // Wait a moment before showing the message
+            setTimeout(() => {
+                // Check for duplicate welcome messages and only show one
+                const visibleWelcomeMessages = document.querySelectorAll('.welcome-message:not(.hidden)');
+                if (visibleWelcomeMessages.length === 0) {
+                    welcomeMsg.classList.remove('hidden');
+                }
+            }, 2000);
         }
-    }, 10000);
+        
+        // Handle close button click
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                hideWelcomeMessage(welcomeMsg);
+                // Remember that user dismissed the message for this specific page and role
+                localStorage.setItem(storageKey, 'true');
+            });
+        }
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            // Check if welcomeMsg still exists in the DOM
+            if (welcomeMsg && document.body.contains(welcomeMsg) && !welcomeMsg.classList.contains('hidden')) {
+                hideWelcomeMessage(welcomeMsg);
+            }
+        }, 10000);
+    } catch (err) {
+        console.error('Error in welcome message:', err);
+    }
 }
 
 /**
@@ -234,12 +239,29 @@ function initDropdowns() {
  * Initialize mobile navigation behavior
  */
 function initMobileNavigation() {
-    const mobileBottomNav = document.querySelector('.mobile-bottom-nav');
+    // Don't show mobile navigation on admin pages
+    const currentPath = window.location.pathname;
+    const isAdminPage = currentPath.includes('/admin-panel/') || currentPath.includes('/admin/');
     
-    // Add padding to the bottom of the page when mobile navigation is present
-    if (mobileBottomNav) {
-        const navHeight = mobileBottomNav.offsetHeight;
-        document.body.style.paddingBottom = `${navHeight}px`;
+    if (isAdminPage) {
+        // Hide mobile navigation on admin pages
+        const mobileBottomNav = document.querySelector('.mobile-bottom-nav');
+        if (mobileBottomNav) {
+            mobileBottomNav.style.display = 'none';
+        }
+        return;
+    }
+
+    try {
+        const mobileBottomNav = document.querySelector('.mobile-bottom-nav');
+        
+        // Add padding to the bottom of the page when mobile navigation is present
+        if (mobileBottomNav) {
+            const navHeight = mobileBottomNav.offsetHeight;
+            document.body.style.paddingBottom = `${navHeight}px`;
+        }
+    } catch (err) {
+        console.error('Error in mobile navigation:', err);
     }
 }
 

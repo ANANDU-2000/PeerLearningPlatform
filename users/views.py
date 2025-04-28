@@ -278,12 +278,20 @@ def learner_dashboard(request):
     # Import here to avoid circular imports
     from learning_sessions.models import Session, Booking
     
-    # Get upcoming bookings for this learner
-    upcoming_bookings = Booking.objects.filter(
+    # Get upcoming bookings for this learner (without duplicates)
+    from django.db.models import Min
+    
+    # Get the earliest booking for each session
+    booking_ids = Booking.objects.filter(
         learner=request.user,
         session__start_time__gt=timezone.now(),
         status='confirmed'
-    ).order_by('session__start_time')
+    ).values('session').annotate(min_id=Min('id')).values_list('min_id', flat=True)
+    
+    # Then get those specific bookings with all related data
+    upcoming_bookings = Booking.objects.filter(
+        id__in=booking_ids
+    ).select_related('session', 'session__mentor', 'session__mentor__user').order_by('session__start_time')
     
     # Initialize recommended_sessions as an empty list in case ML fails
     recommended_sessions = []

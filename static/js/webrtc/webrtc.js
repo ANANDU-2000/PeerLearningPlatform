@@ -24,6 +24,14 @@ class PeerLearnRTC {
         this.remoteVideos = {};
         this.peerConnections = {};
 
+        // Connection monitoring and reliability
+        this.connectionMonitorInterval = null;
+        this.connectionRetryAttempts = {}; // Track retry attempts per user
+        this.maxRetryAttempts = 3; // Maximum number of retry attempts
+        this.connectionHealth = {}; // Track connection health status
+        this.lastIceCandidate = {}; // Track last received ICE candidate time
+        this.healthCheckInterval = 15000; // Health check every 15 seconds
+        
         // UI elements and controls
         this.videoEnabled = true;
         this.audioEnabled = true;
@@ -33,6 +41,10 @@ class PeerLearnRTC {
         this.onUserLeft = config.onUserLeft || (() => {});
         this.onChatMessage = config.onChatMessage || (() => {});
         this.onError = config.onError || ((error) => { console.error('WebRTC Error:', error); });
+        this.onConnectionStateChange = config.onConnectionStateChange || (() => {});
+        
+        // Debug mode for verbose logging
+        this.debugMode = config.debugMode || true;
     }
 
     /**
@@ -102,10 +114,150 @@ class PeerLearnRTC {
             
             // Setup WebSocket for signaling
             this.setupWebSocket();
+            
+            // Start connection health monitoring
+            this.startConnectionMonitoring();
         } catch (error) {
             console.error("WebRTC initialization failed:", error);
             this.onError("Failed to access camera and microphone: " + error.message);
         }
+    }
+    
+    /**
+     * Start monitoring WebRTC connections for health and reliability
+     */
+    startConnectionMonitoring() {
+        if (this.connectionMonitorInterval) {
+            clearInterval(this.connectionMonitorInterval);
+        }
+        
+        // Start periodic health checks
+        this.connectionMonitorInterval = setInterval(() => {
+            this.checkAllConnectionsHealth();
+        }, this.healthCheckInterval);
+        
+        console.log("Connection health monitoring started");
+    }
+    
+    /**
+     * Check the health of all active peer connections
+     */
+    checkAllConnectionsHealth() {
+        if (this.debugMode) {
+            console.log("Performing connection health check");
+        }
+        
+        Object.keys(this.peerConnections).forEach(userId => {
+            const pc = this.peerConnections[userId];
+            if (!pc) return;
+            
+            // Check connection state
+            const connectionState = pc.connectionState || pc.iceConnectionState;
+            const lastHealth = this.connectionHealth[userId] || 'unknown';
+            
+            // Update connection health status
+            this.connectionHealth[userId] = connectionState;
+            
+            if (this.debugMode) {
+                console.log(`Connection health for user ${userId}: ${connectionState}`);
+            }
+            
+            // Handle connection state changes
+            if (lastHealth !== connectionState) {
+                // Notify listeners about connection state change
+                this.onConnectionStateChange({
+                    userId,
+                    state: connectionState,
+                    previous: lastHealth
+                });
+                
+                // Handle problematic states
+                if (connectionState === 'failed' || connectionState === 'disconnected') {
+                    this.handleConnectionFailure(userId);
+                }
+                
+                // Handle successful connection (was problematic, now connected)
+                if ((lastHealth === 'failed' || lastHealth === 'disconnected') && 
+                    (connectionState === 'connected' || connectionState === 'completed')) {
+                    console.log(`Connection to user ${userId} recovered successfully`);
+                    // Reset retry counter after successful recovery
+                    this.connectionRetryAttempts[userId] = 0;
+                }
+            }
+            
+            // Check for ICE gathering stalls (no new candidates received in a while)
+            const lastIceCandidateTime = this.lastIceCandidate[userId] || 0;
+            const now = Date.now();
+            
+            // If no ICE candidates for 20 seconds during gathering and not connected
+            if (pc.iceGatheringState === 'gathering' && 
+                lastIceCandidateTime > 0 && 
+                now - lastIceCandidateTime > 20000 &&
+                (connectionState !== 'connected' && connectionState !== 'completed')) {
+                
+                console.warn(`ICE gathering may be stalled for user ${userId}, attempting recovery`);
+                this.handleConnectionFailure(userId);
+            }
+        });
+    }
+    
+    /**
+     * Handle connection failure with automatic recovery attempts
+     */
+    handleConnectionFailure(userId) {
+        // Initialize or increment retry counter
+        this.connectionRetryAttempts[userId] = (this.connectionRetryAttempts[userId] || 0) + 1;
+        
+        console.log(`Connection failure detected for user ${userId}. Retry attempt: ${this.connectionRetryAttempts[userId]}/${this.maxRetryAttempts}`);
+        
+        // Don't show error on first attempt, just retry quietly
+        if (this.connectionRetryAttempts[userId] > 1) {
+            this.onError(`Connection issue detected. Attempting to reconnect... (${this.connectionRetryAttempts[userId]}/${this.maxRetryAttempts})`);
+        }
+        
+        // If we've reached max retries, notify the user of persistent issues
+        if (this.connectionRetryAttempts[userId] >= this.maxRetryAttempts) {
+            console.warn(`Max retry attempts (${this.maxRetryAttempts}) reached for user ${userId}`);
+            
+            // Send error information to the server for improved diagnostics
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.sendSignalingMessage({
+                    type: 'connection_error',
+                    error: `Failed to connect after ${this.maxRetryAttempts} attempts`,
+                    to_user_id: userId
+                });
+            }
+            
+            this.onError(`Unable to establish a stable connection. This may be due to network firewalls or restrictive security settings. Try using a different network or browser.`);
+            return;
+        }
+        
+        // Close existing broken connection
+        const oldPc = this.peerConnections[userId];
+        if (oldPc) {
+            // We don't delete the connection yet to avoid race conditions
+            oldPc.close();
+        }
+        
+        // Wait a bit before retrying to allow for network recovery
+        setTimeout(() => {
+            // If this is the mentor, recreate the connection
+            if (this.isMentor) {
+                console.log(`Mentor attempting to recreate connection to user ${userId}`);
+                // Create new connection and send offer
+                delete this.peerConnections[userId]; // Now it's safe to delete
+                this.createPeerConnection(userId, "Remote User");
+                this.createOffer(userId);
+            } else {
+                // For learners, send a signal to the mentor to trigger a reconnection
+                console.log("Learner signaling connection failure to mentor");
+                this.sendSignalingMessage({
+                    type: 'connection_error',
+                    error: 'learner_requesting_reconnect',
+                    to_user_id: 'mentor' // Special target for the mentor
+                });
+            }
+        }, 2000); // Wait 2 seconds before retry
     }
 
     /**
@@ -291,11 +443,36 @@ class PeerLearnRTC {
             // Handle ICE candidates
             pc.onicecandidate = (event) => {
                 if (event.candidate) {
+                    // Record time of last ICE candidate for connection health monitoring
+                    this.lastIceCandidate[userId] = Date.now();
+                    
+                    if (this.debugMode) {
+                        console.log(`ICE candidate gathered for user ${userId}:`, event.candidate.candidate);
+                    }
+                    
                     this.sendSignalingMessage({
                         type: 'candidate',
                         candidate: event.candidate,
                         to_user_id: userId
                     });
+                } else {
+                    // ICE gathering is complete
+                    console.log(`ICE gathering complete for user ${userId}`);
+                }
+            };
+            
+            // Handle ICE gathering state changes
+            pc.onicegatheringstatechange = () => {
+                console.log(`ICE gathering state for user ${userId}: ${pc.iceGatheringState}`);
+                
+                // If gathering is complete but no candidates were gathered, it could indicate an issue
+                if (pc.iceGatheringState === 'complete' && !this.lastIceCandidate[userId]) {
+                    console.warn(`ICE gathering completed for user ${userId} but no candidates were gathered`);
+                    
+                    // This could be due to network restrictions - notify user
+                    if (this.connectionRetryAttempts[userId] > 0) {
+                        this.onError("No ICE candidates were gathered. This typically indicates a network issue or firewall restriction.");
+                    }
                 }
             };
             
@@ -303,12 +480,20 @@ class PeerLearnRTC {
             pc.oniceconnectionstatechange = () => {
                 console.log(`ICE connection state for user ${userId}: ${pc.iceConnectionState}`);
                 
+                // Connection failed or disconnected - handled by the health check system 
+                // to avoid duplicate recovery attempts
                 if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-                    console.log(`Connection to user ${userId} failed or disconnected, attempting to restart ICE`);
-                    // Try to restart ICE connection
-                    if (this.isMentor) {
-                        this.createOffer(userId);
-                    }
+                    console.log(`Connection to user ${userId} is in ${pc.iceConnectionState} state`);
+                    
+                    // The health monitor will handle the recovery, but immediately update status
+                    this.connectionHealth[userId] = pc.iceConnectionState;
+                }
+                
+                // Connection successfully established
+                if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
+                    console.log(`Successfully connected to user ${userId}`);
+                    this.connectionHealth[userId] = pc.iceConnectionState;
+                    this.connectionRetryAttempts[userId] = 0;
                 }
             };
             
@@ -463,9 +648,41 @@ class PeerLearnRTC {
         }
         
         try {
+            // Track that we received a candidate from this peer
+            // This is important for connection health monitoring
+            if (!this.lastIceCandidate[`remote_${userId}`]) {
+                console.log(`First ICE candidate received from user ${userId}`);
+            }
+            this.lastIceCandidate[`remote_${userId}`] = Date.now();
+            
+            if (this.debugMode) {
+                console.log(`Received ICE candidate from user ${userId}:`, 
+                    data.candidate.candidate ? data.candidate.candidate.substring(0, 50) + '...' : 'empty');
+            }
+            
+            // Add the candidate to the peer connection
             await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+            
+            // If connection is in checking state for too long without progress
+            if (pc.iceConnectionState === 'checking' && 
+                this.connectionRetryAttempts[userId] === 0) {
+                
+                // Start a timeout to detect stalled ICE checking
+                setTimeout(() => {
+                    // If still in checking state after timeout, may indicate issues with NAT traversal
+                    if (pc.iceConnectionState === 'checking') {
+                        console.warn(`ICE connection still in 'checking' state after 10 seconds for user ${userId}`);
+                        // Don't trigger the health check immediately, but mark it for attention
+                        this.connectionHealth[userId] = 'checking-stalled';
+                    }
+                }, 10000); // 10 seconds is a reasonable time for ICE negotiation
+            }
         } catch (error) {
-            this.onError("Error handling ICE candidate: " + error.message);
+            console.error("Error handling ICE candidate:", error);
+            this.onError("Error processing connection information: " + error.message);
+            
+            // If we're getting ICE candidate errors, mark the connection health accordingly
+            this.connectionHealth[userId] = 'candidate-error';
         }
     }
 
@@ -514,23 +731,85 @@ class PeerLearnRTC {
     }
 
     /**
-     * Close all connections and cleanup
+     * Close all connections and perform cleanup
      */
     close() {
+        console.log("Closing all WebRTC connections and performing cleanup");
+        
+        // Stop connection health monitoring
+        if (this.connectionMonitorInterval) {
+            console.log("Stopping connection health monitoring");
+            clearInterval(this.connectionMonitorInterval);
+            this.connectionMonitorInterval = null;
+        }
+        
         // Close all peer connections
         Object.keys(this.peerConnections).forEach(userId => {
-            this.peerConnections[userId].close();
+            console.log(`Closing connection to user ${userId}`);
+            try {
+                // Remove all tracks and clean up properly
+                const pc = this.peerConnections[userId];
+                const senders = pc.getSenders();
+                if (senders && senders.length) {
+                    senders.forEach(sender => {
+                        try {
+                            pc.removeTrack(sender);
+                        } catch (e) {
+                            console.warn(`Error removing track from peer connection: ${e.message}`);
+                        }
+                    });
+                }
+                
+                // Close the connection
+                pc.close();
+            } catch (e) {
+                console.error(`Error closing peer connection to user ${userId}:`, e);
+            }
         });
         this.peerConnections = {};
         
         // Stop all local media tracks
         if (this.localStream) {
-            this.localStream.getTracks().forEach(track => track.stop());
+            console.log("Stopping all local media tracks");
+            try {
+                this.localStream.getTracks().forEach(track => {
+                    track.stop();
+                    this.localStream.removeTrack(track);
+                });
+                this.localStream = null;
+            } catch (e) {
+                console.error("Error stopping local media tracks:", e);
+            }
         }
         
-        // Close WebSocket
-        if (this.socket) {
-            this.socket.close();
+        // Send a notification that we're leaving if the socket is still open
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            console.log("Sending leave notification before closing WebSocket");
+            try {
+                this.sendSignalingMessage({
+                    type: 'user_leaving',
+                    user_id: this.userId,
+                    user_name: this.userName
+                });
+            } catch (e) {
+                console.warn("Error sending leave notification:", e);
+            }
         }
+        
+        // Close WebSocket with a small delay to allow the leave message to be sent
+        setTimeout(() => {
+            if (this.socket) {
+                console.log("Closing WebSocket connection");
+                this.socket.close(1000, "User left session");
+                this.socket = null;
+            }
+        }, 100);
+        
+        // Clear all state
+        this.connectionHealth = {};
+        this.connectionRetryAttempts = {};
+        this.lastIceCandidate = {};
+        
+        console.log("WebRTC cleanup complete");
     }
 }

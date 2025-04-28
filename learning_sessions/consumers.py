@@ -228,6 +228,16 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
             'user_name': event['user_name'],
             'timestamp': event['timestamp'],
         }))
+        
+    async def connection_error(self, event):
+        """Send connection error notification to WebSocket."""
+        await self.send(text_data=json.dumps({
+            'type': 'connection_error',
+            'user_id': event['user_id'],
+            'user_name': event['user_name'],
+            'error': event['error'],
+            'timestamp': event['timestamp'],
+        }))
     
     @database_sync_to_async
     def _check_user_session_permission(self):

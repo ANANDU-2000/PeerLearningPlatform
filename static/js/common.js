@@ -139,10 +139,11 @@ function initDropdowns() {
         }
         
         // Generic dropdowns
-        const dropdownToggles = document.querySelectorAll('.dropdown button:not(#user-menu-button):not(.profile-menu-button)');
+        var dropdownToggles = document.querySelectorAll('.dropdown button:not(#user-menu-button):not(.profile-menu-button)');
         if (dropdownToggles && dropdownToggles.length > 0) {
-            dropdownToggles.forEach(toggle => {
-                if (!toggle) return;
+            for (var j = 0; j < dropdownToggles.length; j++) {
+                var toggle = dropdownToggles[j];
+                if (!toggle) continue;
                 
                 toggle.addEventListener('click', function(e) {
                     e.stopPropagation();
@@ -154,19 +155,20 @@ function initDropdowns() {
                         const isExpanded = this.getAttribute('aria-expanded') === 'true';
                         
                         // Close all other dropdowns first
-                        dropdownToggles.forEach(otherToggle => {
-                            if (!otherToggle || otherToggle === toggle) return;
+                        for (var i = 0; i < dropdownToggles.length; i++) {
+                            var otherToggle = dropdownToggles[i];
+                            if (!otherToggle || otherToggle === toggle) continue;
                             
                             try {
                                 otherToggle.setAttribute('aria-expanded', 'false');
-                            const otherContent = otherToggle.nextElementSibling;
-                            if (otherContent && otherContent.classList) {
-                                otherContent.classList.add('hidden');
+                                var otherContent = otherToggle.nextElementSibling;
+                                if (otherContent && otherContent.classList) {
+                                    otherContent.classList.add('hidden');
+                                }
+                            } catch (err) {
+                                console.error('Error closing other dropdown:', err);
                             }
-                        } catch (err) {
-                            console.error('Error closing other dropdown:', err);
                         }
-                    });
                     
                     // Toggle current dropdown
                     this.setAttribute('aria-expanded', !isExpanded);
@@ -176,7 +178,7 @@ function initDropdowns() {
                     if (content.classList && !content.classList.contains('hidden')) {
                         const focusableElements = content.querySelectorAll('a, button');
                         if (focusableElements.length) {
-                            setTimeout(() => focusableElements[0].focus(), 100);
+                            setTimeout(function() { focusableElements[0].focus(); }, 100);
                         }
                     }
                 } catch (err) {
@@ -189,19 +191,20 @@ function initDropdowns() {
         document.addEventListener('click', function(e) {
             try {
                 if (!e.target.closest('.dropdown')) {
-                    dropdownToggles.forEach(toggle => {
-                        if (!toggle) return;
+                    for (var k = 0; k < dropdownToggles.length; k++) {
+                        var toggle = dropdownToggles[k];
+                        if (!toggle) continue;
                         
                         try {
                             toggle.setAttribute('aria-expanded', 'false');
-                            const content = toggle.nextElementSibling;
+                            var content = toggle.nextElementSibling;
                             if (content && content.classList) {
                                 content.classList.add('hidden');
                             }
                         } catch (err) {
                             console.error('Error closing dropdown on outside click:', err);
                         }
-                    });
+                    }
                 }
             } catch (err) {
                 console.error('Error in document click handler:', err);
@@ -212,19 +215,20 @@ function initDropdowns() {
         document.addEventListener('keydown', function(e) {
             try {
                 if (e.key === 'Escape') {
-                    dropdownToggles.forEach(toggle => {
-                        if (!toggle) return;
+                    for (var m = 0; m < dropdownToggles.length; m++) {
+                        var toggle = dropdownToggles[m];
+                        if (!toggle) continue;
                         
                         try {
                             toggle.setAttribute('aria-expanded', 'false');
-                            const content = toggle.nextElementSibling;
+                            var content = toggle.nextElementSibling;
                             if (content && content.classList) {
                                 content.classList.add('hidden');
                             }
                         } catch (err) {
                             console.error('Error closing dropdown on escape:', err);
                         }
-                    });
+                    }
                 }
             } catch (err) {
                 console.error('Error in escape key handler:', err);
@@ -257,8 +261,8 @@ function initMobileNavigation() {
         
         // Add padding to the bottom of the page when mobile navigation is present
         if (mobileBottomNav) {
-            const navHeight = mobileBottomNav.offsetHeight;
-            document.body.style.paddingBottom = `${navHeight}px`;
+            var navHeight = mobileBottomNav.offsetHeight;
+            document.body.style.paddingBottom = navHeight + 'px';
         }
     } catch (err) {
         console.error('Error in mobile navigation:', err);
@@ -276,37 +280,42 @@ function showNotification(message, type = 'info', duration = 3000) {
     if (!container) return;
     
     // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `global-notification ${type}`;
+    var notification = document.createElement('div');
+    notification.className = 'global-notification ' + type;
     
     // Inner content structure
-    notification.innerHTML = `
-        <div class="notification-content">
-            <span>${message}</span>
-            <button class="notification-close">&times;</button>
-        </div>
-    `;
+    notification.innerHTML = 
+        '<div class="notification-content">' +
+            '<span>' + message + '</span>' +
+            '<button class="notification-close">&times;</button>' +
+        '</div>';
     
     // Add to container
     container.appendChild(notification);
     
     // Animate in
-    setTimeout(() => notification.classList.add('show'), 10);
+    setTimeout(function() { 
+        notification.classList.add('show'); 
+    }, 10);
     
     // Attach close handler
-    const closeBtn = notification.querySelector('.notification-close');
+    var closeBtn = notification.querySelector('.notification-close');
     if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
+        closeBtn.addEventListener('click', function() {
             notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(function() { 
+                notification.remove(); 
+            }, 300);
         });
     }
     
     // Auto-remove after duration
-    setTimeout(() => {
+    setTimeout(function() {
         if (notification.parentNode) {
             notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
+            setTimeout(function() { 
+                notification.remove(); 
+            }, 300);
         }
     }, duration);
 }

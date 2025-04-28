@@ -1,0 +1,62 @@
+NoReverseMatch at /admin-panel/secure-login
+Reverse for 'home' not found. 'home' is not a valid view function or pattern name.
+Request Method:	GET
+Request URL:	http://c04fd6df-be0d-492d-b2f8-d8a5ecbe079b-00-mp4il0lqopkm.riker.replit.dev/admin-panel/secure-login
+Django Version:	5.2
+Exception Type:	NoReverseMatch
+Exception Value:	
+Reverse for 'home' not found. 'home' is not a valid view function or pattern name.
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/urls/resolvers.py, line 831, in _reverse_with_prefix
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.11.10
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/lc7qv2ldzrs1aq3hbyzmbgvn0h2w26pl-sitecustomize/lib/python/site-packages',
+ '/nix/store/dfg63lldbvcj207iyr9z0xw21d8ax02n-python3.11-pip-24.0/lib/python3.11/site-packages',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python311.zip',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/wblvmd5y7izx0z10d1w7ga7zc4apjxmb-python3.11-setuptools-75.1.1/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/setuptools/_vendor']
+Server time:	Mon, 28 Apr 2025 18:11:54 +0000
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/core/handlers/exception.py, line 55, in inner
+                response = get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/admin_panel/middleware.py, line 78, in __call__
+                return redirect('home')  # Redirect to home page
+                           ^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/shortcuts.py, line 51, in redirect
+        resolve_url(to, *args, **kwargs),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/shortcuts.py, line 184, in resolve_url
+        return reverse(to, args=args, kwargs=kwargs)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/urls/base.py, line 98, in reverse
+    resolved_url = resolver._reverse_with_prefix(view, prefix, *args, **kwargs)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/urls/resolvers.py, line 831, in _reverse_with_prefix
+        raise NoReverseMatch(msg)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+Request information
+USER
+krishna@gmail.com
+
+GET
+No GET data
+
+POST
+No POST data
+
+FILES
+No FILES data
+
+COOKIES

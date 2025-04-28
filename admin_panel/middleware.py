@@ -75,7 +75,7 @@ class AdminSecurityMiddleware:
                 )
                 
                 messages.error(request, _("You do not have permissions to access this area."))
-                return redirect('home')  # Redirect to home page
+                return redirect('landing_page')  # Redirect to landing page
             
             # Check admin session verification flag
             if not request.session.get('admin_verified'):

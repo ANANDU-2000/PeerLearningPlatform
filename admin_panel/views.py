@@ -127,7 +127,7 @@ def mentor_approval(request):
     # Get recently approved mentors (last 10)
     recent_approved = MentorProfile.objects.filter(
         is_approved=True
-    ).select_related('user').order_by('-approved_at')[:10]
+    ).select_related('user').order_by('-updated_at')[:10]
     
     context = {
         'pending_mentors': pending_mentors,
@@ -149,8 +149,7 @@ def approve_mentor(request, mentor_id):
     
     if request.method == 'POST':
         mentor.is_approved = True
-        mentor.approved_at = timezone.now()
-        mentor.save()
+        mentor.save()  # updated_at will be automatically updated
         
         # Send notification email to mentor (in real implementation)
         

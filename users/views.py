@@ -370,7 +370,7 @@ def learner_dashboard(request):
         if total_mins['total']:
             stats['total_learning_hours'] = round(total_mins['total'] / 60, 1)
     
-    return render(request, 'dashboard/learner_dashboard.html', {
+    return render(request, 'dashboard/learner_dashboard_new.html', {
         'upcoming_bookings': upcoming_bookings,  # For backwards compatibility
         'live_session_bookings': live_session_bookings,
         'upcoming_bookings': upcoming_bookings,

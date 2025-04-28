@@ -97,27 +97,63 @@ function hideWelcomeMessage(welcomeMsg) {
  */
 function initDropdowns() {
     try {
-        const dropdownToggles = document.querySelectorAll('.dropdown button');
-        if (!dropdownToggles || dropdownToggles.length === 0) return;
+        // Explicitly handle user profile menu
+        const userMenuButton = document.querySelector('#user-menu-button, .profile-menu-button');
+        const userMenu = document.querySelector('#user-menu-dropdown, .profile-dropdown');
         
-        dropdownToggles.forEach(toggle => {
-            if (!toggle) return;
+        if (userMenuButton && userMenu) {
+            console.log("Profile menu elements found:", {userMenuButton, userMenu});
             
-            toggle.addEventListener('click', function(e) {
+            userMenuButton.addEventListener('click', function(e) {
+                e.preventDefault();
                 e.stopPropagation();
+                console.log("Profile menu clicked");
                 
-                try {
-                    const content = this.nextElementSibling;
-                    if (!content) return;
+                // Toggle visibility
+                const isHidden = userMenu.classList.contains('hidden');
+                if (isHidden) {
+                    // Show menu
+                    userMenu.classList.remove('hidden');
+                    userMenuButton.setAttribute('aria-expanded', 'true');
+                } else {
+                    // Hide menu
+                    userMenu.classList.add('hidden');
+                    userMenuButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+            
+            // Close menu when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!userMenuButton.contains(e.target) && !userMenu.contains(e.target)) {
+                    userMenu.classList.add('hidden');
+                    userMenuButton.setAttribute('aria-expanded', 'false');
+                }
+            });
+        } else {
+            console.log("Profile menu elements not found");
+        }
+        
+        // Generic dropdowns
+        const dropdownToggles = document.querySelectorAll('.dropdown button:not(#user-menu-button):not(.profile-menu-button)');
+        if (dropdownToggles && dropdownToggles.length > 0) {
+            dropdownToggles.forEach(toggle => {
+                if (!toggle) return;
+                
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
                     
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    
-                    // Close all other dropdowns first
-                    dropdownToggles.forEach(otherToggle => {
-                        if (!otherToggle || otherToggle === toggle) return;
+                    try {
+                        const content = this.nextElementSibling;
+                        if (!content) return;
                         
-                        try {
-                            otherToggle.setAttribute('aria-expanded', 'false');
+                        const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                        
+                        // Close all other dropdowns first
+                        dropdownToggles.forEach(otherToggle => {
+                            if (!otherToggle || otherToggle === toggle) return;
+                            
+                            try {
+                                otherToggle.setAttribute('aria-expanded', 'false');
                             const otherContent = otherToggle.nextElementSibling;
                             if (otherContent && otherContent.classList) {
                                 otherContent.classList.add('hidden');

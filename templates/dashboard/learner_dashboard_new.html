@@ -673,7 +673,7 @@
                                             
                                             <!-- Feedback Button if feedback not given -->
                                             {% if not booking.feedback %}
-                                                <a href="{% url 'session_detail' session_id=booking.session.id %}#feedback" 
+                                                <a href="{% url 'submit_feedback' booking_id=booking.id %}" 
                                                 class="w-full py-2 px-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg font-medium text-center hover:from-green-600 hover:to-emerald-600 transition-all text-sm">
                                                     {% trans "Leave Feedback" %}
                                                 </a>

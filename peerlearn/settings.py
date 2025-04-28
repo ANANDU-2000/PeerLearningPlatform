@@ -52,6 +52,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # Custom middleware
     'users.middleware.UserRoleMiddleware',
+    'admin_panel.middleware.AdminSecurityMiddleware',
 ]
 
 ROOT_URLCONF = 'peerlearn.urls'
@@ -163,6 +164,41 @@ SESSION_COOKIE_SECURE = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
+
+# Admin security
+ADMIN_SECURITY_LOG_FILE = BASE_DIR / 'logs' / 'admin_security.log'
+
+# Logging configuration for security events
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'admin_security_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': ADMIN_SECURITY_LOG_FILE,
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'admin_security': {
+            'handlers': ['admin_security_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # Rate limiting
 RATELIMIT_ENABLE = True

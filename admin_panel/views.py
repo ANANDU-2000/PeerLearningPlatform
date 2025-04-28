@@ -5,17 +5,37 @@ Views for the admin panel.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.http import JsonResponse
+from django.contrib.auth import authenticate, login, logout
+from django.http import JsonResponse, HttpResponseForbidden
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Count, Sum, Avg, F, Q
 from django.utils import timezone
+from django.views.decorators.http import require_POST
+from django.conf import settings
 from datetime import timedelta
 import os
 import json
+import hashlib
+import hmac
+import ipaddress
+import logging
 
 from users.models import User, MentorProfile
 from learning_sessions.models import Session, Booking, Feedback
 from payments.models import Transaction, WithdrawalRequest
+
+# Create a logger for recording security events
+security_logger = logging.getLogger('admin_security')
+
+# Define the admin security key (in a real app, this would be in .env or settings)
+ADMIN_SECURITY_KEY = "YOUR_PRIVATE_KEY_HERE"
+
+# Define list of allowed IP addresses or ranges for admin access
+ALLOWED_ADMIN_IPS = [
+    '127.0.0.1',           # Localhost
+    '172.31.0.0/16',       # Example internal IP range
+    # Add your own IP addresses here
+]
 
 
 def is_admin(user):
@@ -435,3 +455,99 @@ def video_storage(request):
     }
     
     return render(request, 'admin_panel/video_storage.html', context)
+
+
+def secure_admin_login(request):
+    """
+    Secure admin login view with multiple layers of protection.
+    This is separate from Django's built-in admin and the regular user login.
+    """
+    # Check for brute force attempts by using IP-based throttling
+    client_ip = request.META.get('REMOTE_ADDR', '')
+    
+    # Log access attempt
+    security_logger.info(f"Admin login attempt from IP: {client_ip}")
+    
+    # Check if IP is in allowed list
+    ip_allowed = False
+    try:
+        client_ip_obj = ipaddress.ip_address(client_ip)
+        for allowed_ip in ALLOWED_ADMIN_IPS:
+            # Check if it's a network range or single IP
+            if '/' in allowed_ip:
+                network = ipaddress.ip_network(allowed_ip)
+                if client_ip_obj in network:
+                    ip_allowed = True
+                    break
+            elif client_ip == allowed_ip:
+                ip_allowed = True
+                break
+    except ValueError:
+        # Invalid IP format
+        security_logger.warning(f"Invalid IP format in admin login: {client_ip}")
+        ip_allowed = False
+    
+    # Block if IP is not allowed
+    if not ip_allowed:
+        security_logger.warning(f"Admin login attempt from unauthorized IP: {client_ip}")
+        # Don't explain the actual reason for security purposes
+        messages.error(request, _("Access denied. Please contact the administrator."))
+        return render(request, 'admin_panel/secure_login.html')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        security_key = request.POST.get('security_key')
+        
+        # Perform additional security key verification
+        if not security_key or not constant_time_compare(security_key, ADMIN_SECURITY_KEY):
+            security_logger.warning(f"Invalid security key provided from IP: {client_ip}")
+            messages.error(request, _("Invalid credentials. Please try again."))
+            return render(request, 'admin_panel/secure_login.html')
+        
+        # Verify admin user
+        user = authenticate(username=username, password=password)
+        if user is not None and user.is_active and user.role == 'admin':
+            login(request, user)
+            
+            # Set admin session flag
+            request.session['admin_verified'] = True
+            request.session['admin_verified_at'] = timezone.now().isoformat()
+            
+            # If remember device is checked, set a longer session expiry
+            if request.POST.get('ip_verify'):
+                request.session.set_expiry(60 * 60 * 24 * 30)  # 30 days
+            else:
+                request.session.set_expiry(60 * 60 * 4)  # 4 hours
+            
+            security_logger.info(f"Successful admin login for user: {username} from IP: {client_ip}")
+            return redirect('admin_dashboard')
+        else:
+            security_logger.warning(f"Failed admin login attempt for user: {username} from IP: {client_ip}")
+            messages.error(request, _("Invalid credentials. Please try again."))
+    
+    return render(request, 'admin_panel/secure_login.html')
+
+
+def secure_admin_logout(request):
+    """Securely log out from admin panel."""
+    if request.session.get('admin_verified'):
+        # Clear admin session flag
+        request.session.pop('admin_verified', None)
+        request.session.pop('admin_verified_at', None)
+    
+    # Also perform standard logout
+    logout(request)
+    
+    messages.success(request, _("You have been securely logged out from the admin panel."))
+    return redirect('secure_admin_login')
+
+
+def constant_time_compare(val1, val2):
+    """
+    Perform a constant time comparison to avoid timing attacks.
+    """
+    if not isinstance(val1, str) or not isinstance(val2, str):
+        return False
+    
+    return hmac.compare_digest(val1, val2)

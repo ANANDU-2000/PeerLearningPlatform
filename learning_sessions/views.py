@@ -240,11 +240,20 @@ def session_detail(request, session_id):
             mentor__is_approved=True
         ).exclude(id=session.id).order_by('start_time')[:3]
     
+    # Check if user is a mentor and specifically the one who created this session
+    is_mentor = request.user.is_authenticated and request.user.role == 'mentor' and session.mentor.user == request.user
+    
+    # Check if user has already booked this session
+    is_booked = user_booking is not None
+    
     context = {
         'session': session,
         'user_booking': user_booking,
+        'is_booked': is_booked,
+        'is_mentor': is_mentor,
         'related_sessions': related_sessions,
         'booking_form': BookingForm(),
+        'now': timezone.now(),  # Pass current time for countdown
     }
     
     return render(request, 'sessions/session_detail.html', context)

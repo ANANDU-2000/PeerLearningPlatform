@@ -81,7 +81,26 @@
                     <!-- Booking card -->
                     <div class="w-full md:w-80 shrink-0">
                         <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                            <div class="text-2xl font-bold text-gray-900 mb-2">₹{{ session.price }}</div>
+                            <div class="flex flex-col mb-2">
+                                <div class="flex items-center">
+                                    <span class="text-2xl font-bold text-gray-900">₹{{ session.price }}</span>
+                                    {% if session.price == 0 %}
+                                        <span class="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                                            {% trans "Free" %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if session.start_time > now %}
+                                <div class="text-sm text-gray-600 mt-1">
+                                    <span>{% trans "Starts in" %}: </span>
+                                    <span class="font-medium text-blue-600 countdown" data-start-time="{{ session.start_time|date:'c' }}">
+                                        {% comment %}JavaScript will update this{% endcomment %}
+                                        ...
+                                    </span>
+                                </div>
+                                {% endif %}
+                            </div>
                             
                             <div class="flex items-center mb-4">
                                 <div class="w-full bg-gray-200 rounded-full h-2">
@@ -133,9 +152,15 @@
                                             {% trans "Session Ended" %}
                                         </div>
                                     {% else %}
-                                        <a href="{% url 'book_session' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
-                                            {% trans "Book Session" %}
-                                        </a>
+                                        {% if session.price == 0 %}
+                                            <a href="{% url 'book_session' session_id=session.id %}?confirm=true" class="w-full block text-center bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                                {% trans "Enroll for Free" %}
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'book_session' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                                {% trans "Book Session" %}
+                                            </a>
+                                        {% endif %}
                                     {% endif %}
                                 {% endif %}
                             {% else %}
@@ -257,6 +282,55 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize feather icons
         feather.replace();
+        
+        // Handle countdown timer
+        const countdownElements = document.querySelectorAll('.countdown');
+        
+        function updateCountdown() {
+            countdownElements.forEach(function(element) {
+                const startTimeStr = element.getAttribute('data-start-time');
+                const startTime = new Date(startTimeStr);
+                const currentTime = new Date();
+                
+                // Calculate the time difference in milliseconds
+                let timeDiff = startTime - currentTime;
+                
+                // If the session has already started, show "Live Now"
+                if (timeDiff <= 0) {
+                    element.innerHTML = '<span class="text-red-600 font-bold">Live Now</span>';
+                    return;
+                }
+                
+                // Calculate days, hours, minutes, seconds
+                const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+                timeDiff -= days * (1000 * 60 * 60 * 24);
+                
+                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                timeDiff -= hours * (1000 * 60 * 60);
+                
+                const minutes = Math.floor(timeDiff / (1000 * 60));
+                timeDiff -= minutes * (1000 * 60);
+                
+                const seconds = Math.floor(timeDiff / 1000);
+                
+                // Format the countdown string
+                let countdownStr = '';
+                
+                if (days > 0) {
+                    countdownStr += `${days}d `;
+                }
+                
+                countdownStr += `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                element.textContent = countdownStr;
+            });
+        }
+        
+        // Initial update
+        updateCountdown();
+        
+        // Update countdown every second
+        setInterval(updateCountdown, 1000);
         
         // Handle social sharing
         const shareButtons = document.querySelectorAll('.share-btn');

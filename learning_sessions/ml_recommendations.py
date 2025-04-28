@@ -36,18 +36,20 @@ def get_content_based_recommendations(user, limit=5):
         status__in=['confirmed', 'completed']
     ).select_related('session')
     
-    # If user has no past bookings, fall back to their interests
+    # If user has no past bookings, fall back to other recommendation methods
     if not past_bookings.exists():
         try:
-            # Get learner profile and interests
+            # Get learner profile
             learner_profile = LearnerProfile.objects.get(user=user)
-            interests = learner_profile.interests or ""
             
-            # Find sessions that match the user's interests
-            interest_keywords = [kw.strip() for kw in interests.split(',') if kw.strip()]
+            # Use career goals as a source of interests since we don't have a dedicated interests field
+            career_goals = getattr(learner_profile, 'career_goals', '') or ''
+            
+            # Find sessions that match the user's career goals
+            interest_keywords = [kw.strip() for kw in career_goals.split(',') if kw.strip()]
             
             if interest_keywords:
-                # Build a query that checks if any interest keyword is in the session tags or title
+                # Build a query that checks if any keyword is in the session tags or title
                 query = Q()
                 for keyword in interest_keywords:
                     query |= Q(tags__icontains=keyword) | Q(title__icontains=keyword)
@@ -63,8 +65,11 @@ def get_content_based_recommendations(user, limit=5):
                     id__in=Booking.objects.filter(learner=user).values_list('session_id', flat=True)
                 ).order_by('start_time')[:limit]
                 
-                return recommendations
-        except LearnerProfile.DoesNotExist:
+                if recommendations.exists():
+                    return recommendations
+        except (LearnerProfile.DoesNotExist, AttributeError) as e:
+            # Log the error for debugging
+            print(f"ML career goals recommendation error: {str(e)}")
             pass
     
     # If user has past bookings, recommend similar sessions

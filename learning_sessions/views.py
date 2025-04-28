@@ -219,15 +219,21 @@ def session_detail(request, session_id):
         except Booking.DoesNotExist:
             pass
     
-    # Get ML-powered similar session recommendations
-    if request.user.is_authenticated and request.user.role == 'learner':
-        # Use machine learning recommendations for authenticated learners
-        from .ml_recommendations import get_content_based_recommendations
-        related_sessions = get_content_based_recommendations(request.user, limit=3)
-        # Exclude the current session from recommendations
-        related_sessions = [s for s in related_sessions if s.id != session.id][:3]
-    else:
-        # Fallback to simple tag-based recommendations for non-authenticated users
+    # Get related session recommendations
+    try:
+        if request.user.is_authenticated and request.user.role == 'learner':
+            # Try to use ML recommendations for authenticated learners
+            from .ml_recommendations import get_content_based_recommendations
+            related_sessions = get_content_based_recommendations(request.user, limit=3)
+            # Exclude the current session from recommendations
+            related_sessions = [s for s in related_sessions if s.id != session.id][:3]
+        else:
+            # Use simple tag-based recommendations for non-authenticated users
+            raise Exception("User not authenticated as learner, using fallback")
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Session detail recommendation error: {str(e)}")
+        # Fallback to simple tag-based recommendations
         related_sessions = Session.objects.filter(
             tags__icontains=session.tags.split(',')[0] if session.tags else '',
             start_time__gt=timezone.now(),

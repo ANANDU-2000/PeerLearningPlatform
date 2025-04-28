@@ -47,11 +47,11 @@ class PeerLearnRTC {
         this.audioEnabled = true;
         
         // Event callbacks
-        this.onUserJoined = config.onUserJoined || (() => {});
-        this.onUserLeft = config.onUserLeft || (() => {});
-        this.onChatMessage = config.onChatMessage || (() => {});
-        this.onError = config.onError || ((error) => { console.error('WebRTC Error:', error); });
-        this.onConnectionStateChange = config.onConnectionStateChange || (() => {});
+        this.onUserJoined = config.onUserJoined || function() {};
+        this.onUserLeft = config.onUserLeft || function() {};
+        this.onChatMessage = config.onChatMessage || function() {};
+        this.onError = config.onError || function(error) { console.error('WebRTC Error:', error); };
+        this.onConnectionStateChange = config.onConnectionStateChange || function() {};
         
         // Debug mode for verbose logging
         this.debugMode = config.debugMode || true;
@@ -145,9 +145,14 @@ class PeerLearnRTC {
             // Display local video stream
             if (this.localVideo && this.localStream) {
                 this.localVideo.srcObject = this.localStream;
-                this.localVideo.onloadedmetadata = () => {
+                var self = this;
+                this.localVideo.onloadedmetadata = function() {
                     console.log("Local video stream loaded");
-                    this.localVideo.play().catch(e => console.error("Error playing local video:", e));
+                    self.localVideo.play().then(function() {
+                        // Playback started successfully
+                    }).catch(function(e) {
+                        console.error("Error playing local video:", e);
+                    });
                 };
             }
             
@@ -171,8 +176,9 @@ class PeerLearnRTC {
         }
         
         // Start periodic health checks
-        this.connectionMonitorInterval = setInterval(() => {
-            this.checkAllConnectionsHealth();
+        var self = this;
+        this.connectionMonitorInterval = setInterval(function() {
+            self.checkAllConnectionsHealth();
         }, this.healthCheckInterval);
         
         console.log("Connection health monitoring started");
@@ -186,26 +192,29 @@ class PeerLearnRTC {
             console.log("Performing connection health check");
         }
         
-        Object.keys(this.peerConnections).forEach(userId => {
-            const pc = this.peerConnections[userId];
-            if (!pc) return;
+        var self = this;
+        var userIds = Object.keys(this.peerConnections);
+        for (var i = 0; i < userIds.length; i++) {
+            var userId = userIds[i];
+            var pc = this.peerConnections[userId];
+            if (!pc) continue;
             
             // Check connection state
-            const connectionState = pc.connectionState || pc.iceConnectionState;
-            const lastHealth = this.connectionHealth[userId] || 'unknown';
+            var connectionState = pc.connectionState || pc.iceConnectionState;
+            var lastHealth = this.connectionHealth[userId] || 'unknown';
             
             // Update connection health status
             this.connectionHealth[userId] = connectionState;
             
             if (this.debugMode) {
-                console.log(`Connection health for user ${userId}: ${connectionState}`);
+                console.log("Connection health for user " + userId + ": " + connectionState);
             }
             
             // Handle connection state changes
             if (lastHealth !== connectionState) {
                 // Notify listeners about connection state change
                 this.onConnectionStateChange({
-                    userId,
+                    userId: userId,
                     state: connectionState,
                     previous: lastHealth
                 });
@@ -218,15 +227,15 @@ class PeerLearnRTC {
                 // Handle successful connection (was problematic, now connected)
                 if ((lastHealth === 'failed' || lastHealth === 'disconnected') && 
                     (connectionState === 'connected' || connectionState === 'completed')) {
-                    console.log(`Connection to user ${userId} recovered successfully`);
+                    console.log("Connection to user " + userId + " recovered successfully");
                     // Reset retry counter after successful recovery
                     this.connectionRetryAttempts[userId] = 0;
                 }
             }
             
             // Check for ICE gathering stalls (no new candidates received in a while)
-            const lastIceCandidateTime = this.lastIceCandidate[userId] || 0;
-            const now = Date.now();
+            var lastIceCandidateTime = this.lastIceCandidate[userId] || 0;
+            var now = Date.now();
             
             // If no ICE candidates for 20 seconds during gathering and not connected
             if (pc.iceGatheringState === 'gathering' && 
@@ -234,10 +243,10 @@ class PeerLearnRTC {
                 now - lastIceCandidateTime > 20000 &&
                 (connectionState !== 'connected' && connectionState !== 'completed')) {
                 
-                console.warn(`ICE gathering may be stalled for user ${userId}, attempting recovery`);
+                console.warn("ICE gathering may be stalled for user " + userId + ", attempting recovery");
                 this.handleConnectionFailure(userId);
             }
-        });
+        }
     }
     
     /**

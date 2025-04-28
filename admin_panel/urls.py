@@ -13,6 +13,7 @@ urlpatterns = [
     
     # Admin dashboard and features
     path('', views.admin_dashboard, name='admin_dashboard'),
+    path('create-admin/', views.create_admin_account, name='create_admin_account'),
     path('mentor-approval/', views.mentor_approval, name='mentor_approval'),
     path('mentor-approval/<int:mentor_id>/approve/', views.approve_mentor, name='approve_mentor'),
     path('mentor-approval/<int:mentor_id>/reject/', views.reject_mentor, name='reject_mentor'),

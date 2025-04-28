@@ -46,6 +46,7 @@ def admin_dashboard(request):
     total_users = User.objects.count()
     total_learners = User.objects.filter(role='learner').count()
     total_mentors = User.objects.filter(role='mentor').count()
+    total_admins = User.objects.filter(role='admin').count()
     total_sessions = Session.objects.count()
     total_bookings = Booking.objects.filter(status='confirmed').count()
     total_revenue = Transaction.objects.filter(status='completed').aggregate(Sum('amount'))['amount__sum'] or 0
@@ -55,6 +56,9 @@ def admin_dashboard(request):
     
     # Get pending withdrawal requests
     pending_withdrawals = WithdrawalRequest.objects.filter(status='pending').select_related('mentor__user')
+    
+    # Get all admin users
+    admin_users = User.objects.filter(role='admin').order_by('-date_joined')
     
     # Calculate recent revenue (last 30 days)
     thirty_days_ago = timezone.now() - timedelta(days=30)
@@ -85,6 +89,7 @@ def admin_dashboard(request):
         'total_users': total_users,
         'total_learners': total_learners,
         'total_mentors': total_mentors,
+        'total_admins': total_admins,
         'total_sessions': total_sessions,
         'total_bookings': total_bookings,
         'total_revenue': total_revenue,
@@ -93,6 +98,7 @@ def admin_dashboard(request):
         'chart_labels': chart_labels,
         'chart_data': chart_data,
         'recent_sessions': recent_sessions,
+        'admin_users': admin_users,
     }
     
     return render(request, 'admin_panel/dashboard.html', context)

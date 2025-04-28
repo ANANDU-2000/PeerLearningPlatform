@@ -195,63 +195,152 @@
         </div>
     </div>
     
-    <!-- Recent Sessions -->
-    <div class="w-full overflow-hidden rounded-lg shadow-xs glassmorphism mb-8">
-        <div class="w-full overflow-x-auto">
-            <h4 class="font-semibold text-gray-800 p-4 border-b">
-                {% trans "Recent Sessions" %}
-            </h4>
-            <table class="w-full whitespace-no-wrap">
-                <thead>
-                    <tr class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b bg-gray-50">
-                        <th class="px-4 py-3">{% trans "Session" %}</th>
-                        <th class="px-4 py-3">{% trans "Mentor" %}</th>
-                        <th class="px-4 py-3">{% trans "Status" %}</th>
-                        <th class="px-4 py-3">{% trans "Price" %}</th>
-                        <th class="px-4 py-3">{% trans "Schedule" %}</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y">
-                    {% for session in recent_sessions %}
-                    <tr class="text-gray-700">
-                        <td class="px-4 py-3">
-                            <div class="flex items-center text-sm">
-                                <div class="font-semibold">{{ session.title }}</div>
+    <!-- Admin Management and Recent Sessions -->
+    <div class="grid gap-6 mb-8 md:grid-cols-2">
+        <!-- Admin Management -->
+        <div class="w-full overflow-hidden rounded-lg shadow-xs glassmorphism mb-8">
+            <div class="w-full overflow-x-auto">
+                <h4 class="font-semibold text-gray-800 p-4 border-b flex items-center justify-between">
+                    <span>{% trans "Admin Management" %}</span>
+                    <span class="text-sm text-indigo-600">{{ total_admins }} {% trans "admins" %}</span>
+                </h4>
+                
+                <!-- Admin Creation Form -->
+                <div class="p-4 border-b border-gray-200 bg-gray-50">
+                    <h5 class="font-semibold text-gray-700 mb-3">{% trans "Create Admin Account" %}</h5>
+                    <form action="{% url 'create_admin_account' %}" method="post" class="space-y-3">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700">{% trans "Email Address" %}</label>
+                                <input type="email" name="email" id="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             </div>
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {{ session.mentor.user.get_full_name }}
-                        </td>
-                        <td class="px-4 py-3 text-xs">
-                            <span class="px-2 py-1 font-semibold leading-tight rounded-full 
-                            {% if session.status == 'scheduled' %}
-                                bg-gray-100 text-gray-800
-                            {% elif session.status == 'in_progress' %}
-                                bg-blue-100 text-blue-800
-                            {% elif session.status == 'completed' %}
-                                bg-green-100 text-green-800
-                            {% elif session.status == 'cancelled' %}
-                                bg-red-100 text-red-800
-                            {% endif %}">
-                                {{ session.get_status_display }}
-                            </span>
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            ₹{{ session.price }}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {{ session.start_time|date:"Y-m-d H:i" }}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="px-4 py-3 text-center text-gray-500">
-                            {% trans "No sessions found." %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <div>
+                                <label for="password" class="block text-sm font-medium text-gray-700">{% trans "Password" %}</label>
+                                <input type="password" name="password" id="password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="first_name" class="block text-sm font-medium text-gray-700">{% trans "First Name" %}</label>
+                                <input type="text" name="first_name" id="first_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="last_name" class="block text-sm font-medium text-gray-700">{% trans "Last Name" %}</label>
+                                <input type="text" name="last_name" id="last_name" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                {% trans "Create Admin Account" %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Admin List -->
+                {% if admin_users %}
+                <table class="w-full whitespace-no-wrap">
+                    <thead>
+                        <tr class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b bg-gray-50">
+                            <th class="px-4 py-3">{% trans "Admin" %}</th>
+                            <th class="px-4 py-3">{% trans "Email" %}</th>
+                            <th class="px-4 py-3">{% trans "Joined" %}</th>
+                            <th class="px-4 py-3">{% trans "Status" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y">
+                        {% for admin in admin_users %}
+                        <tr class="text-gray-700">
+                            <td class="px-4 py-3">
+                                <div class="flex items-center text-sm">
+                                    <div class="h-8 w-8 rounded-full bg-indigo-600 flex items-center justify-center text-white uppercase mr-3">
+                                        {{ admin.first_name|first }}{{ admin.last_name|first }}
+                                    </div>
+                                    <div class="font-semibold">{{ admin.get_full_name }}</div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {{ admin.email }}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {{ admin.date_joined|date:"Y-m-d" }}
+                            </td>
+                            <td class="px-4 py-3 text-xs">
+                                <span class="px-2 py-1 font-semibold leading-tight rounded-full {% if admin.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                                    {% if admin.is_active %}{% trans "Active" %}{% else %}{% trans "Inactive" %}{% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="p-4 text-center text-gray-500">
+                    {% trans "No admin users found." %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Recent Sessions -->
+        <div class="w-full overflow-hidden rounded-lg shadow-xs glassmorphism mb-8">
+            <div class="w-full overflow-x-auto">
+                <h4 class="font-semibold text-gray-800 p-4 border-b">
+                    {% trans "Recent Sessions" %}
+                </h4>
+                <table class="w-full whitespace-no-wrap">
+                    <thead>
+                        <tr class="text-xs font-semibold tracking-wide text-left text-gray-500 uppercase border-b bg-gray-50">
+                            <th class="px-4 py-3">{% trans "Session" %}</th>
+                            <th class="px-4 py-3">{% trans "Mentor" %}</th>
+                            <th class="px-4 py-3">{% trans "Status" %}</th>
+                            <th class="px-4 py-3">{% trans "Price" %}</th>
+                            <th class="px-4 py-3">{% trans "Schedule" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y">
+                        {% for session in recent_sessions %}
+                        <tr class="text-gray-700">
+                            <td class="px-4 py-3">
+                                <div class="flex items-center text-sm">
+                                    <div class="font-semibold">{{ session.title }}</div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {{ session.mentor.user.get_full_name }}
+                            </td>
+                            <td class="px-4 py-3 text-xs">
+                                <span class="px-2 py-1 font-semibold leading-tight rounded-full 
+                                {% if session.status == 'scheduled' %}
+                                    bg-gray-100 text-gray-800
+                                {% elif session.status == 'in_progress' %}
+                                    bg-blue-100 text-blue-800
+                                {% elif session.status == 'completed' %}
+                                    bg-green-100 text-green-800
+                                {% elif session.status == 'cancelled' %}
+                                    bg-red-100 text-red-800
+                                {% endif %}">
+                                    {{ session.get_status_display }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                ₹{{ session.price }}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {{ session.start_time|date:"Y-m-d H:i" }}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-4 py-3 text-center text-gray-500">
+                                {% trans "No sessions found." %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

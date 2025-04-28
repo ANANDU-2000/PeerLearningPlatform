@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load i18n %}
+{% load custom_filters %}
 
 {% block title %}{% trans "Learner Dashboard" %} | PeerLearn{% endblock %}
 
@@ -325,15 +326,35 @@
             
             <!-- Activity Chart -->
             <div class="activity-bar">
-                {% with days='Mon,Tue,Wed,Thu,Fri,Sat,Sun'|split:',' %}
-                {% with values='2,3,5,1,2,0,0'|split:',' heights='20,30,60,10,20,5,5'|split:',' %}
-                    {% for day in days %}
-                        <div class="activity-column" style="height: {{ heights|index:forloop.counter0 }}%">
-                            <span class="activity-column-day">{{ day }}</span>
-                        </div>
-                    {% endfor %}
-                {% endwith %}
-                {% endwith %}
+                <!-- Define days directly in a for loop for simplicity -->
+                {% for day, height in 'Mon,Tue,Wed,Thu,Fri,Sat,Sun'|zip:'20,30,60,10,20,5,5' %}
+                    <div class="activity-column" style="height: {{ height }}%">
+                        <span class="activity-column-day">{{ day }}</span>
+                    </div>
+                {% empty %}
+                    <!-- Fallback for direct HTML when needed -->
+                    <div class="activity-column" style="height: 20%">
+                        <span class="activity-column-day">Mon</span>
+                    </div>
+                    <div class="activity-column" style="height: 30%">
+                        <span class="activity-column-day">Tue</span>
+                    </div>
+                    <div class="activity-column" style="height: 60%">
+                        <span class="activity-column-day">Wed</span>
+                    </div>
+                    <div class="activity-column" style="height: 10%">
+                        <span class="activity-column-day">Thu</span>
+                    </div>
+                    <div class="activity-column" style="height: 20%">
+                        <span class="activity-column-day">Fri</span>
+                    </div>
+                    <div class="activity-column" style="height: 5%">
+                        <span class="activity-column-day">Sat</span>
+                    </div>
+                    <div class="activity-column" style="height: 5%">
+                        <span class="activity-column-day">Sun</span>
+                    </div>
+                {% endfor %}
             </div>
         </div>
         

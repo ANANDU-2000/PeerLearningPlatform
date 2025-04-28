@@ -1,0 +1,71 @@
+TemplateSyntaxError at /payments/cart/
+Invalid block tag on line 268: 'static', expected 'endblock'. Did you forget to register or load this tag?
+Request Method:	GET
+Request URL:	http://c04fd6df-be0d-492d-b2f8-d8a5ecbe079b-00-mp4il0lqopkm.riker.replit.dev/payments/cart/
+Django Version:	5.2
+Exception Type:	TemplateSyntaxError
+Exception Value:	
+Invalid block tag on line 268: 'static', expected 'endblock'. Did you forget to register or load this tag?
+Exception Location:	/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/template/base.py, line 567, in invalid_block_tag
+Raised during:	payments.views.cart_view
+Python Executable:	/home/runner/workspace/.pythonlibs/bin/python
+Python Version:	3.11.10
+Python Path:	
+['/home/runner/workspace',
+ '/nix/store/lc7qv2ldzrs1aq3hbyzmbgvn0h2w26pl-sitecustomize/lib/python/site-packages',
+ '/nix/store/dfg63lldbvcj207iyr9z0xw21d8ax02n-python3.11-pip-24.0/lib/python3.11/site-packages',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python311.zip',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11',
+ '/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/lib-dynload',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages',
+ '/nix/store/wblvmd5y7izx0z10d1w7ga7zc4apjxmb-python3.11-setuptools-75.1.1/lib/python3.11/site-packages',
+ '/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/setuptools/_vendor']
+Server time:	Mon, 28 Apr 2025 04:19:59 +0000
+Error during template rendering
+In template /home/runner/workspace/templates/payments/cart.html, error at line 268
+
+Invalid block tag on line 268: 'static', expected 'endblock'. Did you forget to register or load this tag?
+258	        prefill: {
+259	            name: "{{ user_name }}",
+260	            email: "{{ user_email }}"
+261	        }
+262	    };
+263	</script>
+264	{% endblock %}
+265	
+266	{% block extra_js %}
+267	<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+268	<script src="{% static 'js/payment.js' %}"></script>
+269	<script>
+270	    document.addEventListener('DOMContentLoaded', function() {
+271	        // Apply cart coupon
+272	        const couponForm = document.getElementById('coupon-form');
+273	        const couponInput = document.getElementById('cart-coupon-code');
+274	        const couponMessage = document.getElementById('coupon-message');
+275	        
+276	        if (couponForm) {
+277	            couponForm.addEventListener('submit', function(e) {
+278	                e.preventDefault();
+Traceback Switch to copy-and-paste view
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/template/base.py, line 510, in parse
+                    compile_func = self.tags[command]
+                                        ^^^^^^^^^^^^^^^^^^ …
+Local vars
+During handling of the above exception ('static'), another exception occurred:
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/core/handlers/exception.py, line 42, in inner
+                response = await get_response(request)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/core/handlers/base.py, line 253, in _get_response_async
+                response = await wrapped_callback(
+                                 …
+Local vars
+/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/django/contrib/auth/decorators.py, line 59, in _view_wrapper
+                    return view_func(request, *args, **kwargs)
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars
+/home/runner/workspace/payments/views.py, line 75, in cart_view
+    return render(request, 'payments/cart.html', context)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ …
+Local vars

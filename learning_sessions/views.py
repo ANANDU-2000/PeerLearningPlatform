@@ -412,10 +412,20 @@ def book_session(request, session_id):
             return redirect('session_list')
         
         # Check if user has already booked this session (including any status)
-        existing_booking = Booking.objects.filter(session=session, learner=request.user).exists()
+        existing_booking = Booking.objects.filter(session=session, learner=request.user).first()
         if existing_booking:
-            messages.info(request, _('You have already booked this session.'))
-            return redirect('cart')
+            if existing_booking.status == 'confirmed' or existing_booking.status == 'pending':
+                messages.info(request, _('You have already booked this session. Check your upcoming sessions.'))
+                # Add a more helpful link to view their booking
+                return redirect('learner_dashboard')
+            elif existing_booking.status == 'cancelled':
+                messages.warning(request, _('You previously cancelled this booking. You can book it again.'))
+                # Allow rebooking if previously cancelled
+                # Delete the old booking
+                existing_booking.delete()
+            else:
+                messages.info(request, _('You have already booked this session. Check your cart.'))
+                return redirect('cart')
         
         # For GET requests, show confirmation page first
         if request.method == 'GET':

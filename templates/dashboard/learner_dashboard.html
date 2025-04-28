@@ -88,16 +88,32 @@
         </div>
         
         <!-- Upcoming Sessions -->
-        <h2 class="text-2xl font-bold mb-4">{% trans "Your Upcoming Sessions" %}</h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">{% trans "Your Upcoming Sessions" %}</h2>
+            <a href="{% url 'session_list' %}" class="text-blue-600 hover:text-blue-800 flex items-center">
+                <span>{% trans "Find More Sessions" %}</span>
+                <i data-feather="arrow-right" class="h-4 w-4 ml-1"></i>
+            </a>
+        </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
             {% if upcoming_bookings %}
                 {% for booking in upcoming_bookings %}
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect border border-gray-200">
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect border border-gray-200 relative">
+                        <!-- Status Badge -->
+                        {% if booking.session.is_ongoing %}
+                            <div class="absolute top-0 right-0 bg-red-500 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                                {% trans "Live Now" %}
+                            </div>
+                        {% elif booking.session.start_time|date:"Y-m-d" == today|date:"Y-m-d" %}
+                            <div class="absolute top-0 right-0 bg-yellow-500 text-white px-3 py-1 text-xs font-bold uppercase tracking-wider">
+                                {% trans "Today" %}
+                            </div>
+                        {% endif %}
+                        
                         <div class="p-6">
                             <div class="flex justify-between items-start mb-4">
-                                <h3 class="text-lg font-bold">{{ booking.session.title }}</h3>
-                                <span class="text-sm py-1 px-2 bg-green-100 text-green-800 rounded-full">{{ booking.session.start_time|date:"M d" }}</span>
+                                <h3 class="text-lg font-bold pr-16">{{ booking.session.title }}</h3>
                             </div>
                             
                             <div class="flex items-center mb-3">
@@ -114,20 +130,71 @@
                                 </div>
                             </div>
                             
+                            <!-- Session Time with Date -->
+                            <div class="flex items-center text-gray-700 mb-3">
+                                <i data-feather="calendar" class="h-4 w-4 mr-2"></i>
+                                <span>{{ booking.session.start_time|date:"D, M d, Y" }}</span>
+                            </div>
+                            
+                            <!-- Session Time -->
                             <div class="flex items-center text-gray-700 mb-4">
                                 <i data-feather="clock" class="h-4 w-4 mr-2"></i>
                                 <span>{{ booking.session.start_time|date:"g:i A" }} - {{ booking.session.end_time|date:"g:i A" }}</span>
                             </div>
                             
+                            <!-- Countdown Timer -->
+                            <div class="mb-4 py-2 px-3 bg-gray-100 rounded-md">
+                                <p class="text-sm text-gray-600 mb-1">{% trans "Starts in:" %}</p>
+                                <div class="countdown-timer flex justify-center space-x-2" 
+                                     data-start-time="{{ booking.session.start_time|date:'c' }}"
+                                     data-end-time="{{ booking.session.end_time|date:'c' }}"
+                                     data-session-id="{{ booking.session.id }}">
+                                    <div class="text-center">
+                                        <div class="days font-bold text-lg">--</div>
+                                        <div class="text-xs text-gray-500">{% trans "Days" %}</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="hours font-bold text-lg">--</div>
+                                        <div class="text-xs text-gray-500">{% trans "Hours" %}</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="minutes font-bold text-lg">--</div>
+                                        <div class="text-xs text-gray-500">{% trans "Mins" %}</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="seconds font-bold text-lg">--</div>
+                                        <div class="text-xs text-gray-500">{% trans "Secs" %}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Action Buttons -->
                             <div class="flex space-x-2">
                                 {% if booking.session.is_ongoing %}
-                                    <a href="{% url 'session_room' session_id=booking.session.id %}" class="flex-1 bg-blue-600 text-white text-center py-2 px-4 rounded-md hover:bg-blue-700 transition">
-                                        {% trans "Join Session" %}
+                                    <a href="{% url 'session_room' session_id=booking.session.id %}" 
+                                       class="flex-1 bg-red-600 text-white text-center py-2 px-4 rounded-md hover:bg-red-700 transition flex items-center justify-center">
+                                        <i data-feather="video" class="h-4 w-4 mr-2"></i>
+                                        {% trans "Join Now" %}
+                                    </a>
+                                {% elif booking.session.start_time|date:"Y-m-d" == today|date:"Y-m-d" %}
+                                    <a href="{% url 'session_detail' session_id=booking.session.id %}" 
+                                       class="flex-1 bg-yellow-600 text-white text-center py-2 px-4 rounded-md hover:bg-yellow-700 transition">
+                                        {% trans "Prepare for Today" %}
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'session_detail' session_id=booking.session.id %}" class="flex-1 border border-gray-300 text-gray-700 text-center py-2 px-4 rounded-md hover:bg-gray-100 transition">
+                                    <a href="{% url 'session_detail' session_id=booking.session.id %}" 
+                                       class="flex-1 border border-gray-300 text-gray-700 text-center py-2 px-4 rounded-md hover:bg-gray-100 transition">
                                         {% trans "View Details" %}
                                     </a>
+                                    <button 
+                                        class="add-to-calendar-btn px-3 border border-blue-600 text-blue-600 rounded-md hover:bg-blue-50 transition"
+                                        data-title="{{ booking.session.title }}"
+                                        data-start="{{ booking.session.start_time|date:'c' }}"
+                                        data-end="{{ booking.session.end_time|date:'c' }}"
+                                        data-description="Session with {{ booking.session.mentor.user.get_full_name }}"
+                                        aria-label="Add to calendar">
+                                        <i data-feather="calendar" class="h-5 w-5"></i>
+                                    </button>
                                 {% endif %}
                             </div>
                         </div>

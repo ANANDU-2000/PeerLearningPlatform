@@ -1,0 +1,274 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Transaction History" %} | PeerLearn{% endblock %}
+
+{% block extra_css %}
+<style>
+    .transaction-card {
+        transition: transform 0.2s;
+    }
+    .transaction-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .status-badge.completed {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    .status-badge.pending {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    .status-badge.failed {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+    .status-badge.refunded {
+        background-color: #e0f2fe;
+        color: #0369a1;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">{% trans "Transaction History" %}</h1>
+        <a href="{% url 'dashboard' %}" class="text-blue-600 hover:text-blue-800 flex items-center">
+            <i class="fas fa-arrow-left mr-2"></i> {% trans "Back to Dashboard" %}
+        </a>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center">
+                <span class="text-gray-600 mr-2">{% trans "Filter by:" %}</span>
+                <select id="status-filter" class="border border-gray-300 rounded-md px-3 py-1 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <option value="all">{% trans "All Transactions" %}</option>
+                    <option value="completed">{% trans "Completed" %}</option>
+                    <option value="pending">{% trans "Pending" %}</option>
+                    <option value="failed">{% trans "Failed" %}</option>
+                    <option value="refunded">{% trans "Refunded" %}</option>
+                </select>
+            </div>
+
+            <div class="relative">
+                <input type="text" id="search-input" placeholder="{% trans 'Search by session title, date...' %}" 
+                       class="w-full md:w-80 pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <div class="absolute left-3 top-2.5 text-gray-400">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if transactions %}
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <!-- Transactions Table -->
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Date" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Session" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Amount" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Status" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Payment Method" %}
+                        </th>
+                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            {% trans "Receipt" %}
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for transaction in transactions %}
+                    <tr class="transaction-row" data-status="{{ transaction.status }}">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ transaction.created_at|date:"M d, Y" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="ml-4">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ transaction.booking.session.title }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {% if user.role == 'mentor' %}
+                                            {{ transaction.booking.learner.get_full_name }}
+                                        {% else %}
+                                            {{ transaction.booking.session.mentor.user.get_full_name }}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">₹{{ transaction.amount }}</div>
+                            {% if transaction.booking.discount_amount > 0 %}
+                            <div class="text-xs text-green-600">-₹{{ transaction.booking.discount_amount }} {% trans "discount" %}</div>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full status-badge {{ transaction.status }}">
+                                {{ transaction.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ transaction.payment_method|default:"Razorpay" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            {% if transaction.status == 'completed' and transaction.payment_id %}
+                                <a href="#" class="text-blue-600 hover:text-blue-900" 
+                                   onclick="showReceipt('{{ transaction.payment_id }}', '{{ transaction.amount }}', '{{ transaction.booking.session.title }}', '{{ transaction.created_at|date:'M d, Y' }}')">
+                                    {% trans "View Receipt" %}
+                                </a>
+                            {% else %}
+                                <span class="text-gray-400">{% trans "Unavailable" %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="bg-white rounded-lg shadow-sm p-8 text-center">
+            <div class="text-gray-500 mb-4">
+                <i class="fas fa-receipt text-5xl"></i>
+            </div>
+            <h3 class="text-xl font-medium text-gray-800 mb-2">{% trans "No transactions yet" %}</h3>
+            <p class="text-gray-600 mb-6">{% trans "Your transaction history will appear here once you've made a payment." %}</p>
+            <a href="{% url 'session_list' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                {% trans "Browse Sessions" %}
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Receipt Modal -->
+<div id="receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-lg max-w-lg w-full mx-4 overflow-hidden">
+        <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 class="text-lg font-medium text-gray-900">{% trans "Payment Receipt" %}</h3>
+            <button onclick="hideReceipt()" class="text-gray-400 hover:text-gray-500">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-6">
+                <div>
+                    <div class="text-sm text-gray-500">{% trans "Payment ID" %}</div>
+                    <div id="receipt-payment-id" class="text-sm font-medium"></div>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">{% trans "Date" %}</div>
+                    <div id="receipt-date" class="text-sm font-medium"></div>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <div class="text-sm text-gray-500">{% trans "Session" %}</div>
+                <div id="receipt-session" class="text-lg font-medium"></div>
+            </div>
+            
+            <div class="border-t border-gray-200 pt-4 mb-6">
+                <div class="flex justify-between mb-2">
+                    <div class="text-gray-500">{% trans "Subtotal" %}</div>
+                    <div id="receipt-amount" class="font-medium"></div>
+                </div>
+                <div class="flex justify-between mb-2">
+                    <div class="text-gray-500">{% trans "Payment Method" %}</div>
+                    <div class="font-medium">Razorpay</div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-200 pt-4 flex justify-between">
+                <div class="text-lg font-medium">{% trans "Total Paid" %}</div>
+                <div id="receipt-total" class="text-lg font-bold"></div>
+            </div>
+        </div>
+        <div class="bg-gray-50 px-6 py-4 flex justify-end">
+            <button onclick="printReceipt()" class="mr-3 inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i class="fas fa-print mr-2"></i> {% trans "Print" %}
+            </button>
+            <button onclick="hideReceipt()" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                {% trans "Close" %}
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Filter transactions by status
+    document.getElementById('status-filter').addEventListener('change', function() {
+        const status = this.value;
+        const rows = document.querySelectorAll('.transaction-row');
+        
+        rows.forEach(row => {
+            if (status === 'all' || row.dataset.status === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    // Search functionality
+    document.getElementById('search-input').addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.transaction-row');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    // Receipt modal functions
+    function showReceipt(paymentId, amount, session, date) {
+        document.getElementById('receipt-payment-id').textContent = paymentId;
+        document.getElementById('receipt-date').textContent = date;
+        document.getElementById('receipt-session').textContent = session;
+        document.getElementById('receipt-amount').textContent = '₹' + amount;
+        document.getElementById('receipt-total').textContent = '₹' + amount;
+        document.getElementById('receipt-modal').classList.remove('hidden');
+    }
+    
+    function hideReceipt() {
+        document.getElementById('receipt-modal').classList.add('hidden');
+    }
+    
+    function printReceipt() {
+        const printContents = document.querySelector('#receipt-modal > div').innerHTML;
+        const originalContents = document.body.innerHTML;
+        
+        document.body.innerHTML = `
+            <div style="padding: 20px; max-width: 800px; margin: 0 auto;">
+                <h2 style="text-align: center; margin-bottom: 20px;">PeerLearn Payment Receipt</h2>
+                ${printContents}
+            </div>
+        `;
+        
+        window.print();
+        document.body.innerHTML = originalContents;
+        location.reload();
+    }
+</script>
+{% endblock %}

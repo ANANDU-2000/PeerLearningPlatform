@@ -343,7 +343,7 @@
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="text-gray-500 text-xs uppercase font-medium mb-1">{% trans "Total Hours" %}</p>
-                        <h3 class="text-xl font-bold text-gray-800">{{ user.total_learning_hours|default:"12.5" }}</h3>
+                        <h3 class="text-xl font-bold text-gray-800">{{ stats.total_learning_hours|default:"0" }}</h3>
                     </div>
                     <div class="p-2 bg-blue-100 rounded-lg">
                         <i data-feather="clock" class="h-5 w-5 text-blue-600"></i>
@@ -363,7 +363,7 @@
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="text-gray-500 text-xs uppercase font-medium mb-1">{% trans "Completed Sessions" %}</p>
-                        <h3 class="text-xl font-bold text-gray-800">{{ user.completed_sessions_count|default:"5" }}</h3>
+                        <h3 class="text-xl font-bold text-gray-800">{{ stats.completed_sessions_count|default:"0" }}</h3>
                     </div>
                     <div class="p-2 bg-purple-100 rounded-lg">
                         <i data-feather="check-circle" class="h-5 w-5 text-purple-600"></i>
@@ -381,7 +381,7 @@
                 <div class="flex items-start justify-between">
                     <div>
                         <p class="text-gray-500 text-xs uppercase font-medium mb-1">{% trans "Learning Streak" %}</p>
-                        <h3 class="text-xl font-bold text-gray-800">{{ user.learning_streak|default:"7" }} {% trans "days" %}</h3>
+                        <h3 class="text-xl font-bold text-gray-800">{{ stats.learning_streak|default:"0" }} {% trans "days" %}</h3>
                     </div>
                     <div class="p-2 bg-orange-100 rounded-lg">
                         <i data-feather="zap" class="h-5 w-5 text-orange-600"></i>
@@ -541,7 +541,7 @@
                                     </div>
                                     <div class="flex items-center">
                                         <i data-feather="clock" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                        <span>{{ booking.session.start_time|date:"g:i A" }}</span>
+                                        <span>{{ booking.session.duration_minutes|floatformat:0 }} mins</span>
                                     </div>
                                 </div>
                                 
@@ -782,7 +782,7 @@
                                     </div>
                                     <div class="flex items-center">
                                         <i data-feather="clock" class="h-3 w-3 mr-1 text-blue-500"></i>
-                                        <span>{{ session.duration_minutes }} mins</span>
+                                        <span>{{ session.duration_minutes|floatformat:0 }} mins</span>
                                     </div>
                                 </div>
                                 

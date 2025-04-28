@@ -1,0 +1,76 @@
+<svg width="800" height="400" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff7ed" />
+      <stop offset="100%" stop-color="#ffedd5" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="400" fill="url(#bg)" />
+  
+  <!-- Business Elements -->
+  <g stroke="url(#accent)" stroke-width="2" fill="none" opacity="0.15">
+    <!-- Growth Chart -->
+    <polyline points="100,280 180,240 260,260 340,200 420,160 500,120" />
+    <line x1="100" y1="100" x2="100" y2="300" />
+    <line x1="100" y1="300" x2="550" y2="300" />
+    
+    <!-- Business Icons -->
+    <rect x="600" y="120" width="40" height="40" rx="4" />
+    <rect x="660" y="120" width="40" height="40" rx="4" />
+    <rect x="720" y="120" width="40" height="40" rx="4" />
+    
+    <rect x="600" y="180" width="40" height="40" rx="4" />
+    <rect x="660" y="180" width="40" height="40" rx="4" />
+    <rect x="720" y="180" width="40" height="40" rx="4" />
+    
+    <rect x="600" y="240" width="40" height="40" rx="4" />
+    <rect x="660" y="240" width="40" height="40" rx="4" />
+    <rect x="720" y="240" width="40" height="40" rx="4" />
+    
+    <!-- Pie Chart -->
+    <path d="M200,170 L200,120 A50,50 0 0,1 243,145 z" />
+    <path d="M200,170 L243,145 A50,50 0 0,1 230,205 z" />
+    <path d="M200,170 L230,205 A50,50 0 0,1 155,200 z" />
+    <path d="M200,170 L155,200 A50,50 0 0,1 200,120 z" />
+  </g>
+  
+  <!-- Business Details -->
+  <g fill="#f97316" opacity="0.2">
+    <!-- Financial symbols -->
+    <text x="120" y="100" font-family="sans-serif" font-size="16">$</text>
+    <text x="140" y="100" font-family="sans-serif" font-size="16">€</text>
+    <text x="160" y="100" font-family="sans-serif" font-size="16">£</text>
+    <text x="180" y="100" font-family="sans-serif" font-size="16">¥</text>
+    
+    <!-- Axis Markers -->
+    <rect x="100" y="200" width="5" height="2" />
+    <rect x="100" y="250" width="5" height="2" />
+    <rect x="150" y="300" width="2" height="5" />
+    <rect x="200" y="300" width="2" height="5" />
+    <rect x="250" y="300" width="2" height="5" />
+    <rect x="300" y="300" width="2" height="5" />
+    <rect x="350" y="300" width="2" height="5" />
+    <rect x="400" y="300" width="2" height="5" />
+    <rect x="450" y="300" width="2" height="5" />
+    <rect x="500" y="300" width="2" height="5" />
+    
+    <!-- Business Metrics -->
+    <rect x="600" y="130" width="20" height="20" rx="2" />
+    <rect x="660" y="130" width="20" height="20" rx="2" />
+    <rect x="720" y="130" width="20" height="20" rx="2" />
+    
+    <rect x="600" y="190" width="20" height="20" rx="2" />
+    <rect x="660" y="190" width="20" height="20" rx="2" />
+    <rect x="720" y="190" width="20" height="20" rx="2" />
+    
+    <rect x="600" y="250" width="20" height="20" rx="2" />
+    <rect x="660" y="250" width="20" height="20" rx="2" />
+    <rect x="720" y="250" width="20" height="20" rx="2" />
+  </g>
+</svg>

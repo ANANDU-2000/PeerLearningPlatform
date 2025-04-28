@@ -1,50 +1,51 @@
 /**
- * Common JavaScript functionality for PeerLearn
+ * PeerLearn Common JavaScript Functionality
  */
+
 document.addEventListener('DOMContentLoaded', function() {
-    // Handle welcome message popup
+    // Initialize the welcome message popup
     initWelcomeMessage();
     
-    // Initialize any feather icons
-    if (typeof feather !== 'undefined') {
-        feather.replace();
-    }
+    // Initialize dropdown menus
+    initDropdowns();
+    
+    // Initialize mobile navigation
+    initMobileNavigation();
 });
 
 /**
- * Initialize the welcome message popup with proper storage and dismissal
+ * Initialize welcome message functionality
  */
 function initWelcomeMessage() {
     const welcomeMsg = document.querySelector('.welcome-message');
-    const closeBtn = document.querySelector('.welcome-message .close-btn');
+    const closeBtn = welcomeMsg?.querySelector('.close-btn');
     
-    if (welcomeMsg) {
-        // Check if the welcome message has been shown before
-        const hasSeenWelcome = localStorage.getItem('peerlearn_welcome_seen');
-        
-        if (!hasSeenWelcome) {
-            // Show the welcome message and set a timeout to auto-hide it after 10 seconds
+    // Only proceed if welcome message exists
+    if (!welcomeMsg) return;
+    
+    // Check if user has dismissed the message before
+    const welcomeDismissed = localStorage.getItem('welcome_dismissed');
+    
+    // Only show if not dismissed
+    if (!welcomeDismissed) {
+        // Wait a moment before showing the message
+        setTimeout(() => {
             welcomeMsg.classList.remove('hidden');
-            setTimeout(() => {
-                hideWelcomeMessage(welcomeMsg);
-            }, 10000);
-            
-            // Mark that the user has seen the welcome message
-            localStorage.setItem('peerlearn_welcome_seen', 'true');
-        }
-        
-        // Add click event to close button
-        if (closeBtn) {
-            closeBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                hideWelcomeMessage(welcomeMsg);
-            });
-        }
+        }, 1500);
+    }
+    
+    // Handle close button click
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            hideWelcomeMessage(welcomeMsg);
+            // Remember that user dismissed the message
+            localStorage.setItem('welcome_dismissed', 'true');
+        });
     }
 }
 
 /**
- * Hide the welcome message with a fade-out animation
+ * Hide welcome message with animation
  */
 function hideWelcomeMessage(welcomeMsg) {
     welcomeMsg.style.opacity = '0';
@@ -55,71 +56,116 @@ function hideWelcomeMessage(welcomeMsg) {
 }
 
 /**
- * Global notification system
+ * Initialize dropdown menus with proper accessibility
  */
-const notification = {
-    show: function(message, type = 'info', duration = 5000) {
-        // Remove any existing notifications
-        const existingNotifications = document.querySelectorAll('.global-notification');
-        existingNotifications.forEach(notification => {
-            notification.remove();
+function initDropdowns() {
+    const dropdownToggles = document.querySelectorAll('.dropdown button');
+    
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            const content = this.nextElementSibling;
+            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            // Close all other dropdowns first
+            dropdownToggles.forEach(otherToggle => {
+                if (otherToggle !== toggle) {
+                    otherToggle.setAttribute('aria-expanded', 'false');
+                    otherToggle.nextElementSibling.classList.add('hidden');
+                }
+            });
+            
+            // Toggle current dropdown
+            this.setAttribute('aria-expanded', !isExpanded);
+            content.classList.toggle('hidden');
+            
+            // Add focus trap for keyboard users
+            if (!content.classList.contains('hidden')) {
+                const focusableElements = content.querySelectorAll('a, button');
+                if (focusableElements.length) {
+                    setTimeout(() => focusableElements[0].focus(), 100);
+                }
+            }
         });
-        
-        // Create new notification
-        const notificationEl = document.createElement('div');
-        notificationEl.className = `global-notification ${type}`;
-        notificationEl.innerHTML = `
-            <div class="notification-content">
-                <span>${message}</span>
-                <button class="notification-close">×</button>
-            </div>
-        `;
-        
-        // Add to document
-        document.body.appendChild(notificationEl);
-        
-        // Animate in
-        setTimeout(() => {
-            notificationEl.classList.add('show');
-        }, 10);
-        
-        // Setup close button
-        const closeBtn = notificationEl.querySelector('.notification-close');
-        closeBtn.addEventListener('click', () => {
-            this.hide(notificationEl);
-        });
-        
-        // Auto close after duration
-        setTimeout(() => {
-            this.hide(notificationEl);
-        }, duration);
-        
-        return notificationEl;
-    },
+    });
     
-    hide: function(notificationEl) {
-        notificationEl.classList.remove('show');
-        setTimeout(() => {
-            notificationEl.remove();
-        }, 300);
-    },
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.dropdown')) {
+            dropdownToggles.forEach(toggle => {
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.nextElementSibling.classList.add('hidden');
+            });
+        }
+    });
     
-    success: function(message, duration = 5000) {
-        return this.show(message, 'success', duration);
-    },
-    
-    error: function(message, duration = 5000) {
-        return this.show(message, 'error', duration);
-    },
-    
-    info: function(message, duration = 5000) {
-        return this.show(message, 'info', duration);
-    },
-    
-    warning: function(message, duration = 5000) {
-        return this.show(message, 'warning', duration);
-    }
-};
+    // Close dropdowns on Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            dropdownToggles.forEach(toggle => {
+                toggle.setAttribute('aria-expanded', 'false');
+                toggle.nextElementSibling.classList.add('hidden');
+            });
+        }
+    });
+}
 
-// Log that the notification system is initialized
-console.log("Notification system initialized");
+/**
+ * Initialize mobile navigation behavior
+ */
+function initMobileNavigation() {
+    const mobileBottomNav = document.querySelector('.mobile-bottom-nav');
+    
+    // Add padding to the bottom of the page when mobile navigation is present
+    if (mobileBottomNav) {
+        const navHeight = mobileBottomNav.offsetHeight;
+        document.body.style.paddingBottom = `${navHeight}px`;
+    }
+}
+
+/**
+ * Show a toast notification
+ * @param {string} message - Message to display
+ * @param {string} type - Type of notification (success, error, info, warning)
+ * @param {number} duration - Duration in milliseconds
+ */
+function showNotification(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('notification-toast');
+    if (!container) return;
+    
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `global-notification ${type}`;
+    
+    // Inner content structure
+    notification.innerHTML = `
+        <div class="notification-content">
+            <span>${message}</span>
+            <button class="notification-close">&times;</button>
+        </div>
+    `;
+    
+    // Add to container
+    container.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => notification.classList.add('show'), 10);
+    
+    // Attach close handler
+    const closeBtn = notification.querySelector('.notification-close');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        });
+    }
+    
+    // Auto-remove after duration
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, duration);
+}

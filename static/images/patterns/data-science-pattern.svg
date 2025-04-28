@@ -1,0 +1,68 @@
+<svg width="800" height="400" viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdfa" />
+      <stop offset="100%" stop-color="#d1fae5" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="800" height="400" fill="url(#bg)" />
+  
+  <!-- Data Science Elements -->
+  <g stroke="url(#accent)" stroke-width="2" fill="none" opacity="0.15">
+    <!-- Bar Chart -->
+    <rect x="100" y="240" width="30" height="40" />
+    <rect x="140" y="220" width="30" height="60" />
+    <rect x="180" y="180" width="30" height="100" />
+    <rect x="220" y="200" width="30" height="80" />
+    <rect x="260" y="160" width="30" height="120" />
+    
+    <!-- Line Graph -->
+    <polyline points="350,240 400,180 450,200 500,160 550,220 600,200" />
+    <circle cx="350" cy="240" r="5" />
+    <circle cx="400" cy="180" r="5" />
+    <circle cx="450" cy="200" r="5" />
+    <circle cx="500" cy="160" r="5" />
+    <circle cx="550" cy="220" r="5" />
+    <circle cx="600" cy="200" r="5" />
+    
+    <!-- Scatter Plot -->
+    <circle cx="680" cy="180" r="6" />
+    <circle cx="720" cy="220" r="6" />
+    <circle cx="700" cy="150" r="6" />
+    <circle cx="740" cy="240" r="6" />
+    <circle cx="660" cy="200" r="6" />
+    <circle cx="690" cy="260" r="6" />
+    <circle cx="730" cy="190" r="6" />
+  </g>
+  
+  <!-- Data Science Symbols -->
+  <g fill="#10b981" opacity="0.2">
+    <!-- Matrix-Like Numbers -->
+    <text x="120" y="130" font-family="monospace">0.85</text>
+    <text x="170" y="130" font-family="monospace">1.23</text>
+    <text x="220" y="130" font-family="monospace">0.56</text>
+    <text x="120" y="150" font-family="monospace">0.42</text>
+    <text x="170" y="150" font-family="monospace">0.91</text>
+    <text x="220" y="150" font-family="monospace">0.33</text>
+    
+    <!-- Axis Labels -->
+    <text x="350" y="280" font-family="sans-serif" font-size="12">x₁</text>
+    <text x="400" y="280" font-family="sans-serif" font-size="12">x₂</text>
+    <text x="450" y="280" font-family="sans-serif" font-size="12">x₃</text>
+    <text x="500" y="280" font-family="sans-serif" font-size="12">x₄</text>
+    <text x="550" y="280" font-family="sans-serif" font-size="12">x₅</text>
+    <text x="600" y="280" font-family="sans-serif" font-size="12">x₆</text>
+    
+    <!-- Math Symbols -->
+    <text x="650" y="130" font-family="sans-serif" font-size="16">Σ</text>
+    <text x="680" y="130" font-family="sans-serif" font-size="16">√</text>
+    <text x="710" y="130" font-family="sans-serif" font-size="16">∫</text>
+    <text x="740" y="130" font-family="sans-serif" font-size="16">∂</text>
+  </g>
+</svg>

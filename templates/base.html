@@ -237,7 +237,7 @@
                     <div class="ml-3 relative">
                         {% if user.is_authenticated %}
                             <div class="dropdown relative">
-                                <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full p-1" aria-expanded="false" aria-haspopup="true">
+                                <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors" aria-expanded="false" aria-haspopup="true">
                                     {% if user.profile_picture %}
                                         <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 rounded-full object-cover border border-gray-200">
                                     {% else %}
@@ -248,7 +248,7 @@
                                     <span class="hidden md:block font-medium">{{ user.get_full_name }}</span>
                                     <i data-feather="chevron-down" class="h-4 w-4 transition-transform duration-200" id="user-menu-arrow"></i>
                                 </button>
-                                <div id="user-menu-dropdown" class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 transform origin-top-right transition-all duration-200 ease-in-out">
+                                <div id="user-menu-dropdown" class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 transform origin-top-right transition-all duration-200 ease-in-out opacity-0 scale-95">
                                     <a href="{{ user.get_dashboard_url }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i data-feather="grid" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Dashboard" %}
@@ -349,11 +349,26 @@
                     </a>
                 {% endif %}
                 
-                <!-- Settings for all authenticated users -->
-                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
-                    <i data-feather="settings" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Settings" %}</span>
-                </a>
+                <!-- Settings and Logout for all authenticated users -->
+                <div class="flex flex-col items-center text-gray-500 hover:text-blue-500 dropdown relative">
+                    <button id="mobile-more-button" class="flex flex-col items-center focus:outline-none">
+                        <i data-feather="more-horizontal" class="h-5 w-5"></i>
+                        <span class="text-xs mt-1">{% trans "More" %}</span>
+                    </button>
+                    <div id="mobile-more-dropdown" class="dropdown-content hidden absolute bottom-full mb-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 transform origin-bottom-center transition-all duration-200 ease-in-out opacity-0 scale-95">
+                        <a href="{% url 'profile_settings' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-feather="settings" class="h-4 w-4 mr-2 text-gray-500"></i>
+                            {% trans "Profile Settings" %}
+                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="block">
+                            {% csrf_token %}
+                            <button type="submit" class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                <i data-feather="log-out" class="h-4 w-4 mr-2"></i>
+                                {% trans "Sign out" %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
             {% else %}
                 <!-- For non-authenticated users -->
                 <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
@@ -561,8 +576,51 @@
                 });
             }
             
+            // Mobile More Button Dropdown
+            const mobileMoreButton = document.getElementById('mobile-more-button');
+            const mobileMoreDropdown = document.getElementById('mobile-more-dropdown');
+            
+            if (mobileMoreButton && mobileMoreDropdown) {
+                let isMobileMenuOpen = false;
+                
+                mobileMoreButton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    isMobileMenuOpen = !isMobileMenuOpen;
+                    
+                    if (isMobileMenuOpen) {
+                        // Open the menu
+                        mobileMoreDropdown.classList.remove('hidden');
+                        mobileMoreDropdown.classList.add('opacity-100', 'scale-100');
+                        mobileMoreDropdown.classList.remove('opacity-0', 'scale-95');
+                    } else {
+                        // Close the menu
+                        closeMobileMenu();
+                    }
+                });
+                
+                // Function to close mobile menu
+                function closeMobileMenu() {
+                    mobileMoreDropdown.classList.add('opacity-0', 'scale-95');
+                    mobileMoreDropdown.classList.remove('opacity-100', 'scale-100');
+                    
+                    // Wait for animation before hiding
+                    setTimeout(() => {
+                        mobileMoreDropdown.classList.add('hidden');
+                    }, 200);
+                    
+                    isMobileMenuOpen = false;
+                }
+                
+                // Close menu when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (isMobileMenuOpen && !event.target.closest('.dropdown')) {
+                        closeMobileMenu();
+                    }
+                });
+            }
+            
             // Handle other dropdowns (if any)
-            document.querySelectorAll('.dropdown button:not(#user-menu-button)').forEach(button => {
+            document.querySelectorAll('.dropdown button:not(#user-menu-button):not(#mobile-more-button)').forEach(button => {
                 button.addEventListener('click', function() {
                     const content = this.nextElementSibling;
                     content.classList.toggle('hidden');

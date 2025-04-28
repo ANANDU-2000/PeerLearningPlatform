@@ -23,56 +23,28 @@ def session_list(request):
     if request.user.is_authenticated and request.user.role == 'mentor':
         return redirect('mentor_sessions')
     
-    # Get base queryset of upcoming, non-full sessions with approved mentors
+    # Get base queryset of upcoming sessions with approved mentors
     queryset = Session.objects.filter(
         status='scheduled',
         start_time__gt=timezone.now(),
         mentor__is_approved=True
     ).select_related('mentor__user').order_by('start_time').distinct()
     
-    # Apply filters if provided
-    search_query = request.GET.get('q')
-    tag_filter = request.GET.get('tag')
-    min_price = request.GET.get('min_price')
-    max_price = request.GET.get('max_price')
+    # Simplified - no complex filtering, just ensure sessions have category tags
+    # for the client-side visual filtering to work
     
-    if search_query:
-        queryset = queryset.filter(
-            Q(title__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(tags__icontains=search_query) |
-            Q(mentor__expertise__icontains=search_query)
-        )
-    
-    if tag_filter:
-        queryset = queryset.filter(tags__icontains=tag_filter)
-    
-    if min_price:
-        queryset = queryset.filter(price__gte=min_price)
-    
-    if max_price:
-        queryset = queryset.filter(price__lte=max_price)
-    
-    # Get all available tags for filtering
-    all_tags = set()
-    for session in Session.objects.filter(mentor__is_approved=True):
-        if session.tags:
-            all_tags.update([tag.strip() for tag in session.tags.split(',')])
+    # Extract categories for the visual filtering system
+    categories = ['programming', 'data-science', 'design']
     
     # Add ML-powered personalized recommendations for authenticated users
     personalized_recommendations = []
-    if request.user.is_authenticated and request.user.role == 'learner' and not (search_query or tag_filter or min_price or max_price):
-        # Only show personalized recommendations when no filters are applied
+    if request.user.is_authenticated and request.user.role == 'learner':
         from .ml_recommendations import get_personalized_recommendations
         personalized_recommendations = get_personalized_recommendations(request.user, limit=4)
     
     context = {
         'sessions': queryset,
-        'search_query': search_query,
-        'tag_filter': tag_filter,
-        'min_price': min_price,
-        'max_price': max_price,
-        'all_tags': sorted(all_tags),
+        'categories': categories,
         'personalized_recommendations': personalized_recommendations,
     }
     

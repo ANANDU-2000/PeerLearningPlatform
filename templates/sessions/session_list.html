@@ -159,14 +159,14 @@
             {% if sessions %}
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {% for session in sessions %}
-                        <div class="session-card bg-white rounded-xl shadow-md overflow-hidden h-full flex flex-col" data-tags="{{ session.tags }}">
+                        <div class="session-card bg-white rounded-xl shadow-md overflow-hidden flex flex-col" data-tags="{{ session.tags }}" style="height: 450px;">
                             <!-- Card Top Accent -->
                             <div class="h-2 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
                             
                             <div class="p-5 flex-1 flex flex-col">
                                 <!-- Session Title & Price -->
                                 <div class="flex justify-between mb-3">
-                                    <h3 class="text-lg font-bold text-gray-800">{{ session.title }}</h3>
+                                    <h3 class="text-lg font-bold text-gray-800 line-clamp-2">{{ session.title }}</h3>
                                     {% if session.price == 0 %}
                                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                             {% trans "Free" %}
@@ -194,7 +194,7 @@
                                 </div>
                                 
                                 <!-- Session Overview -->
-                                <p class="text-gray-600 text-sm mb-4 flex-grow">{{ session.description|truncatechars:120 }}</p>
+                                <p class="text-gray-600 text-sm mb-4 h-16 line-clamp-3">{{ session.description|truncatechars:120 }}</p>
                                 
                                 <!-- Session Details -->
                                 <div class="grid grid-cols-2 gap-2 mb-4">
@@ -218,7 +218,7 @@
                                 
                                 <!-- Tags -->
                                 {% if session.tags %}
-                                    <div class="flex flex-wrap gap-2 mb-4">
+                                    <div class="flex flex-wrap gap-2 mb-4 h-8 overflow-hidden">
                                         {% for tag in session.tags.split %}
                                             <span class="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded-md">{{ tag }}</span>
                                         {% endfor %}

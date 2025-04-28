@@ -379,6 +379,18 @@
                             {% if is_mentor %}{% trans "You (Mentor)" %}{% else %}{% trans "You" %}{% endif %}
                         </div>
                         
+                        <!-- Network Quality Indicator -->
+                        <div id="network-quality" class="network-quality good">
+                            <i data-feather="wifi" class="h-3 w-3"></i>
+                            <span>{% trans "Good" %}</span>
+                        </div>
+                        
+                        <!-- Buffering Indicator -->
+                        <div class="buffering-indicator">
+                            <div class="spinner"></div>
+                            <div class="text">{% trans "Buffering..." %}</div>
+                        </div>
+                        
                         <!-- Video Controls Overlay -->
                         <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 bg-black bg-opacity-30">
                             <div class="flex space-x-3">

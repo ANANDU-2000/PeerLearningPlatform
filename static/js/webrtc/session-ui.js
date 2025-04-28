@@ -31,6 +31,16 @@ class SessionUIController {
         // Session timer
         this.sessionTimer = document.getElementById('session-timer');
         
+        // Network quality indicator
+        this.networkQualityIndicator = document.getElementById('network-quality');
+        
+        // Video buffering detection
+        this.videoBufferingDetection = {
+            enabled: true,
+            checkInterval: null,
+            lastPlayingState: true
+        };
+        
         // Whiteboard elements
         this.whiteboardCanvas = document.getElementById('whiteboard-canvas');
         this.whiteboardColorButtons = document.querySelectorAll('[data-color]');
@@ -81,10 +91,14 @@ class SessionUIController {
             onUserJoined: this.handleUserJoined.bind(this),
             onUserLeft: this.handleUserLeft.bind(this),
             onChatMessage: this.handleChatMessage.bind(this),
-            onError: this.handleError.bind(this)
+            onError: this.handleError.bind(this),
+            onConnectionStateChange: this.handleConnectionStateChange.bind(this)
         });
         
         this.rtc.init();
+        
+        // Start video buffering detection
+        this.startBufferingDetection();
     }
 
     /**
@@ -1260,5 +1274,117 @@ class SessionUIController {
         
         this.addSystemMessage(message);
         this.showNotification(message);
+    }
+    
+    /**
+     * Handle connection state changes and update network quality indicator
+     */
+    handleConnectionStateChange(data) {
+        console.log(`Connection state changed for ${data.userId}: ${data.state} (was: ${data.previous})`);
+        
+        // Update network quality indicator based on connection state
+        if (this.networkQualityIndicator) {
+            let qualityLevel = 'good';
+            let qualityText = 'Good';
+            
+            // Determine quality based on connection state
+            if (data.state === 'disconnected' || data.state === 'failed' || data.state === 'closed') {
+                qualityLevel = 'poor';
+                qualityText = 'Poor';
+            } else if (data.state === 'connecting' || data.state === 'checking') {
+                qualityLevel = 'medium';
+                qualityText = 'Connecting...';
+            } else if (data.state === 'connected' || data.state === 'completed') {
+                // Connection is good, but we should check stats for a more accurate assessment
+                if (this.rtc && this.rtc.connectionHealth && this.rtc.connectionHealth[data.userId]) {
+                    // Further refine based on connection health if available
+                }
+            }
+            
+            // Update the indicator
+            this.updateNetworkQualityIndicator(qualityLevel, qualityText);
+            
+            // If connection was restored after being poor, show a message
+            if ((data.previous === 'disconnected' || data.previous === 'failed') && 
+                (data.state === 'connected' || data.state === 'completed')) {
+                this.showNotification('Connection restored!');
+            }
+        }
+    }
+    
+    /**
+     * Update the network quality indicator in the UI
+     */
+    updateNetworkQualityIndicator(quality, text) {
+        if (!this.networkQualityIndicator) return;
+        
+        // Remove all quality classes
+        this.networkQualityIndicator.classList.remove('good', 'medium', 'poor');
+        
+        // Add the current quality class
+        this.networkQualityIndicator.classList.add(quality);
+        
+        // Update the text
+        const textElement = this.networkQualityIndicator.querySelector('span');
+        if (textElement) {
+            textElement.textContent = text;
+        }
+    }
+    
+    /**
+     * Start buffering detection for video elements
+     */
+    startBufferingDetection() {
+        if (!this.videoBufferingDetection.enabled) return;
+        
+        // Clear existing interval if any
+        if (this.videoBufferingDetection.checkInterval) {
+            clearInterval(this.videoBufferingDetection.checkInterval);
+        }
+        
+        // Check for video buffering every 1 second
+        this.videoBufferingDetection.checkInterval = setInterval(() => {
+            // Check local video
+            this.checkVideoBuffering(document.getElementById('local-video'), document.querySelector('.video-container.mentor'));
+            
+            // Check remote videos
+            document.querySelectorAll('.video-container:not(.mentor) video').forEach(video => {
+                this.checkVideoBuffering(video, video.closest('.video-container'));
+            });
+        }, 1000);
+    }
+    
+    /**
+     * Check if a video element is currently buffering
+     */
+    checkVideoBuffering(videoElement, container) {
+        if (!videoElement || !container) return;
+        
+        // Check if video is actually playing
+        const isPlaying = !videoElement.paused && videoElement.currentTime > 0 && 
+                         !videoElement.ended && videoElement.readyState > 2;
+                         
+        // Check if video is stalled (buffering)
+        const isStalled = videoElement.readyState < 3 || videoElement.waiting;
+        
+        // Apply buffering UI if video should be playing but is stalled
+        if (!isPlaying && videoElement.srcObject && !videoElement.paused) {
+            container.classList.add('buffering');
+        } else {
+            container.classList.remove('buffering');
+        }
+        
+        // Update network quality if appropriate
+        if (!isPlaying && this.videoBufferingDetection.lastPlayingState) {
+            this.updateNetworkQualityIndicator('medium', 'Slow Connection');
+        } else if (isPlaying && !this.videoBufferingDetection.lastPlayingState) {
+            // Connection recovered, update after a short delay to make sure it's stable
+            setTimeout(() => {
+                this.updateNetworkQualityIndicator('good', 'Good');
+            }, 2000);
+        }
+        
+        // Update last playing state
+        this.videoBufferingDetection.lastPlayingState = isPlaying;
     }
 }

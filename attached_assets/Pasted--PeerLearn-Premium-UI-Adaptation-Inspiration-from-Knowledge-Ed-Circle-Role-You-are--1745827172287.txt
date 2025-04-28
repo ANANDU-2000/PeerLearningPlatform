@@ -1,0 +1,105 @@
+**PeerLearn Premium UI Adaptation – Inspiration from Knowledge & Ed‑Circle**
+
+**Role:** You are **PeerLearn UI Stylist**, tasked with reimagining PeerLearn’s Learner and Mentor dashboards in the spirit of the provided Knowledge and Ed‑Circle designs: simple, neat, pastel gradients, clean iconography, and a premium feel—**but exclusively focused on one-to-one live sessions**, with no static course catalog.
+
+**Objective:**
+- Adapt the left‑sidebar + top KPIs + three‑panel center layout.
+- Use pastel backgrounds, subtle gradients, and glassmorphism overlays.
+- Rename modules to **Sessions**, **Mentors**, **Calendar**, **Activity**, **Settings**.
+- Feature only upcoming/in‑progress/past live sessions and mentor browsing (no courses).
+- Retain essential PeerLearn features: session agenda, join controls, chat, transcript, feedback, ML suggestions, payment balance.
+
+---
+
+### 1. Global Layout & Navigation
+
+#### A. Left Sidebar (Fixed)
+- **Logo & App Name** (Knowledge-style stylized “PeerLearn”)
+- **Nav Items** (icon + label, highlight active):
+  1. Home (dashboard overview)
+  2. Sessions (list of upcoming/in‑progress/past)
+  3. Mentors (directory of live mentors)
+  4. Calendar (schedule view)
+  5. Activity (task & feedback summary)
+  6. Settings (profile, language toggle, logout)
+- **Upgrade/Premium Badge** at bottom (if any paid plan)
+
+#### B. Top Bar
+- **Breadcrumb/Title** (e.g. "Home")
+- **Search** (🔍) for sessions or mentors
+- **Key Metrics**: Balance ($323), Upcoming Sessions (5), Deposit button
+- **User Avatar** (click → dropdown: Profile, Notifications, Logout)
+
+---
+
+### 2. Main Content Sections
+
+#### Panel 1 (Left of Center)
+- **My Activity Chart** (bar chart pastel bars) showing sessions per day
+- **Quick Action Buttons**: “Request New Session,” “View History”
+
+#### Panel 2 (Center Hero)
+- **Upcoming Live Session** card in large format:
+  - Title, Mentor name & photo, Date & Time
+  - **Countdown Timer** widget
+  - **Join Now** button: gradient fill with subtle shadow
+  - **Agenda Accordion**: click to expand topic list (bullet icons, status)
+  - **Status Banner**: “Scheduled,” “Live Now,” or “Completed” badge
+
+#### Panel 3 (Right of Center)
+- **Your Mentors Carousel**: circular avatars, name, expertise tag
+- **Quick Stats**: ML‑suggested next mentors or topics
+- **Alerts & Toasts**: system reminders, network status
+
+---
+
+### 3. UI Style & Visual Elements
+
+- **Color Palette**:
+  - Background: Soft pastel (#F5F9FF, #FEF8F3)
+  - Primary Accent: Light blue gradient (#B2E3FF → #87C2FF)
+  - Secondary Accent: Peach gradient (#FFD8B2 → #FFB287)
+  - Cards: White with 12px backdrop-filter + 8% opacity overlay
+- **Typography**:
+  - Headings: Montserrat Bold 18–24px
+  - Body: Inter Regular 14px
+- **Cards & Buttons**:
+  - Rounded corners (20px)
+  - Soft shadow (0 4px 12px rgba(0,0,0,0.05))
+  - Buttons: gradient fill, subtle hover lift (translateY(-2px))
+- **Icons**:
+  - Simple line icons (Heroicons style)
+  - Filled for active states
+- **Animations**:
+  - Fade-ins (200ms) for panels
+  - Chart bars animate from 0 to value
+  - Join button pulse when session <5 min
+
+---
+
+### 4. Responsive Behavior
+
+- **Desktop (>1280px)**: 3‑column grid (sidebar + 3 panels + right widgets collapse to bottom)
+- **Tablet (768–1280px)**: sidebar collapsible → icons only; panels stack into 2 columns
+- **Mobile (<768px)**: bottom nav replaces sidebar; panels scroll vertically; hero session card full‑width
+
+---
+
+### 5. Feature Mapping & Requirements
+
+| PeerLearn Feature        | Panel & UI Element                |
+|--------------------------|-----------------------------------|
+| Upcoming Session Timer   | Center Hero Countdown + Join Btn  |
+| Session Agenda           | Hero Accordion topics list        |
+| Past Session History     | “View History” modal + chart panel|
+| Mentor Directory         | Right Carousels of Mentors        |
+| Chat & Transcript        | Inside Live Session Room only     |
+| Payment Balance & Deposit| Top Bar metrics                   |
+| ML Recommendations       | Right Panel “Suggested Mentors”   |
+| Notifications            | Toasts & Top Bar bell icon        |
+
+
+---
+
+**Use this prompt** to guide your design team or AI tool to craft PeerLearn’s new dashboards with the same premium feel, layout, and simplicity as the Knowledge and Ed‑Circle inspirations, while strictly focusing on live sessions and your unique feature set.
+

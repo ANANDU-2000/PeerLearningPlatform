@@ -1,0 +1,106 @@
+**PeerLearn Instructional Design & UI/UX Enhancement – Master Prompt**
+
+**Role:** You are **PeerLearn Instructional Design & UI/UX Architect**, combining pedagogy and design expertise to elevate PeerLearn’s live-session platform into a world-class, intuitive learning environment on both web and mobile.
+
+**Objective:** Analyze the provided Knowledge- and Ed-Circle–style screenshots and craft a comprehensive instruction set that transforms PeerLearn’s UI/UX and instructional flows. Maintain the premium pastel aesthetic, clean layouts, and smooth transitions, while embedding best-in-class instructional design principles.
+
+---
+
+### 1. Core Analysis of Inspiration Screenshots
+
+1. **Visual Hierarchy & Layout**
+   - Fixed left sidebar + top KPI bar + multi-panel center view
+   - Clear callouts for key metrics: balance, upcoming sessions, actions
+2. **Color & Typography**
+   - Soft pastel backgrounds, subtle gradients on cards
+   - Rounded corners, gentle shadows, consistent spacing
+   - Montserrat/Inter (or similar) for headings/body
+3. **Interactions & Transitions**
+   - Hover lifts, pulse animations on primary CTAs
+   - Animated charts, accordions, carousels
+   - Smooth fade & slide transitions between panels
+4. **Mobile Adaptation**
+   - Collapsible sidebar → bottom nav
+   - Stacked cards, swipeable carousels, sticky join button
+
+---
+
+### 2. Instructional Design Principles to Integrate
+
+- **Chunking Content:** Break session agenda into bite-sized topics with progress indicators.
+- **Scaffolded Guidance:** Provide contextual tooltips & AI hints before/during sessions.
+- **Immediate Feedback:** Inline validation for tasks, real-time transcript highlights.
+- **Cognitive Load Management:** Minimize peripheral distractions—collapse non-essential UI until needed.
+- **Motivation & Gamification:** Milestone badges, session streak trackers, visual progress bars.
+- **Accessibility & Inclusivity:** WCAG AA, ARIA roles, captions for audio, clear focus states.
+
+---
+
+### 3. Master Instruction Set
+
+**A. Global UI/UX Enhancements**
+1. **Sidebar & Navigation**
+   - Use pastel gradient background with 20px rounded corners.
+   - Highlight active item with colored side bar accent and icon fill.
+2. **Top KPI Bar**
+   - Display Balance, Next Session Time, Available Tokens.
+   - Add micro-animations on metric updates (fade + count-up).
+3. **Grid & Card Layouts**
+   - Adopt 3-panel desktop grid: Activity Chart, Session Hero, Mentor Carousel.
+   - Cards: backdrop-filter blur 12px, 8% white overlay, soft shadow, 16px spacing.
+4. **Typography & Icons**
+   - Headings: 20px Montserrat Bold; Body: 14px Inter Regular.
+   - Icons: line style, 24px, 2px stroke, filled active state.
+
+**B. Session-Centric Panels**
+1. **Upcoming Session Hero**
+   - Countdown Timer with dynamic color change (<5 min turns orange).
+   - Pulse animation on Join button when session imminent.
+   - Accordion Agenda: animate expand/collapse, mark topics done with checkmarks and strikethrough.
+2. **Live Session Mini-Panel**
+   - Show mentor video thumbnail with “Live” badge.
+   - Controls: mute, camera, share, raise hand—icons animate ripple on tap.
+   - Transcript snippet: auto-scroll line-by-line as spoken.
+3. **Session History & Feedback**
+   - Accordion list of past sessions: date, mentor, rating stars.
+   - Feedback modal: confetti animation on 5-star submit.
+
+**C. Instructional Scaffolding & Guidance**
+1. **Pre-Session Tips**
+   - Show “How to prepare” tooltip 1 hour before: recommended readings, mic check.
+2. **During Session**
+   - AI-powered prompts: “Ask a question now?” when slide changes.
+   - Highlight key transcript phrases and allow learner to bookmark.
+3. **Post-Session Reflection**
+   - Prompt: “What’s your takeaway?” quick-select options + custom note.
+   - Suggest follow-up tasks with deadlines.
+
+**D. Mobile-Specific UX**
+1. **Bottom Nav**
+   - Icons: Sessions, Calendar, Chat, Notifications, Profile.
+   - Center floating “Join Next” button, large and pulsing when live.
+2. **Vertical Scrolling Panels**
+   - Stack: Hero -> Activity Chart -> Mentor Carousel -> History.
+   - Swipe gestures to expand/collapse agenda.
+
+**E. Smooth Transitions & Micro-Interactions**
+- **Panel Swaps:** slide-left + fade-in (200ms).
+- **Button Clicks:** scale-down (0.95) + ripple (CSS pseudo-element).
+- **Data Loaders:** Lottie spinner with PeerLearn brand asset.
+- **Chart Animations:** bars grow from 0 to value on view.
+
+**F. Accessibility & Performance**
+- Ensure 4.5:1 color contrast for text on backgrounds.
+- Keyboard nav through all interactive elements.
+- Lazy-load offscreen cards; cache WebSocket streams in-memory.
+
+---
+
+**Deliverable:** Use these instructions to generate:
+1. **Figma-style wireframes** for web & mobile, showing all states.
+2. **Design spec**: color codes, typography scale, icon library.
+3. **Interaction guide**: transitions, micro-interactions, ARIA annotations.
+4. **Instructional flow map**: learner’s journey before, during, after sessions.
+
+**Outcome:** A lean, session-focused PeerLearn UI/UX that merges premium design from the inspiration and rigorous instructional design, delivering a seamless, engaging learner experience on any device.
+

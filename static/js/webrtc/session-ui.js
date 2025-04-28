@@ -493,13 +493,30 @@ class SessionUIController {
                     errorClass = 'bg-green-600 text-white';
                     errorTimeout = 3000; // Even shorter timeout for success messages
                 } else {
-                    userMessage = 'Connection to the session server failed. Please check your internet connection and refresh the page.';
+                    // Check network conditions if available
+                    let networkInfo = '';
+                    if (navigator.connection) {
+                        const effectiveType = navigator.connection.effectiveType || "unknown";
+                        const downlink = navigator.connection.downlink || 0;
+                        
+                        if (effectiveType === '2g' || downlink < 0.5) {
+                            networkInfo = " Your network connection appears to be very slow. If possible, switch to a better network.";
+                        } else if (effectiveType === '3g' || downlink < 2) {
+                            networkInfo = " Your network connection is moderate. Video quality might be reduced.";
+                        }
+                    }
+                    
+                    userMessage = 'Connection to the session server failed. Please check your internet connection and refresh the page.' + networkInfo;
+                    userMessage += '\n\nTroubleshooting tips:\n• Try refreshing the page\n• Check if other sites work\n• Try using a wired connection if on Wi-Fi\n• Restart your router if problems persist';
                 }
                 
             // ICE connection issues (peer-to-peer connectivity)
             } else if (message.includes('ICE') || message.includes('peer') || 
                        message.includes('STUN') || message.includes('TURN')) {
-                userMessage = 'Failed to establish connection with other participants. This may be due to network firewall restrictions.';
+                userMessage = 'Failed to establish direct connection with other participants. This may be due to network firewall restrictions.';
+                
+                // Add troubleshooting suggestions
+                userMessage += '\n\nTry these steps:\n• If you\'re on a corporate/school network, try a different network\n• Disable VPN if you\'re using one\n• Try a different browser\n• If problems persist, the session may need to be rescheduled on a more compatible network';
                 errorType = 'ice';
                 
             // Client-side errors and fallbacks

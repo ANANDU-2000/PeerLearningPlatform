@@ -480,7 +480,30 @@ class PeerLearnRTC {
                     
                     // Show reconnection status to user
                     if (this.wsReconnectAttempts > 1) {
-                        this.onError(`Connection lost. Reconnecting in ${Math.round(reconnectDelay/1000)} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
+                        // More specific error messages based on navigator.connection if available
+                        let connectionQuality = "unknown";
+                        let connectionType = "unknown";
+                        
+                        // Use Network Information API if available
+                        if (navigator.connection) {
+                            connectionType = navigator.connection.effectiveType || "unknown"; // 4g, 3g, 2g, etc.
+                            connectionQuality = navigator.connection.downlink ? 
+                                (navigator.connection.downlink > 5 ? "good" : 
+                                 navigator.connection.downlink > 1 ? "moderate" : "poor") : "unknown";
+                        }
+                        
+                        let message = `Connection lost. Reconnecting in ${Math.round(reconnectDelay/1000)} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`;
+                        
+                        // Add network quality information if available
+                        if (connectionType !== "unknown") {
+                            message += `\nDetected network: ${connectionType}`;
+                            
+                            if (connectionQuality === "poor") {
+                                message += "\nSlow connection detected. Consider switching to a better network for improved experience.";
+                            }
+                        }
+                        
+                        this.onError(message);
                     } else {
                         // First disconnect, show a more subtle message
                         this.onError(`Connection temporarily interrupted. Reconnecting automatically...`);

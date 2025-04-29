@@ -186,7 +186,7 @@
                     <div class="mt-4">
                         <div class="-mx-2 -my-1.5 flex">
                             <a href="#" class="px-2 py-1.5 text-sm text-yellow-800 hover:bg-yellow-100 rounded-md">{% trans "Learn more" %}</a>
-                            {% if user.is_superuser or user.role == 'admin' %}
+                            {% if user.is_superuser or user.is_staff %}
                             <a href="/admin-panel/mentor-approval/" class="ml-3 px-2 py-1.5 text-sm text-yellow-800 bg-yellow-100 hover:bg-yellow-200 rounded-md">{% trans "Go to Admin Panel" %}</a>
                             {% endif %}
                         </div>

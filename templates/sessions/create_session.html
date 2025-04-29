@@ -285,75 +285,30 @@
                     </div>
                 </div>
                 
-                <!-- Step 3: Participants -->
+                <!-- Step 3: Session Format -->
                 <div class="wizard-step" id="step-3">
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Participant Settings" %}</h3>
-                        <p class="text-sm text-gray-600">{% trans "Choose your audience size for optimal engagement" %}</p>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Format" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Your session details and format" %}</p>
                     </div>
                     
-                    <!-- Participant Options (Radio buttons with modern styling) -->
-                    <div class="participant-options grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                        <!-- Option 1: One-on-One -->
-                        <div>
-                            <input type="radio" id="participants-1" name="max_participants" value="1" class="sr-only" />
-                            <label for="participants-1" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
-                                <div class="flex flex-col items-center text-center">
-                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
-                                        <i data-feather="user" class="h-5 w-5 text-indigo-600"></i>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900">{% trans "One-on-One" %}</h4>
-                                    <p class="text-xs text-gray-500 mt-1">{% trans "Private session with just one learner" %}</p>
+                    <!-- One-on-One Session Information -->
+                    <div class="bg-blue-50 rounded-lg p-5 border border-blue-100 mb-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                                    <i data-feather="users" class="h-6 w-6 text-blue-600"></i>
                                 </div>
-                            </label>
-                        </div>
-                        
-                        <!-- Option 2: Small Group (2-5) -->
-                        <div>
-                            <input type="radio" id="participants-5" name="max_participants" value="5" class="sr-only" checked />
-                            <label for="participants-5" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
-                                <div class="flex flex-col items-center text-center">
-                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-3">
-                                        <i data-feather="users" class="h-5 w-5 text-blue-600"></i>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900">{% trans "Small Group" %}</h4>
-                                    <p class="text-xs text-gray-500 mt-1">{% trans "2-5 learners for personalized interaction" %}</p>
-                                </div>
-                            </label>
-                        </div>
-                        
-                        <!-- Option 3: Custom -->
-                        <div>
-                            <input type="radio" id="participants-custom" name="max_participants_type" value="custom" class="sr-only" />
-                            <label for="participants-custom" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
-                                <div class="flex flex-col items-center text-center">
-                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-3">
-                                        <i data-feather="sliders" class="h-5 w-5 text-purple-600"></i>
-                                    </div>
-                                    <h4 class="font-medium text-gray-900">{% trans "Custom" %}</h4>
-                                    <p class="text-xs text-gray-500 mt-1">{% trans "Specify your preferred group size" %}</p>
-                                </div>
-                            </label>
+                            </div>
+                            <div class="ml-4">
+                                <h4 class="text-md font-semibold text-blue-800">{% trans "One-on-One Live Session" %}</h4>
+                                <p class="text-sm text-blue-600 mt-1">{% trans "This is a personalized one-on-one session between you and a single learner. Both participants will have live video sharing for optimal learning experience." %}</p>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Custom Participants Input (shows only when custom is selected) -->
-                    <div id="custom-participants-container" class="mb-6 hidden">
-                        <label for="custom-participants" class="block text-sm font-medium text-gray-700 mb-1">
-                            {% trans "Number of Participants" %} <span class="text-red-600">*</span>
-                        </label>
-                        <div class="flex items-center">
-                            <input type="number" id="custom-participants" min="1" max="50" value="10" class="form-control shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md">
-                            <button type="button" id="apply-custom-participants" class="ml-2 inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-                                {% trans "Apply" %}
-                            </button>
-                        </div>
-                        <p class="mt-1 text-xs text-gray-500">
-                            {% trans "For optimal experience, we recommend between 2-20 participants" %}
-                        </p>
-                    </div>
-                    
-                    <!-- Hidden actual max_participants field that will be submitted -->
+                    <!-- Hidden fixed participant field -->
+                    <input type="hidden" name="max_participants" id="max_participants" value="1" />
                     {{ form.max_participants }}
                     {% if form.max_participants.errors %}
                         <p class="mt-1 text-sm text-red-600">{{ form.max_participants.errors }}</p>

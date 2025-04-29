@@ -5,6 +5,7 @@ URL patterns for the sessions app.
 from django.urls import path
 
 from . import views
+from . import test_views
 
 urlpatterns = [
     # Session browsing
@@ -26,4 +27,7 @@ urlpatterns = [
     
     # Learner session management
     path('my-booked-sessions/', views.my_booked_sessions, name='my_booked_sessions'),
+    
+    # Testing pages
+    path('test/mobile-compatibility/', test_views.mobile_compatibility_test, name='mobile_compatibility_test'),
 ]

@@ -5,144 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}PeerLearn - Connect with Expert Mentors{% endblock %}</title>
     
-    <!-- Tailwind CSS via CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    
     <!-- Google Fonts: Poppins and Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     
     <!-- Feather Icons -->
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
-    
-    <!-- Custom CSS -->
-    <style>
-        :root {
-            --primary-color: #007BFF;
-            --secondary-color: #FF5733;
-            --bg-light: #F5F5F5;
-            --bg-dark: #121212;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            color: white;
-        }
-        
-        .btn-secondary {
-            background-color: var(--secondary-color);
-            color: white;
-        }
-        
-        .glass-card {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card-hover-effect {
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-        
-        .card-hover-effect:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        }
-        
-        .desktop-sidebar {
-            width: 250px;
-            transition: width 0.3s;
-        }
-        
-        .mobile-bottom-nav {
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-        }
-        
-        /* Light/Dark mode classes */
-        .light-mode {
-            background-color: var(--bg-light);
-            color: #333;
-        }
-        
-        .dark-mode {
-            background-color: var(--bg-dark);
-            color: #fff;
-        }
-        
-        .dark-mode .glass-card {
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        /* Animation for error states */
-        .shake {
-            animation: shake 0.5s linear;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        /* Progress rings */
-        .progress-ring {
-            position: relative;
-            width: 80px;
-            height: 80px;
-        }
-        
-        .progress-ring__circle {
-            transform: rotate(-90deg);
-            transform-origin: 50% 50%;
-            transition: stroke-dashoffset 0.3s;
-        }
-        
-        /* User menu dropdown animations */
-        #user-menu-dropdown {
-            transform-origin: top right;
-            transition: opacity 0.2s ease, transform 0.2s ease;
-        }
-        
-        #user-menu-dropdown.opacity-0 {
-            opacity: 0;
-            transform: scale(0.95);
-        }
-        
-        #user-menu-dropdown.opacity-100 {
-            opacity: 1;
-            transform: scale(1);
-        }
-        
-        #user-menu-arrow {
-            transition: transform 0.2s ease;
-        }
-    </style>
     
     <!-- Internationalization support -->
     {% load i18n %}
     {% load static %}
     
-    <!-- Components CSS -->
+    <!-- PeerLearn Design System -->
+    <link href="{% static 'css/design-system.css' %}" rel="stylesheet">
     <link href="{% static 'css/components.css' %}" rel="stylesheet">
+    
+    <!-- Prevent Flash of Unstyled Content -->
+    <style>
+        .no-js {
+            visibility: hidden;
+            opacity: 0;
+        }
+        
+        html.js .no-js {
+            visibility: visible;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+    
+    <script>
+        // Add 'js' class to html element
+        document.documentElement.classList.add('js');
+        
+        // Set theme based on user preference if stored in localStorage
+        if (localStorage.getItem('theme') === 'dark') {
+            document.documentElement.classList.add('dark-mode');
+            document.documentElement.classList.remove('light-mode');
+        } else {
+            document.documentElement.classList.add('light-mode');
+            document.documentElement.classList.remove('dark-mode');
+        }
+    </script>
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="light-mode">
+<body class="light-mode no-js">
     <!-- Top Navigation -->
     <nav class="bg-white dark:bg-gray-900 shadow-md z-50 relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -401,7 +313,10 @@
     
     <!-- Main Content -->
     <main class="pb-16 sm:pb-0">
-        {% block content %}{% endblock %}
+        <!-- Main Content with Page Transitions -->
+        <main id="page-content" class="page-transition">
+            {% block content %}{% endblock %}
+        </main>
         
         <!-- Welcome Message - Role-specific content with enhanced design and visibility -->
         {% if user.is_authenticated %}

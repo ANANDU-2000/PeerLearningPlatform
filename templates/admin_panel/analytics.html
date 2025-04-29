@@ -191,12 +191,36 @@
                         <input type="radio" id="period-all" name="period" value="all" {% if period == 'all' %}checked{% endif %} class="h-4 w-4 text-blue-600 focus:ring-blue-500">
                         <label for="period-all" class="ml-2 text-gray-700">{% trans "All Time" %}</label>
                     </div>
+                    <input type="hidden" name="tab" value="{{ active_tab }}">
                     <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors ml-auto">
                         {% trans "Apply" %}
                     </button>
                 </form>
             </div>
             
+            <!-- Analytics Tabs -->
+            <div class="mb-6 bg-white rounded-lg shadow-sm p-1">
+                <div class="flex flex-wrap border-b border-gray-200">
+                    <a href="?period={{ period }}&tab=overview" class="px-4 py-3 text-sm font-medium {% if active_tab == 'overview' %}tab-active border-b-2{% else %}tab-inactive hover:text-gray-700 hover:border-gray-300{% endif %}">
+                        {% trans "Overview" %}
+                    </a>
+                    <a href="?period={{ period }}&tab=revenue" class="px-4 py-3 text-sm font-medium {% if active_tab == 'revenue' %}tab-active border-b-2{% else %}tab-inactive hover:text-gray-700 hover:border-gray-300{% endif %}">
+                        {% trans "Revenue Analytics" %}
+                    </a>
+                    <a href="?period={{ period }}&tab=learners" class="px-4 py-3 text-sm font-medium {% if active_tab == 'learners' %}tab-active border-b-2{% else %}tab-inactive hover:text-gray-700 hover:border-gray-300{% endif %}">
+                        {% trans "Learner Engagement" %}
+                    </a>
+                    <a href="?period={{ period }}&tab=sessions" class="px-4 py-3 text-sm font-medium {% if active_tab == 'sessions' %}tab-active border-b-2{% else %}tab-inactive hover:text-gray-700 hover:border-gray-300{% endif %}">
+                        {% trans "Session Quality" %}
+                    </a>
+                    <a href="?period={{ period }}&tab=mentors" class="px-4 py-3 text-sm font-medium {% if active_tab == 'mentors' %}tab-active border-b-2{% else %}tab-inactive hover:text-gray-700 hover:border-gray-300{% endif %}">
+                        {% trans "Mentor Performance" %}
+                    </a>
+                </div>
+            </div>
+            
+            {% if active_tab == 'overview' or not active_tab %}
+            <!-- Overview Tab Content -->
             <!-- Key Metrics -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <!-- Revenue Card -->
@@ -282,18 +306,18 @@
                                     {% if mentor.user.profile_picture %}
                                         <img src="{{ mentor.user.profile_picture.url }}" alt="{{ mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
                                     {% else %}
-                                        <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-bold mr-3">
-                                            {{ mentor.user.first_name|first|upper }}
+                                        <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center mr-3">
+                                            <span class="text-indigo-800 font-medium">{{ mentor.user.get_full_name|slice:":1" }}</span>
                                         </div>
                                     {% endif %}
                                     <div>
-                                        <h4 class="font-medium text-gray-800">{{ mentor.user.get_full_name }}</h4>
-                                        <p class="text-xs text-gray-500">{{ mentor.expertise|truncatechars:25 }}</p>
+                                        <h4 class="text-sm font-medium text-gray-800">{{ mentor.user.get_full_name }}</h4>
+                                        <p class="text-xs text-gray-500">{{ mentor.area_of_expertise|truncatechars:25 }}</p>
                                     </div>
                                 </div>
                                 <div class="text-right">
-                                    <span class="text-lg font-bold text-gray-800">₹{{ mentor.total_earnings }}</span>
-                                    <div class="text-xs text-gray-500">{% trans "Total Earnings" %}</div>
+                                    <p class="text-sm font-bold text-green-600">₹{{ mentor.total_earnings }}</p>
+                                    <p class="text-xs text-gray-500">{% trans "Total Earnings" %}</p>
                                 </div>
                             </div>
                         {% empty %}
@@ -317,233 +341,329 @@
                                 <span class="text-sm text-gray-500">{% trans "Used" %}</span>
                                 <span class="text-sm font-medium text-gray-800">3.2 GB / 10 GB</span>
                             </div>
-                            <div class="h-2 w-full bg-gray-200 rounded-full mb-2">
-                                <div class="h-2 rounded-full bg-blue-500" style="width: 32%"></div>
-                            </div>
-                            <div class="text-xs text-gray-500 text-right">
-                                {% trans "32% used" %}
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-blue-600 h-2 rounded-full" style="width: 32%"></div>
                             </div>
                         </div>
-                        
                         <div class="bg-white p-4 rounded-lg shadow-sm">
                             <h4 class="text-sm font-medium text-gray-600 mb-2">{% trans "Bandwidth Usage" %}</h4>
                             <div class="flex justify-between items-center mb-1">
                                 <span class="text-sm text-gray-500">{% trans "Used" %}</span>
                                 <span class="text-sm font-medium text-gray-800">45 GB / 100 GB</span>
                             </div>
-                            <div class="h-2 w-full bg-gray-200 rounded-full mb-2">
-                                <div class="h-2 rounded-full bg-green-500" style="width: 45%"></div>
-                            </div>
-                            <div class="text-xs text-gray-500 text-right">
-                                {% trans "45% used" %}
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: 45%"></div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Real-time Session Analytics -->
-                    <div class="bg-white p-4 rounded-lg shadow-sm mb-4">
-                        <h4 class="text-sm font-medium text-gray-600 mb-3">{% trans "Real-time Platform Metrics" %}</h4>
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-800" id="active-sessions-count">12</div>
-                                <div class="text-xs text-gray-500">{% trans "Active Sessions" %}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-800" id="active-users-count">78</div>
-                                <div class="text-xs text-gray-500">{% trans "Online Users" %}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-800" id="total-minutes">1,458</div>
-                                <div class="text-xs text-gray-500">{% trans "Total Minutes Today" %}</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-2xl font-bold text-gray-800" id="today-bookings">23</div>
-                                <div class="text-xs text-gray-500">{% trans "Bookings Today" %}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Private Access Controls -->
+                    <!-- Video Analytics -->
                     <div class="bg-white p-4 rounded-lg shadow-sm">
-                        <div class="flex justify-between items-center mb-3">
-                            <h4 class="text-sm font-medium text-gray-600">{% trans "Access Controls" %}</h4>
-                            <a href="#" class="text-xs text-blue-600 hover:text-blue-800 flex items-center">
-                                {% trans "Manage Settings" %}
-                                <i data-feather="chevron-right" class="h-3 w-3 ml-1"></i>
-                            </a>
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="text-sm font-medium text-gray-600">{% trans "Recent Recordings" %}</h4>
+                            <a href="{% url 'video_storage' %}" class="text-sm text-blue-600 hover:underline">{% trans "View All" %}</a>
                         </div>
-                        
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i data-feather="shield" class="h-4 w-4 mr-2 text-blue-500"></i>
-                                    <span class="text-sm text-gray-800">{% trans "IP Restrictions" %}</span>
-                                </div>
-                                <div class="flex h-5 items-center">
-                                    <input type="checkbox" id="ip-restrictions" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i data-feather="key" class="h-4 w-4 mr-2 text-blue-500"></i>
-                                    <span class="text-sm text-gray-800">{% trans "2FA for Admins" %}</span>
-                                </div>
-                                <div class="flex h-5 items-center">
-                                    <input type="checkbox" id="2fa-toggle" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
-                                </div>
-                            </div>
-                            
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <i data-feather="video" class="h-4 w-4 mr-2 text-blue-500"></i>
-                                    <span class="text-sm text-gray-800">{% trans "Archive Sessions" %}</span>
-                                </div>
-                                <div class="flex h-5 items-center">
-                                    <input type="checkbox" id="archive-toggle" class="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" checked>
-                                </div>
-                            </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead>
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Session" %}</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Date" %}</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Duration" %}</th>
+                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Size" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <tr>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">Advanced Machine Learning</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2023-02-15</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">1h 20m</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">245 MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">Web Development Basics</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2023-02-14</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">45m</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">120 MB</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">Financial Literacy</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2023-02-12</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">2h 05m</td>
+                                        <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">350 MB</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <!-- Video Storage Data -->
+            {% elif active_tab == 'revenue' %}
+            <!-- Revenue Analytics Tab Content -->
             <div class="glass-card p-6 rounded-lg mb-8">
-                <h3 class="text-lg font-medium text-gray-800 mb-4">{% trans "Archived Session Recordings" %}</h3>
+                <h3 class="text-xl font-medium text-gray-800 mb-6">{% trans "Advanced Revenue Analytics" %}</h3>
                 
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Session" %}
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Mentor" %}
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Date" %}
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Duration" %}
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Size" %}
-                                </th>
-                                <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    {% trans "Actions" %}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            <!-- Sample data - in real app would be populated from database -->
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">Advanced Python Programming</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">Rahul Sharma</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">Apr 25, 2025</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">1h 20m</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">256 MB</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                    <a href="#" class="text-red-600 hover:text-red-900">Delete</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">Introduction to Data Science</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">Priya Singh</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">Apr 24, 2025</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">45m</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">128 MB</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                    <a href="#" class="text-red-600 hover:text-red-900">Delete</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm font-medium text-gray-900">Web Development Fundamentals</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">Vikram Patel</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">Apr 23, 2025</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">55m</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <div class="text-sm text-gray-900">180 MB</div>
-                                </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <a href="#" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                    <a href="#" class="text-red-600 hover:text-red-900">Delete</a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <!-- Revenue Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Total Revenue" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">₹{{ total_revenue }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Avg. Transaction" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">₹{{ avg_booking_value|floatformat:2 }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Avg. Session Price" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">₹{{ avg_session_price|floatformat:2 }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Revenue per Learner" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">₹{{ total_revenue|floatformat:2 }}</p>
+                    </div>
                 </div>
                 
-                <!-- Pagination -->
-                <div class="flex items-center justify-between border-t border-gray-200 px-4 py-3 sm:px-6 mt-4">
-                    <div class="flex flex-1 justify-between sm:hidden">
-                        <a href="#" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</a>
-                        <a href="#" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</a>
+                <!-- Revenue Forecast -->
+                <div class="mb-8">
+                    <h4 class="text-lg font-medium text-gray-800 mb-4">{% trans "Revenue Forecast (Next 14 Days)" %}</h4>
+                    <div class="h-80">
+                        <canvas id="forecastChart"></canvas>
                     </div>
-                    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                        <div>
-                            <p class="text-sm text-gray-700">
-                                Showing <span class="font-medium">1</span> to <span class="font-medium">3</span> of <span class="font-medium">12</span> results
-                            </p>
+                    <p class="text-xs text-gray-500 mt-2">{% trans "Forecast based on historical transaction data and trend analysis" %}</p>
+                </div>
+                
+                <!-- Revenue by Session Type -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Revenue by Topic" %}</h4>
+                        <div class="h-60">
+                            <canvas id="revenueByTopicChart"></canvas>
                         </div>
-                        <div>
-                            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                                <a href="#" class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-20">
-                                    <span class="sr-only">Previous</span>
-                                    <i data-feather="chevron-left" class="h-4 w-4"></i>
-                                </a>
-                                <a href="#" aria-current="page" class="relative z-10 inline-flex items-center border border-blue-500 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-600 focus:z-20">1</a>
-                                <a href="#" class="relative inline-flex items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-20">2</a>
-                                <a href="#" class="relative hidden items-center border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-20 md:inline-flex">3</a>
-                                <a href="#" class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-20">
-                                    <span class="sr-only">Next</span>
-                                    <i data-feather="chevron-right" class="h-4 w-4"></i>
-                                </a>
-                            </nav>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Revenue by Time of Day" %}</h4>
+                        <div class="h-60">
+                            <canvas id="revenueByTimeChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
+            
+            {% elif active_tab == 'learners' %}
+            <!-- Learner Engagement Tab Content -->
+            <div class="glass-card p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-medium text-gray-800 mb-6">{% trans "Learner Engagement Analytics" %}</h3>
+                
+                <!-- Engagement Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Total Learners" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ engagement_stats.total_learners }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Active Learners" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ engagement_stats.active_learners }}</p>
+                        <p class="text-xs text-gray-500">{{ engagement_stats.engagement_rate|floatformat:1 }}% {% trans "engagement" %}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Repeat Bookings" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ engagement_stats.repeat_learners }}</p>
+                        <p class="text-xs text-gray-500">{{ engagement_stats.repeat_booking_rate|floatformat:1 }}% {% trans "of active users" %}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Avg. Session Time" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ engagement_stats.avg_session_minutes|floatformat:0 }} {% trans "min" %}</p>
+                    </div>
+                </div>
+                
+                <!-- Engagement Metrics Visualization -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Session Completion Rate" %}</h4>
+                        <div class="h-60">
+                            <canvas id="completionRateChart"></canvas>
+                        </div>
+                        <p class="text-sm text-center mt-4">
+                            <span class="font-medium">{{ engagement_stats.completion_rate|floatformat:1 }}%</span> 
+                            {% trans "of booked sessions were completed" %}
+                        </p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Feedback Submission Rate" %}</h4>
+                        <div class="h-60">
+                            <canvas id="feedbackRateChart"></canvas>
+                        </div>
+                        <p class="text-sm text-center mt-4">
+                            <span class="font-medium">{{ engagement_stats.feedback_rate|floatformat:1 }}%</span> 
+                            {% trans "of completed sessions received feedback" %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            {% elif active_tab == 'sessions' %}
+            <!-- Session Quality Tab Content -->
+            <div class="glass-card p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-medium text-gray-800 mb-6">{% trans "Session Quality Analytics" %}</h3>
+                
+                <!-- Quality Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Average Rating" %}</h4>
+                        <div class="flex items-center mt-2">
+                            <p class="text-3xl font-bold text-gray-800 mr-2">{{ quality_metrics.avg_rating|floatformat:1 }}</p>
+                            <div class="flex text-yellow-400">
+                                {% for i in '12345'|make_list %}
+                                    {% if forloop.counter <= quality_metrics.avg_rating|add:"0.5"|floatformat:"0" %}
+                                        <i data-feather="star" class="h-5 w-5 fill-current"></i>
+                                    {% elif forloop.counter <= quality_metrics.avg_rating|add:"0.9"|floatformat:"0" %}
+                                        <i data-feather="star" class="h-5 w-5 fill-current"></i>
+                                    {% else %}
+                                        <i data-feather="star" class="h-5 w-5"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">{% trans "From" %} {{ quality_metrics.feedback_count }} {% trans "ratings" %}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Session Duration" %}</h4>
+                        <p class="text-3xl font-bold text-gray-800">{{ quality_metrics.duration_stats.mean|floatformat:0 }} {% trans "min" %}</p>
+                        <p class="text-xs text-gray-500 mt-1">{% trans "Range:" %} {{ quality_metrics.duration_stats.min|floatformat:0 }} - {{ quality_metrics.duration_stats.max|floatformat:0 }} {% trans "min" %}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Top Feedback Themes" %}</h4>
+                        <div class="mt-2">
+                            <div class="text-sm text-green-600 mb-1">{% trans "Positive:" %}</div>
+                            <div class="flex flex-wrap gap-2">
+                                {% for theme, count in quality_metrics.feedback_themes.positive.items %}
+                                    {% if count > 0 %}
+                                        <span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">{{ theme }} ({{ count }})</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="text-sm text-red-600 mt-2 mb-1">{% trans "Areas for Improvement:" %}</div>
+                            <div class="flex flex-wrap gap-2">
+                                {% for theme, count in quality_metrics.feedback_themes.negative.items %}
+                                    {% if count > 0 %}
+                                        <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">{{ theme }} ({{ count }})</span>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Rating Distribution -->
+                <div class="mb-8">
+                    <h4 class="text-lg font-medium text-gray-800 mb-4">{% trans "Rating Distribution" %}</h4>
+                    <div class="h-64">
+                        <canvas id="ratingDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Session Duration Distribution -->
+                <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+                    <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Session Duration Distribution" %}</h4>
+                    <div class="h-64">
+                        <canvas id="durationDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            {% elif active_tab == 'mentors' %}
+            <!-- Mentor Performance Tab Content -->
+            <div class="glass-card p-6 rounded-lg mb-8">
+                <h3 class="text-xl font-medium text-gray-800 mb-6">{% trans "Mentor Performance Analytics" %}</h3>
+                
+                <!-- Performance Metrics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Total Mentors" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ mentor_metrics.total_mentors }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Active Mentors" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ mentor_metrics.active_mentors }}</p>
+                        <p class="text-xs text-gray-500">{{ mentor_metrics.mentor_activation_rate|floatformat:1 }}% {% trans "activation rate" %}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Avg. Sessions per Mentor" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ mentor_metrics.avg_sessions_per_mentor|floatformat:1 }}</p>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-sm font-medium text-gray-600 mb-1">{% trans "Avg. Booking Rate" %}</h4>
+                        <p class="text-2xl font-bold text-gray-800">{{ mentor_metrics.avg_booking_rate|floatformat:1 }}%</p>
+                    </div>
+                </div>
+                
+                <!-- Top Mentors Table -->
+                <div class="bg-white p-4 rounded-lg shadow-sm mb-8">
+                    <h4 class="text-lg font-medium text-gray-800 mb-4">{% trans "Top Performing Mentors" %}</h4>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Mentor" %}</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Sessions" %}</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Bookings" %}</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Booking Rate" %}</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Avg. Rating" %}</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Earnings" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for mentor in mentor_metrics.mentor_performance %}
+                                <tr>
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-900">{{ mentor.mentor_name }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ mentor.sessions_count }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ mentor.bookings_count }}</td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{{ mentor.booking_rate|floatformat:1 }}%</td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        <div class="flex items-center">
+                                            <span class="mr-1">{{ mentor.avg_rating|floatformat:1 }}</span>
+                                            <i data-feather="star" class="h-4 w-4 text-yellow-400 fill-current"></i>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-green-600">₹{{ mentor.earnings }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="px-3 py-4 text-sm text-gray-500 text-center">{% trans "No mentor performance data available" %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Visualization of Inactive vs Active Mentors -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Mentor Activity Distribution" %}</h4>
+                        <div class="h-60">
+                            <canvas id="mentorActivityChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg shadow-sm">
+                        <h4 class="text-md font-medium text-gray-700 mb-4">{% trans "Mentor Rating vs Earnings" %}</h4>
+                        <div class="h-60">
+                            <canvas id="mentorRatingVsEarningsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
         </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<!-- Javascript for advanced charts -->
 <script>
-    // Mobile menu toggle
     document.addEventListener('DOMContentLoaded', function() {
+        // Mobile menu toggle
         const mobileMenuButton = document.getElementById('mobile-menu-button');
         const mobileSidebar = document.getElementById('mobile-sidebar');
         
@@ -557,69 +677,72 @@
             });
         }
         
-        // Initialize charts
-        initCharts();
+        // Real-time stats counter
+        const counterElements = document.querySelectorAll('.counter-value');
         
-        // Initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
+        function animateCounter(element, target) {
+            let current = 0;
+            const duration = 1000; // ms
+            const step = target / (duration / 16); // 60fps
+            
+            const updateCount = () => {
+                if (current < target) {
+                    current += step;
+                    if (current > target) current = target;
+                    element.textContent = element.textContent.includes('₹') 
+                        ? '₹' + Math.floor(current) 
+                        : Math.floor(current);
+                    requestAnimationFrame(updateCount);
+                }
+            };
+            
+            updateCount();
         }
         
-        // Setup real-time metrics simulation
-        setupRealTimeMetrics();
+        counterElements.forEach((el) => {
+            const target = parseFloat(el.textContent.replace(/[^\d.-]/g, ''));
+            animateCounter(el, target);
+        });
         
-        // Initialize access control toggles
-        setupAccessControls();
+        // Simulate real-time updates
+        if (window.location.search.includes('tab=overview') || !window.location.search.includes('tab=')) {
+            const currentSessions = document.getElementById('current-sessions');
+            const todayBookings = document.getElementById('today-bookings');
+            
+            setInterval(function() {
+                if (currentSessions && Math.random() > 0.7) {
+                    currentSessions.textContent = parseInt(currentSessions.textContent) + 1;
+                }
+                
+                if (todayBookings && Math.random() > 0.6) {
+                    todayBookings.textContent = parseInt(todayBookings.textContent) + 1;
+                }
+            }, 5000); // Update every 5 seconds
+        }
+        
+        // Initialize all the charts
+        initCharts();
     });
     
-    function setupAccessControls() {
-        const toggles = document.querySelectorAll('input[type="checkbox"]');
-        toggles.forEach(toggle => {
-            toggle.addEventListener('change', function() {
-                // In a real app, this would call an API to update settings
-                console.log(`${this.id} toggled to ${this.checked}`);
-            });
-        });
-    }
-    
-    function setupRealTimeMetrics() {
-        // Simulate real-time updates
-        setInterval(function() {
-            // Update active sessions (random fluctuation between 10-15)
-            const activeSessions = document.getElementById('active-sessions-count');
-            if (activeSessions) {
-                const newCount = Math.floor(Math.random() * 6) + 10;
-                activeSessions.textContent = newCount;
-            }
-            
-            // Update active users (random fluctuation)
-            const activeUsers = document.getElementById('active-users-count');
-            if (activeUsers) {
-                const currentCount = parseInt(activeUsers.textContent);
-                const change = Math.floor(Math.random() * 5) - 2; // -2 to +2
-                activeUsers.textContent = Math.max(70, currentCount + change);
-            }
-            
-            // Increase total minutes (1-3 minutes per update)
-            const totalMinutes = document.getElementById('total-minutes');
-            if (totalMinutes) {
-                const currentMinutes = parseInt(totalMinutes.textContent.replace(',', ''));
-                const increase = Math.floor(Math.random() * 3) + 1;
-                totalMinutes.textContent = (currentMinutes + increase).toLocaleString();
-            }
-            
-            // Occasionally increase bookings
-            if (Math.random() > 0.7) {
-                const todayBookings = document.getElementById('today-bookings');
-                if (todayBookings) {
-                    const currentBookings = parseInt(todayBookings.textContent);
-                    todayBookings.textContent = currentBookings + 1;
-                }
-            }
-        }, 5000); // Update every 5 seconds
-    }
-    
     function initCharts() {
+        // Basic charts for the overview tab
+        initBasicCharts();
+        
+        // Advanced charts for specific tabs
+        const activeTab = "{{ active_tab }}";
+        
+        if (activeTab === 'revenue') {
+            initRevenueCharts();
+        } else if (activeTab === 'learners') {
+            initLearnerCharts();
+        } else if (activeTab === 'sessions') {
+            initSessionCharts();
+        } else if (activeTab === 'mentors') {
+            initMentorCharts();
+        }
+    }
+    
+    function initBasicCharts() {
         // Revenue Chart
         const revenueCtx = document.getElementById('revenueChart');
         if (revenueCtx) {
@@ -729,6 +852,524 @@
                                     size: 11
                                 }
                             }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function initRevenueCharts() {
+        // Revenue Forecast Chart
+        const forecastCtx = document.getElementById('forecastChart');
+        if (forecastCtx) {
+            const forecastDates = {{ revenue_forecast.dates|safe }};
+            const forecastValues = {{ revenue_forecast.values|safe }};
+            const lowerBound = {{ revenue_forecast.lower_bound|safe }};
+            const upperBound = {{ revenue_forecast.upper_bound|safe }};
+            
+            new Chart(forecastCtx, {
+                type: 'line',
+                data: {
+                    labels: forecastDates,
+                    datasets: [
+                        {
+                            label: '{% trans "Forecast" %}',
+                            data: forecastValues,
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 3
+                        },
+                        {
+                            label: '{% trans "Lower Bound" %}',
+                            data: lowerBound,
+                            borderColor: 'rgba(209, 213, 219, 1)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: false
+                        },
+                        {
+                            label: '{% trans "Upper Bound" %}',
+                            data: upperBound,
+                            borderColor: 'rgba(209, 213, 219, 1)',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            fill: '-1',
+                            backgroundColor: 'rgba(59, 130, 246, 0.05)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    if (context.dataset.label === '{% trans "Forecast" %}') {
+                                        return '₹' + context.raw.toFixed(2);
+                                    } else {
+                                        return context.dataset.label + ': ₹' + context.raw.toFixed(2);
+                                    }
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                filter: function(item) {
+                                    // Only show the forecast in the legend
+                                    return item.text === '{% trans "Forecast" %}';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Revenue by Topic Chart (mock data)
+        const topicCtx = document.getElementById('revenueByTopicChart');
+        if (topicCtx) {
+            // Mock data based on popular topics
+            const topics = [];
+            const revenues = [];
+            
+            {% for tag, count in popular_tags %}
+                if (topics.length < 5) {
+                    topics.push("{{ tag }}");
+                    revenues.push({{ count }} * (100 + Math.floor(Math.random() * 200)));
+                }
+            {% endfor %}
+            
+            new Chart(topicCtx, {
+                type: 'bar',
+                data: {
+                    labels: topics,
+                    datasets: [{
+                        label: '{% trans "Revenue (INR)" %}',
+                        data: revenues,
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.raw;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Revenue by Time of Day (mock data)
+        const timeCtx = document.getElementById('revenueByTimeChart');
+        if (timeCtx) {
+            // Mock data for time of day
+            const timeLabels = ['Morning', 'Afternoon', 'Evening', 'Night'];
+            const timeData = [12000, 18000, 25000, 8000];
+            
+            new Chart(timeCtx, {
+                type: 'radar',
+                data: {
+                    labels: timeLabels,
+                    datasets: [{
+                        label: '{% trans "Revenue Distribution" %}',
+                        data: timeData,
+                        backgroundColor: 'rgba(139, 92, 246, 0.5)',
+                        borderColor: 'rgba(139, 92, 246, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(139, 92, 246, 1)',
+                        pointBorderColor: '#fff',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            ticks: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function initLearnerCharts() {
+        // Completion Rate Chart
+        const completionCtx = document.getElementById('completionRateChart');
+        if (completionCtx) {
+            const completionRate = {{ engagement_stats.completion_rate|default:0 }};
+            
+            new Chart(completionCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['{% trans "Completed" %}', '{% trans "Not Completed" %}'],
+                    datasets: [{
+                        data: [completionRate, 100 - completionRate],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(209, 213, 219, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(209, 213, 219, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Feedback Rate Chart
+        const feedbackCtx = document.getElementById('feedbackRateChart');
+        if (feedbackCtx) {
+            const feedbackRate = {{ engagement_stats.feedback_rate|default:0 }};
+            
+            new Chart(feedbackCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['{% trans "Feedback Given" %}', '{% trans "No Feedback" %}'],
+                    datasets: [{
+                        data: [feedbackRate, 100 - feedbackRate],
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.7)',
+                            'rgba(209, 213, 219, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(209, 213, 219, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.label + ': ' + context.raw + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function initSessionCharts() {
+        // Rating Distribution Chart
+        const ratingCtx = document.getElementById('ratingDistributionChart');
+        if (ratingCtx) {
+            const labels = [];
+            const counts = [];
+            const percentages = [];
+            
+            {% for rating_item in quality_metrics.ratings_distribution %}
+                labels.push('{{ rating_item.rating }} star{% if rating_item.rating != 1 %}s{% endif %}');
+                counts.push({{ rating_item.count }});
+                percentages.push({{ rating_item.percentage|floatformat:1 }});
+            {% endfor %}
+            
+            new Chart(ratingCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '{% trans "Rating Count" %}',
+                        data: counts,
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgba(59, 130, 246, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.raw + ' (' + percentages[context.dataIndex] + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '{% trans "Number of Ratings" %}'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Session Duration Distribution Chart (histogram-like)
+        const durationCtx = document.getElementById('durationDistributionChart');
+        if (durationCtx) {
+            const durationStats = {
+                min: {{ quality_metrics.duration_stats.min|default:0 }},
+                max: {{ quality_metrics.duration_stats.max|default:0 }},
+                p25: {{ quality_metrics.duration_stats.p25|default:0 }},
+                p75: {{ quality_metrics.duration_stats.p75|default:0 }},
+                median: {{ quality_metrics.duration_stats.median|default:0 }}
+            };
+            
+            // Create a box plot representation
+            new Chart(durationCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['{% trans "Duration Distribution (minutes)" %}'],
+                    datasets: [
+                        {
+                            label: '{% trans "Min" %}',
+                            data: [durationStats.min],
+                            backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '{% trans "25th Percentile" %}',
+                            data: [durationStats.p25 - durationStats.min],
+                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '{% trans "Median to 75th" %}',
+                            data: [durationStats.p75 - durationStats.median],
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: '{% trans "75th to Max" %}',
+                            data: [durationStats.max - durationStats.p75],
+                            backgroundColor: 'rgba(59, 130, 246, 0.3)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            stacked: true,
+                            position: 'top',
+                            title: {
+                                display: true,
+                                text: '{% trans "Session Duration (minutes)" %}'
+                            },
+                            min: durationStats.min,
+                            max: durationStats.max
+                        },
+                        y: {
+                            stacked: true
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function() {
+                                    return '{% trans "Session Duration Statistics" %}';
+                                },
+                                label: function() {
+                                    return [
+                                        '{% trans "Min:" %} ' + durationStats.min + ' {% trans "min" %}',
+                                        '{% trans "25th Percentile:" %} ' + durationStats.p25 + ' {% trans "min" %}',
+                                        '{% trans "Median:" %} ' + durationStats.median + ' {% trans "min" %}',
+                                        '{% trans "75th Percentile:" %} ' + durationStats.p75 + ' {% trans "min" %}',
+                                        '{% trans "Max:" %} ' + durationStats.max + ' {% trans "min" %}'
+                                    ];
+                                }
+                            }
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+    }
+    
+    function initMentorCharts() {
+        // Mentor Activity Chart
+        const activityCtx = document.getElementById('mentorActivityChart');
+        if (activityCtx) {
+            const activeMentors = {{ mentor_metrics.active_mentors }};
+            const inactiveMentors = {{ mentor_metrics.inactive_mentors }};
+            
+            new Chart(activityCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['{% trans "Active Mentors" %}', '{% trans "Inactive Mentors" %}'],
+                    datasets: [{
+                        data: [activeMentors, inactiveMentors],
+                        backgroundColor: [
+                            'rgba(16, 185, 129, 0.7)',
+                            'rgba(209, 213, 219, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(16, 185, 129, 1)',
+                            'rgba(209, 213, 219, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = activeMentors + inactiveMentors;
+                                    const percentage = Math.round(context.raw / total * 100);
+                                    return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Mentor Rating vs Earnings Chart (scatter plot)
+        const ratingEarningsCtx = document.getElementById('mentorRatingVsEarningsChart');
+        if (ratingEarningsCtx) {
+            const data = [];
+            
+            {% for mentor in mentor_metrics.mentor_performance %}
+                data.push({
+                    x: {{ mentor.avg_rating|default:0 }},
+                    y: {{ mentor.earnings|default:0 }},
+                    name: "{{ mentor.mentor_name }}"
+                });
+            {% endfor %}
+            
+            new Chart(ratingEarningsCtx, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: '{% trans "Mentors" %}',
+                        data: data,
+                        backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                        borderColor: 'rgba(139, 92, 246, 1)',
+                        borderWidth: 1,
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const point = context.raw;
+                                    return point.name + ': ₹' + point.y + ', ' + point.x.toFixed(1) + ' stars';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '{% trans "Average Rating" %}'
+                            },
+                            min: 0,
+                            max: 5
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '{% trans "Earnings (INR)" %}'
+                            },
+                            beginAtZero: true
                         }
                     }
                 }

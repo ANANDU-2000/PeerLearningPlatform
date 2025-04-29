@@ -171,6 +171,31 @@
             </div>
         </div>
         
+        {% if not mentor_profile.is_approved %}
+        <!-- Pending Approval Alert -->
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i data-feather="alert-circle" class="h-5 w-5 text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-yellow-800">{% trans "Account Pending Approval" %}</h3>
+                    <div class="mt-2 text-sm text-yellow-700">
+                        <p>{% trans "Your mentor account is currently under review. You'll be able to create sessions once an administrator approves your account." %}</p>
+                    </div>
+                    <div class="mt-4">
+                        <div class="-mx-2 -my-1.5 flex">
+                            <a href="#" class="px-2 py-1.5 text-sm text-yellow-800 hover:bg-yellow-100 rounded-md">{% trans "Learn more" %}</a>
+                            {% if user.is_superuser or user.role == 'admin' %}
+                            <a href="/admin-panel/mentor-approval/" class="ml-3 px-2 py-1.5 text-sm text-yellow-800 bg-yellow-100 hover:bg-yellow-200 rounded-md">{% trans "Go to Admin Panel" %}</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Create Session CTA -->
         <div class="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl shadow-md p-8 mb-8 text-white relative overflow-hidden">
             <div class="absolute right-0 top-0 opacity-10">
@@ -184,7 +209,7 @@
                     <h2 class="text-2xl font-bold mb-2">{% trans "Ready to share your knowledge?" %}</h2>
                     <p class="text-blue-100 max-w-lg">{% trans "Create a new session and start teaching learners from around the world. Schedule your next virtual class now." %}</p>
                 </div>
-                <button id="create-session-btn" class="bg-white text-blue-600 py-2.5 px-6 rounded-lg font-bold hover:bg-blue-50 transition shadow-md transform hover:scale-105">
+                <button id="create-session-btn" {% if not mentor_profile.is_approved %}disabled title="{% trans 'Your account needs to be approved first' %}"{% endif %} class="bg-white text-blue-600 py-2.5 px-6 rounded-lg font-bold hover:bg-blue-50 transition shadow-md transform hover:scale-105 {% if not mentor_profile.is_approved %}opacity-50 cursor-not-allowed{% endif %}">
                     {% trans "Create New Session" %}
                 </button>
             </div>
@@ -698,29 +723,38 @@
         const closeModalBtn = document.getElementById('close-modal');
         const cancelCreateSessionBtn = document.getElementById('cancel-create-session');
         
+        // Check if mentor is approved
+        const isMentorApproved = {% if mentor_profile.is_approved %}true{% else %}false{% endif %};
+        
         if (createSessionBtn && createSessionModal) {
             createSessionBtn.addEventListener('click', function() {
-                createSessionModal.classList.remove('hidden');
-                document.body.classList.add('overflow-hidden');
-                
-                // Set default start and end time
-                const now = new Date();
-                const tomorrow = new Date(now);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                
-                // Format for datetime-local input (YYYY-MM-DDThh:mm)
-                const startTime = new Date(tomorrow);
-                startTime.setHours(10, 0, 0);
-                
-                const endTime = new Date(tomorrow);
-                endTime.setHours(11, 0, 0);
-                
-                const formatDateForInput = (date) => {
-                    return date.toISOString().slice(0, 16);
-                };
-                
-                document.getElementById('id_start_time').value = formatDateForInput(startTime);
-                document.getElementById('id_end_time').value = formatDateForInput(endTime);
+                // Only open modal if mentor is approved
+                if (isMentorApproved) {
+                    createSessionModal.classList.remove('hidden');
+                    document.body.classList.add('overflow-hidden');
+                    
+                    // Set default start and end time
+                    const now = new Date();
+                    const tomorrow = new Date(now);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    
+                    // Format for datetime-local input (YYYY-MM-DDThh:mm)
+                    const startTime = new Date(tomorrow);
+                    startTime.setHours(10, 0, 0);
+                    
+                    const endTime = new Date(tomorrow);
+                    endTime.setHours(11, 0, 0);
+                    
+                    const formatDateForInput = (date) => {
+                        return date.toISOString().slice(0, 16);
+                    };
+                    
+                    document.getElementById('id_start_time').value = formatDateForInput(startTime);
+                    document.getElementById('id_end_time').value = formatDateForInput(endTime);
+                } else {
+                    // Show a toast or alert if mentor is not approved
+                    alert('Your mentor account needs to be approved by an administrator before you can create sessions.');
+                }
             });
             
             const closeModal = function() {

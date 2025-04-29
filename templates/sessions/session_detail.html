@@ -15,53 +15,120 @@
             </a>
         </div>
         
-        <!-- Session Header -->
-        <div class="bg-white shadow rounded-xl overflow-hidden mb-8">
+        <!-- Enhanced Session Header with Thumbnail -->
+        <div class="bg-white shadow-lg rounded-xl overflow-hidden mb-8 border border-gray-200">
+            <!-- Session Thumbnail Header -->
+            {% if session.thumbnail %}
+                <div class="w-full h-48 bg-gradient-to-r from-blue-600 to-indigo-700 relative overflow-hidden">
+                    <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover opacity-90">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                        <div class="p-6 text-white">
+                            <div class="inline-flex items-center mb-2 bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                <i data-feather="video" class="h-3.5 w-3.5 mr-1"></i>
+                                ONE-ON-ONE LIVE SESSION
+                            </div>
+                            <h1 class="text-2xl md:text-3xl font-bold text-shadow mb-2">{{ session.title }}</h1>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <!-- Fallback gradient if no thumbnail -->
+                <div class="w-full h-48 bg-gradient-to-r from-blue-600 to-indigo-700 relative overflow-hidden">
+                    <div class="absolute inset-0 opacity-20">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+                            <defs>
+                                <pattern id="pattern" width="40" height="40" patternUnits="userSpaceOnUse">
+                                    <path d="M0 20 L40 20" stroke="white" stroke-width="1" fill="none" opacity="0.2"/>
+                                    <path d="M20 0 L20 40" stroke="white" stroke-width="1" fill="none" opacity="0.2"/>
+                                </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill="url(#pattern)" />
+                        </svg>
+                    </div>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <div class="bg-white/10 backdrop-blur-md rounded-xl p-4 shadow-lg text-center">
+                            <i data-feather="video" class="h-10 w-10 text-white mx-auto mb-2"></i>
+                            <h1 class="text-white font-bold text-xl">LIVE SESSION</h1>
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                        <div class="p-6 text-white">
+                            <div class="inline-flex items-center mb-2 bg-primary/90 text-white text-xs font-bold px-3 py-1 rounded-full">
+                                <i data-feather="video" class="h-3.5 w-3.5 mr-1"></i>
+                                ONE-ON-ONE LIVE SESSION
+                            </div>
+                            <h1 class="text-2xl md:text-3xl font-bold text-shadow mb-2">{{ session.title }}</h1>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Session Content -->
             <div class="p-6 md:p-8">
                 <div class="flex flex-col md:flex-row md:items-start md:justify-between">
                     <div class="flex-grow mb-6 md:mb-0 md:mr-8">
-                        <div class="flex items-center mb-3">
-                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full mr-2">
-                                {{ session.status }}
-                            </span>
-                            <span class="text-gray-500 text-sm">{{ session.duration_minutes }} {% trans "minutes" %}</span>
+                        <!-- Session Status Bar -->
+                        <div class="flex items-center mb-4 justify-between bg-gray-50 rounded-lg p-3 border border-gray-100">
+                            <div class="flex items-center">
+                                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full mr-2">
+                                    {{ session.status|upper }}
+                                </span>
+                                <span class="text-gray-500 text-sm font-medium flex items-center">
+                                    <i data-feather="clock" class="h-4 w-4 mr-1 text-blue-500"></i>
+                                    <span class="duration-display">{{ session.duration_minutes }}</span> {% trans "minutes duration" %}
+                                </span>
+                            </div>
+                            
+                            <!-- Direct Start Button for Quick Access -->
+                            {% if session.is_ongoing and is_booked %}
+                                <a href="{% url 'session_room' session_id=session.id %}" class="inline-flex items-center bg-primary hover:bg-primary-dark text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors duration-200">
+                                    <i data-feather="play-circle" class="h-4 w-4 mr-1"></i>
+                                    {% trans "Join Now" %}
+                                </a>
+                            {% endif %}
                         </div>
                         
-                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 mb-2">{{ session.title }}</h1>
-                        
+                        <!-- Mentor Profile -->
                         <div class="flex items-center mb-6">
                             {% if session.mentor.user.profile_picture %}
-                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-10 w-10 rounded-full object-cover mr-3">
+                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="h-12 w-12 rounded-full object-cover mr-3 border-2 border-white shadow-md">
                             {% else %}
-                                <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-3">
+                                <div class="h-12 w-12 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex items-center justify-center font-bold text-xl mr-3 border-2 border-white shadow-md">
                                     {{ session.mentor.user.first_name|first|upper }}
                                 </div>
                             {% endif %}
                             
                             <div>
-                                <p class="font-medium">{{ session.mentor.user.get_full_name }}</p>
+                                <p class="font-bold text-gray-800">{{ session.mentor.user.get_full_name }}</p>
                                 <div class="flex items-center">
                                     <div class="flex items-center text-yellow-400 mr-1">
                                         <i data-feather="star" class="h-3.5 w-3.5 fill-current"></i>
+                                        <span class="ml-1 text-sm font-medium">{{ session.mentor.average_rating|default:"New" }}</span>
                                     </div>
-                                    <span class="text-sm text-gray-500">{{ session.mentor.average_rating|default:"New" }}</span>
                                     <span class="mx-2 text-gray-300">|</span>
-                                    <span class="text-sm text-gray-500">{{ session.mentor.total_reviews|default:"0" }} {% trans "reviews" %}</span>
+                                    <span class="text-sm text-primary font-medium">{{ session.mentor.total_reviews|default:"0" }} {% trans "reviews" %}</span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Session time and date -->
-                        <div class="flex flex-col md:flex-row mb-6">
-                            <div class="flex items-center mb-3 md:mb-0 md:mr-8">
-                                <i data-feather="calendar" class="h-5 w-5 text-gray-400 mr-2"></i>
-                                <span>{{ session.start_time|date:"F j, Y" }}</span>
+                        <!-- Enhanced Session Time and Date with Countdown -->
+                        <div class="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-100">
+                            <h3 class="font-medium text-blue-800 mb-2 flex items-center">
+                                <i data-feather="calendar" class="h-4 w-4 mr-2"></i>
+                                {% trans "Session Schedule" %}
+                            </h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="bg-white rounded-md p-3 shadow-sm border border-blue-200">
+                                    <div class="text-xs text-gray-500 mb-1">{% trans "DATE" %}</div>
+                                    <div class="font-medium">{{ session.start_time|date:"l, F j, Y" }}</div>
+                                </div>
+                                
+                                <div class="bg-white rounded-md p-3 shadow-sm border border-blue-200">
+                                    <div class="text-xs text-gray-500 mb-1">{% trans "TIME" %}</div>
+                                    <div class="font-medium">{{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</div>
+                                </div>
                             </div>
-                            <div class="flex items-center">
-                                <i data-feather="clock" class="h-5 w-5 text-gray-400 mr-2"></i>
-                                <span>{{ session.start_time|date:"g:i A" }} - {{ session.end_time|date:"g:i A" }}</span>
-                            </div>
-                        </div>
                         
                         <!-- Session description -->
                         <div class="prose max-w-none mb-6">
@@ -90,33 +157,84 @@
                     
                     <!-- Booking card -->
                     <div class="w-full md:w-80 shrink-0">
-                        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
-                            <div class="flex flex-col mb-2">
+                        <div class="bg-white shadow-md border border-gray-200 rounded-lg p-6 sticky top-24">
+                            <!-- Live indicator and price -->
+                            <div class="flex flex-row justify-between items-center mb-4">
                                 <div class="flex items-center">
-                                    <span class="text-2xl font-bold text-gray-900">₹{{ session.price }}</span>
+                                    <span class="text-3xl font-bold text-gray-900">₹{{ session.price }}</span>
                                     {% if session.price == 0 %}
-                                        <span class="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
-                                            {% trans "Free" %}
+                                        <span class="ml-2 bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                                            {% trans "FREE" %}
                                         </span>
                                     {% endif %}
                                 </div>
-                                
-                                {% if session.start_time > now %}
-                                <div class="text-sm text-gray-600 mt-1">
-                                    <span>{% trans "Starts in" %}: </span>
-                                    <span class="font-medium text-blue-600 countdown" data-start-time="{{ session.start_time|date:'c' }}">
-                                        {% comment %}JavaScript will update this{% endcomment %}
-                                        ...
-                                    </span>
+                                <div>
+                                    {% if session.is_ongoing %}
+                                        <div class="inline-flex items-center bg-red-100 text-red-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                                            <span class="animate-pulse mr-1.5 h-2 w-2 bg-red-600 rounded-full"></span>
+                                            {% trans "LIVE NOW" %}
+                                        </div>
+                                    {% elif session.start_time > now %}
+                                        <div class="inline-flex items-center bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                                            <i data-feather="clock" class="h-3 w-3 mr-1"></i>
+                                            {% trans "UPCOMING" %}
+                                        </div>
+                                    {% else %}
+                                        <div class="inline-flex items-center bg-gray-100 text-gray-800 text-xs font-bold px-2.5 py-1 rounded-full">
+                                            <i data-feather="check-circle" class="h-3 w-3 mr-1"></i>
+                                            {% trans "COMPLETED" %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% endif %}
                             </div>
                             
-                            <div class="flex items-center mb-4">
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-blue-600 h-2 rounded-full" style="width: {{ session.current_participants|floatformat:0 }}%"></div>
+                            <!-- Real-time countdown -->
+                            {% if session.start_time > now %}
+                                <div class="bg-blue-50 rounded-lg p-4 mb-4 border border-blue-100">
+                                    <h4 class="text-xs uppercase text-gray-500 mb-2">{% trans "STARTS IN" %}</h4>
+                                    <div class="grid grid-cols-4 gap-2 text-center">
+                                        <div class="bg-white rounded p-2 border border-blue-200 shadow-sm">
+                                            <div class="text-xl font-bold text-blue-800 countdown-days">--</div>
+                                            <div class="text-xs text-gray-500">{% trans "Days" %}</div>
+                                        </div>
+                                        <div class="bg-white rounded p-2 border border-blue-200 shadow-sm">
+                                            <div class="text-xl font-bold text-blue-800 countdown-hours">--</div>
+                                            <div class="text-xs text-gray-500">{% trans "Hours" %}</div>
+                                        </div>
+                                        <div class="bg-white rounded p-2 border border-blue-200 shadow-sm">
+                                            <div class="text-xl font-bold text-blue-800 countdown-minutes">--</div>
+                                            <div class="text-xs text-gray-500">{% trans "Mins" %}</div>
+                                        </div>
+                                        <div class="bg-white rounded p-2 border border-blue-200 shadow-sm">
+                                            <div class="text-xl font-bold text-blue-800 countdown-seconds">--</div>
+                                            <div class="text-xs text-gray-500">{% trans "Secs" %}</div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <span class="text-sm text-gray-500 ml-2">{{ session.current_participants }}/{{ session.max_participants }}</span>
+                            {% elif session.is_ongoing %}
+                                <div class="bg-red-50 rounded-lg p-4 mb-4 border border-red-100">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <h4 class="text-xs uppercase text-gray-500 mb-1">{% trans "SESSION IN PROGRESS" %}</h4>
+                                            <p class="text-sm text-red-700 font-medium">{% trans "Join now to avoid missing content!" %}</p>
+                                        </div>
+                                        <div class="animate-pulse flex h-10 w-10 rounded-full bg-red-200 items-center justify-center">
+                                            <i data-feather="video" class="h-5 w-5 text-red-600"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Capacity indicator -->
+                            <div class="mb-4">
+                                <div class="flex justify-between items-center mb-1">
+                                    <span class="text-sm font-medium text-gray-700">{% trans "Capacity" %}</span>
+                                    <span class="text-sm text-primary font-bold">{{ session.current_participants }}/{{ session.max_participants }}</span>
+                                </div>
+                                <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary" style="width: {{ session.current_participants_pct|default:'0' }}%"></div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">{% trans "One-on-one personalized session" %}</p>
                             </div>
                             
                             {% if user.is_authenticated %}
@@ -295,6 +413,10 @@
         
         // Handle enhanced countdown timer with session status tracking
         const countdownElements = document.querySelectorAll('.countdown');
+        const countdownDays = document.querySelector('.countdown-days');
+        const countdownHours = document.querySelector('.countdown-hours');
+        const countdownMinutes = document.querySelector('.countdown-minutes');
+        const countdownSeconds = document.querySelector('.countdown-seconds');
         const joinSessionBtn = document.querySelector('.join-session-btn');
         const sessionStatus = "{{ session.status }}";
         const currentUserRole = "{{ user.role }}";
@@ -313,15 +435,6 @@
         
         function updateCountdown() {
             const currentTime = new Date();
-            
-            // For debugging time calculation issues
-            console.log("Session time data:", {
-                now: currentTime.toISOString(),
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-                timeToStart: startTime - currentTime,
-                timeToEnd: endTime - currentTime
-            });
             
             countdownElements.forEach(function(element) {
                 // Status variables

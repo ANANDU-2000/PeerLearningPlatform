@@ -25,7 +25,7 @@
     <link href="{% static 'css/components.css' %}" rel="stylesheet">
     
     <!-- Page Transitions and Common Scripts -->
-    <script src="{% static 'js/page-transitions.js' %}"></script>
+    <script src="{% static 'js/page-transitions-fixed.js' %}"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
     
     <!-- Prevent Flash of Unstyled Content and Mobile Nav Styles -->
@@ -44,13 +44,78 @@
         /* Mobile navigation special styling */
         .mobile-bottom-nav {
             padding-bottom: env(safe-area-inset-bottom, 0);
-            height: 4.5rem; /* Increase height for better spacing with floating button */
+            height: 5rem; /* Increase height for better spacing with floating button */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 -1px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .icon-container {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: currentColor;
+            border-radius: 8px;
+            z-index: -1;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item:active::before {
+            opacity: 0.1;
+            transform: scale(1);
+        }
+        
+        .nav-item-center {
+            position: relative;
+            z-index: 10;
+        }
+
+        .nav-item-center .icon-container {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .nav-item-center:active .icon-container {
+            transform: scale(0.95);
         }
         
         @media (max-width: 640px) {
             .pb-16 {
-                padding-bottom: 5rem; /* Increase padding to account for taller nav */
+                padding-bottom: 6rem; /* Increase padding to account for taller nav */
             }
+        }
+        
+        /* Active state styling */
+        .nav-item.active {
+            color: var(--color-primary);
+        }
+        
+        .nav-item.active .icon-container::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--color-primary);
         }
     </style>
     
@@ -223,72 +288,104 @@
         </div>
     </nav>
     
-    <!-- Mobile Bottom Navigation - More compact and cleaner -->
+    <!-- Mobile Bottom Navigation - Enhanced -->
     <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900 border-t border-gray-200 shadow-lg">
         <div class="flex justify-around items-center py-2 relative">
             {% if user.is_authenticated %}
                 <!-- Dashboard as home for authenticated users -->
-                <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
-                    <i data-feather="grid" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Home" %}</span>
+                <a href="{{ user.get_dashboard_url }}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="grid" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Home" %}</span>
                 </a>
                 
                 <!-- Sessions - both roles need this -->
                 {% if user.role == 'mentor' %}
-                <a href="{% url 'mentor_sessions' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
-                    <i data-feather="calendar" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Sessions" %}</span>
+                <a href="{% url 'mentor_sessions' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="calendar" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Sessions" %}</span>
                 </a>
                 
                 <!-- Create Session Button (Center, Elevated) -->
-                <a href="{% url 'create_session' %}" class="absolute top-0 transform -translate-y-1/2 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center">
-                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-primary-dark shadow-lg flex items-center justify-center text-white hover:scale-110 transition-transform duration-200">
-                        <i data-feather="plus" class="h-6 w-6"></i>
+                <a href="{% url 'create_session' %}" class="nav-item-center absolute top-0 transform -translate-y-1/3 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center">
+                    <div class="icon-container w-14 h-14 rounded-full bg-gradient-to-r from-primary to-primary-dark shadow-lg flex items-center justify-center text-white hover:shadow-xl active:shadow-md hover:scale-110 active:scale-95 transition-all duration-200">
+                        <i data-feather="plus" class="h-7 w-7"></i>
                     </div>
-                    <span class="text-xs mt-1 text-gray-600 font-medium">{% trans "Create" %}</span>
+                    <span class="text-xs font-medium mt-1 text-primary-dark">{% trans "Create" %}</span>
+                </a>
+                
+                <!-- Earnings button for mentors -->
+                <a href="{% url 'withdrawal_request' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="dollar-sign" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Earnings" %}</span>
                 </a>
                 {% else %}
-                <a href="{% url 'session_list' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
-                    <i data-feather="search" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Find" %}</span>
+                <!-- For learners - Find Sessions and Cart -->
+                <a href="{% url 'session_list' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="search" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Find" %}</span>
                 </a>
-                {% endif %}
                 
-                <!-- Primary action based on role -->
-                {% if user.role == 'learner' %}
-                    <a href="{% url 'cart' %}" class="flex flex-col items-center justify-center text-primary hover:text-primary-dark transition-colors px-2">
-                        <i data-feather="shopping-cart" class="h-4 w-4"></i>
-                        <span class="text-xs mt-1">{% trans "Cart" %}</span>
-                    </a>
-                {% elif user.role == 'mentor' %}
-                    <a href="{% url 'create_session' %}" class="flex flex-col items-center justify-center text-primary hover:text-primary-dark transition-colors px-2">
-                        <i data-feather="plus-circle" class="h-4 w-4"></i>
-                        <span class="text-xs mt-1">{% trans "Create" %}</span>
-                    </a>
+                <!-- Center Button - Book Session for Learners -->
+                <a href="{% url 'session_list' %}" class="nav-item-center absolute top-0 transform -translate-y-1/3 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center">
+                    <div class="icon-container w-14 h-14 rounded-full bg-gradient-to-r from-primary to-accent shadow-lg flex items-center justify-center text-white hover:shadow-xl active:shadow-md hover:scale-110 active:scale-95 transition-all duration-200">
+                        <i data-feather="video" class="h-7 w-7"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-1 text-primary-dark">{% trans "Sessions" %}</span>
+                </a>
+                
+                <!-- Cart button for learners -->
+                <a href="{% url 'cart' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="shopping-cart" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Cart" %}</span>
+                </a>
                 {% endif %}
                 
                 <!-- Profile settings as more/menu option -->
-                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
-                    <i data-feather="user" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Profile" %}</span>
+                <a href="{% url 'profile_settings' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="user" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Profile" %}</span>
                 </a>
             {% else %}
                 <!-- For non-authenticated users - simplified -->
-                <a href="{% url 'landing_page' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-3">
-                    <i data-feather="home" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Home" %}</span>
+                <a href="{% url 'landing_page' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="home" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Home" %}</span>
                 </a>
-                <a href="{% url 'session_list' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-3">
-                    <i data-feather="search" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Find" %}</span>
+                
+                <a href="{% url 'session_list' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="search" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Find" %}</span>
                 </a>
-                <a href="{% url 'login' %}" class="flex flex-col items-center justify-center text-primary hover:text-primary-dark transition-colors px-3">
-                    <i data-feather="log-in" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Login" %}</span>
+                
+                <!-- Center Button - Sign Up for visitors -->
+                <a href="{% url 'role_selection' %}" class="nav-item-center absolute top-0 transform -translate-y-1/3 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center">
+                    <div class="icon-container w-14 h-14 rounded-full bg-gradient-to-r from-primary to-accent shadow-lg flex items-center justify-center text-white hover:shadow-xl active:shadow-md hover:scale-110 active:scale-95 transition-all duration-200">
+                        <i data-feather="user-plus" class="h-7 w-7"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-1 text-primary-dark">{% trans "Join" %}</span>
                 </a>
-                <a href="{% url 'role_selection' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-3">
-                    <i data-feather="user-plus" class="h-4 w-4"></i>
-                    <span class="text-xs mt-1">{% trans "Join" %}</span>
+                
+                <a href="{% url 'login' %}" class="nav-item flex flex-col items-center justify-center text-gray-600 hover:text-primary active:scale-95 transition-all duration-150 px-2 py-1 rounded-md">
+                    <div class="icon-container flex items-center justify-center h-10 w-10 relative">
+                        <i data-feather="log-in" class="h-5 w-5"></i>
+                    </div>
+                    <span class="text-xs font-medium mt-0.5">{% trans "Login" %}</span>
                 </a>
             {% endif %}
         </div>

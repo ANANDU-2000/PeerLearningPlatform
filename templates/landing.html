@@ -265,17 +265,46 @@
 
 <!-- Popular Topics -->
 {% if popular_topics %}
-<section class="py-16 bg-white">
-    <div class="container mx-auto px-6">
-        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Popular Topics" %}</h2>
+<section class="py-10 bg-white">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 font-heading">{% trans "Popular Topics" %}</h2>
+            <a href="{% url 'session_list' %}" class="text-sm inline-flex items-center text-primary hover:text-primary-dark">
+                {% trans "Browse All" %}
+                <i data-feather="arrow-right" class="ml-1 h-4 w-4"></i>
+            </a>
+        </div>
         
-        <div class="flex flex-wrap gap-4 justify-center">
-            {% for topic, count in popular_topics %}
-                <a href="{% url 'session_list' %}?tag={{ topic }}" class="inline-block px-6 py-3 bg-blue-50 hover:bg-blue-100 text-blue-800 rounded-full transition-all transform hover:scale-105">
-                    <span class="font-medium">{{ topic|title }}</span>
-                    <span class="ml-2 bg-blue-200 text-blue-800 px-2 py-1 rounded-full text-xs">{{ count }}</span>
-                </a>
-            {% endfor %}
+        <div class="relative topics-carousel">
+            <div class="carousel-container overflow-x-auto hide-scrollbar pb-4">
+                <div class="carousel-track flex flex-wrap gap-2 sm:gap-3">
+                    {% for topic, count in popular_topics %}
+                        <a href="{% url 'session_list' %}?tag={{ topic }}" class="topic-pill flex-none px-4 py-1.5 bg-gray-100 hover:bg-primary-light text-gray-700 hover:text-primary rounded-full transition-all text-sm whitespace-nowrap">
+                            <span class="font-medium">{{ topic|title }}</span>
+                            <span class="ml-1.5 bg-white text-primary px-1.5 py-0.5 rounded-full text-xs">{{ count }}</span>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Category Quick Filter Buttons -->
+        <div class="mt-6 flex flex-wrap gap-2 justify-center">
+            <button class="category-filter px-3 py-1.5 bg-primary text-white rounded-md text-sm font-medium">
+                {% trans "All" %}
+            </button>
+            <button class="category-filter px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md text-sm font-medium">
+                {% trans "Programming" %}
+            </button>
+            <button class="category-filter px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md text-sm font-medium">
+                {% trans "Design" %}
+            </button>
+            <button class="category-filter px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md text-sm font-medium">
+                {% trans "Business" %}
+            </button>
+            <button class="category-filter px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-md text-sm font-medium">
+                {% trans "Data Science" %}
+            </button>
         </div>
     </div>
 </section>
@@ -284,231 +313,181 @@
     </div>
 </section>
 
-<!-- Featured Mentors -->
-<section class="py-20 bg-gray-50">
-    <div class="container mx-auto px-6">
-        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Meet Our Top Mentors" %}</h2>
+<!-- Top Mentors with Horizontal Scrolling -->
+<section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 font-heading">{% trans "Meet Our Top Mentors" %}</h2>
+            <a href="{% url 'session_list' %}?type=mentors" class="text-sm inline-flex items-center text-primary hover:text-primary-dark">
+                {% trans "View All" %}
+                <i data-feather="arrow-right" class="ml-1 h-4 w-4"></i>
+            </a>
+        </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {% if featured_mentors %}
-                {% for mentor in featured_mentors %}
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                        <div class="p-6">
-                            <div class="flex items-center mb-4">
-                                {% if mentor.user.profile_picture %}
-                                    <img src="{{ mentor.user.profile_picture.url }}" alt="{{ mentor.user.get_full_name }}" class="w-16 h-16 rounded-full object-cover mr-4">
-                                {% else %}
-                                    <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">
-                                        {{ mentor.user.first_name|first|upper }}
+        <div class="relative mentor-carousel">
+            <button class="absolute -left-2 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow p-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 hidden sm:block" id="mentor-prev-button">
+                <i data-feather="chevron-left" class="h-5 w-5 text-gray-600"></i>
+            </button>
+            
+            <div class="carousel-container overflow-x-auto hide-scrollbar pb-4">
+                <div class="carousel-track flex gap-3 transition-transform duration-300 ease-out snap-x">
+                    {% if featured_mentors %}
+                        {% for mentor in featured_mentors %}
+                            <div class="carousel-item flex-none w-64 sm:w-56 snap-start mentor-card">
+                                <div class="bg-white rounded-md shadow-sm overflow-hidden h-full border border-gray-100 hover:border-primary hover:shadow-md transition-all">
+                                    <div class="p-4">
+                                        <div class="flex flex-col items-center text-center mb-3">
+                                            {% if mentor.user.profile_picture %}
+                                                <img src="{{ mentor.user.profile_picture.url }}" alt="{{ mentor.user.get_full_name }}" class="w-20 h-20 rounded-full object-cover mb-2">
+                                            {% else %}
+                                                <div class="w-20 h-20 rounded-full bg-primary text-white flex items-center justify-center font-bold text-xl mb-2">
+                                                    {{ mentor.user.first_name|first|upper }}
+                                                </div>
+                                            {% endif %}
+                                            <h3 class="text-base font-bold text-gray-800">{{ mentor.user.get_full_name }}</h3>
+                                            <p class="text-xs text-primary">{{ mentor.expertise|truncatechars:30 }}</p>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-center mb-2">
+                                            <div class="flex text-yellow-400">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= mentor.average_rating %}
+                                                        <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                                    {% else %}
+                                                        <i data-feather="star" class="h-3 w-3"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <span class="ml-1 text-xs text-gray-500">{{ mentor.total_reviews }}</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-center space-x-1 mb-3">
+                                            {% with session_count=mentor.session_set.count %}
+                                                <span class="px-2 py-0.5 bg-primary-light text-primary rounded-full text-xs">{{ session_count }} {% trans "Sessions" %}</span>
+                                            {% endwith %}
+                                        </div>
+                                        
+                                        <a href="{{ mentor.get_absolute_url }}" class="block w-full bg-primary hover:bg-primary-dark text-white text-center py-1.5 rounded text-sm font-medium">
+                                            {% trans "View Profile" %}
+                                        </a>
                                     </div>
-                                {% endif %}
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-800">{{ mentor.user.get_full_name }}</h3>
-                                    <p class="text-blue-600">{{ mentor.expertise }}</p>
                                 </div>
                             </div>
-                            
-                            <div class="flex items-center mb-3">
-                                <div class="flex text-yellow-400">
-                                    {% for i in "12345" %}
-                                        {% if forloop.counter <= mentor.average_rating %}
-                                            <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                        {% else %}
-                                            <i data-feather="star" class="h-4 w-4"></i>
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                                <span class="ml-2 text-sm text-gray-600">{{ mentor.total_reviews }} {% trans "reviews" %}</span>
-                            </div>
-                            
-                            <p class="text-gray-600 mb-4 line-clamp-3">{{ mentor.bio }}</p>
-                            
-                            <div class="mt-4">
-                                <a href="{{ mentor.get_absolute_url }}" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
-                                    {% trans "View Profile" %}
-                                </a>
-                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <!-- Empty state if no mentors -->
+                        <div class="w-full text-center py-6">
+                            <p class="text-gray-500 text-sm">{% trans "No mentors available at the moment." %}</p>
                         </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <!-- Example Mentors (if no featured mentors in database) -->
-                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                    <div class="p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="w-16 h-16 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">A</div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-800">Ankit Patel</h3>
-                                <p class="text-blue-600">{% trans "Full Stack Developer" %}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center mb-3">
-                            <div class="flex text-yellow-400">
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                            </div>
-                            <span class="ml-2 text-sm text-gray-600">42 {% trans "reviews" %}</span>
-                        </div>
-                        
-                        <p class="text-gray-600 mb-4 line-clamp-3">{% trans "Senior developer with 8+ years of experience in React, Node.js, and Python. Previously worked at Google and Amazon." %}</p>
-                        
-                        <div class="mt-4">
-                            <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
-                                {% trans "View Profile" %}
-                            </a>
-                        </div>
-                    </div>
+                    {% endif %}
                 </div>
-                
-                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                    <div class="p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="w-16 h-16 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xl mr-4">M</div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-800">Meera Singh</h3>
-                                <p class="text-blue-600">{% trans "Data Scientist" %}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center mb-3">
-                            <div class="flex text-yellow-400">
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4"></i>
-                            </div>
-                            <span class="ml-2 text-sm text-gray-600">36 {% trans "reviews" %}</span>
-                        </div>
-                        
-                        <p class="text-gray-600 mb-4 line-clamp-3">{% trans "ML expert specialized in NLP and computer vision. PhD from Stanford University." %}</p>
-                        
-                        <div class="mt-4">
-                            <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
-                                {% trans "View Profile" %}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                    <div class="p-6">
-                        <div class="flex items-center mb-4">
-                            <div class="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl mr-4">R</div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-800">Raj Malhotra</h3>
-                                <p class="text-blue-600">{% trans "Product Designer" %}</p>
-                            </div>
-                        </div>
-                        
-                        <div class="flex items-center mb-3">
-                            <div class="flex text-yellow-400">
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                                <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                            </div>
-                            <span class="ml-2 text-sm text-gray-600">28 {% trans "reviews" %}</span>
-                        </div>
-                        
-                        <p class="text-gray-600 mb-4 line-clamp-3">{% trans "UI/UX designer with a passion for creating intuitive, accessible digital experiences. Works as Design Lead at Flipkart." %}</p>
-                        
-                        <div class="mt-4">
-                            <a href="#" class="btn-primary px-4 py-2 rounded-lg text-sm inline-block">
-                                {% trans "View Profile" %}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
+            </div>
+            
+            <button class="absolute -right-2 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow p-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 hidden sm:block" id="mentor-next-button">
+                <i data-feather="chevron-right" class="h-5 w-5 text-gray-600"></i>
+            </button>
         </div>
     </div>
 </section>
 
-<!-- Testimonials -->
-<section class="py-20 bg-white">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-16">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800">{% trans "What Our Learners Say" %}</h2>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">{% trans "Hear from people who have accelerated their learning journey with PeerLearn" %}</p>
+<!-- Testimonials with Horizontal Scroll -->
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 font-heading">{% trans "What Our Learners Say" %}</h2>
+            <div class="flex space-x-1">
+                <button class="testimonial-prev p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full focus:outline-none">
+                    <i data-feather="chevron-left" class="h-4 w-4 text-gray-600"></i>
+                </button>
+                <button class="testimonial-next p-1.5 bg-gray-100 hover:bg-gray-200 rounded-full focus:outline-none">
+                    <i data-feather="chevron-right" class="h-4 w-4 text-gray-600"></i>
+                </button>
+            </div>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <!-- Testimonial 1 -->
-            <div class="glass-card p-6 rounded-xl">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-xl mr-4">S</div>
-                    <div>
-                        <h3 class="font-bold text-gray-800">Sanjay Gupta</h3>
-                        <p class="text-gray-600 text-sm">{% trans "Software Engineer" %}</p>
+        <div class="relative testimonial-carousel">
+            <div class="carousel-container overflow-x-auto hide-scrollbar pb-4">
+                <div class="testimonial-track flex gap-4 snap-x">
+                    <!-- Testimonial 1 -->
+                    <div class="testimonial-item flex-none w-full md:w-1/2 lg:w-1/3 snap-start">
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm mr-3">S</div>
+                                <div>
+                                    <h3 class="font-medium text-gray-800 text-sm">Sanjay Gupta</h3>
+                                    <p class="text-gray-500 text-xs">{% trans "Software Engineer" %}</p>
+                                </div>
+                                <div class="ml-auto flex text-yellow-400">
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">{% trans "The 1-on-1 mentoring sessions were game-changing for my career. My mentor provided practical insights that no online course could offer. Within 3 months, I managed to land my dream job." %}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Testimonial 2 -->
+                    <div class="testimonial-item flex-none w-full md:w-1/2 lg:w-1/3 snap-start">
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-sm mr-3">N</div>
+                                <div>
+                                    <h3 class="font-medium text-gray-800 text-sm">Neha Sharma</h3>
+                                    <p class="text-gray-500 text-xs">{% trans "UX Designer" %}</p>
+                                </div>
+                                <div class="ml-auto flex text-yellow-400">
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3"></i>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">{% trans "The whiteboard feature was amazing for collaborative design reviews. My mentor helped me improve my portfolio significantly, and I received great feedback in my interviews." %}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Testimonial 3 -->
+                    <div class="testimonial-item flex-none w-full md:w-1/2 lg:w-1/3 snap-start">
+                        <div class="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                            <div class="flex items-center mb-3">
+                                <div class="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-sm mr-3">V</div>
+                                <div>
+                                    <h3 class="font-medium text-gray-800 text-sm">Vikram Desai</h3>
+                                    <p class="text-gray-500 text-xs">{% trans "Data Analyst" %}</p>
+                                </div>
+                                <div class="ml-auto flex text-yellow-400">
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                    <i data-feather="star" class="h-3 w-3 fill-current"></i>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm leading-relaxed">{% trans "I was struggling with complex SQL queries and data visualization. After just 5 sessions with my mentor, I gained the confidence to tackle challenging projects at work. Worth every rupee!" %}</p>
+                        </div>
                     </div>
                 </div>
-                <div class="flex text-yellow-400 mb-3">
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                </div>
-                <p class="text-gray-700">{% trans "The 1-on-1 mentoring sessions were game-changing for my career. My mentor provided practical insights that no online course could offer. Within 3 months, I managed to land my dream job." %}</p>
-            </div>
-            
-            <!-- Testimonial 2 -->
-            <div class="glass-card p-6 rounded-xl">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xl mr-4">N</div>
-                    <div>
-                        <h3 class="font-bold text-gray-800">Neha Sharma</h3>
-                        <p class="text-gray-600 text-sm">{% trans "UX Designer" %}</p>
-                    </div>
-                </div>
-                <div class="flex text-yellow-400 mb-3">
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4"></i>
-                </div>
-                <p class="text-gray-700">{% trans "The whiteboard feature was amazing for collaborative design reviews. My mentor helped me improve my portfolio significantly, and I received great feedback in my interviews." %}</p>
-            </div>
-            
-            <!-- Testimonial 3 -->
-            <div class="glass-card p-6 rounded-xl">
-                <div class="flex items-center mb-4">
-                    <div class="w-12 h-12 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-xl mr-4">V</div>
-                    <div>
-                        <h3 class="font-bold text-gray-800">Vikram Desai</h3>
-                        <p class="text-gray-600 text-sm">{% trans "Data Analyst" %}</p>
-                    </div>
-                </div>
-                <div class="flex text-yellow-400 mb-3">
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                    <i data-feather="star" class="h-4 w-4 fill-current"></i>
-                </div>
-                <p class="text-gray-700">{% trans "I was struggling with complex SQL queries and data visualization. After just 5 sessions with my mentor, I gained the confidence to tackle challenging projects at work. Worth every rupee!" %}</p>
             </div>
         </div>
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="py-20 bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
-    <div class="container mx-auto px-6 text-center">
-        <h2 class="text-3xl md:text-4xl font-bold mb-6">{% trans "Ready to Accelerate Your Learning?" %}</h2>
-        <p class="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">{% trans "Join thousands of learners who are achieving their goals faster with personalized mentorship." %}</p>
-        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-6">
-            <a href="{% url 'session_list' %}" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold transform transition hover:scale-105">
+<!-- CTA Section - More Compact -->
+<section class="py-12 bg-gradient-to-r from-primary to-primary-dark text-white">
+    <div class="container mx-auto px-4 sm:px-6 text-center">
+        <h2 class="text-2xl md:text-3xl font-bold mb-4 font-heading">{% trans "Ready to Accelerate Your Learning?" %}</h2>
+        <p class="text-base text-white/80 mb-6 max-w-2xl mx-auto">{% trans "Join thousands of learners who are achieving their goals faster with personalized mentorship." %}</p>
+        <div class="flex flex-col sm:flex-row justify-center items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <a href="{% url 'session_list' %}" class="bg-white text-primary px-6 py-2.5 rounded-md font-medium text-sm md:text-base inline-flex items-center justify-center">
+                <i data-feather="search" class="h-4 w-4 mr-2"></i>
                 {% trans "Find a Mentor" %}
             </a>
-            <a href="{% url 'role_selection' %}" class="border-2 border-white text-white px-8 py-4 rounded-lg font-bold transform transition hover:scale-105">
+            <a href="{% url 'role_selection' %}" class="border border-white text-white px-6 py-2.5 rounded-md font-medium text-sm md:text-base inline-flex items-center justify-center">
+                <i data-feather="users" class="h-4 w-4 mr-2"></i>
                 {% trans "Become a Mentor" %}
             </a>
         </div>
@@ -518,50 +497,106 @@
 
 {% block extra_js %}
 <script>
-    // Parallax effect for background elements
     document.addEventListener('DOMContentLoaded', function() {
-        const parallaxElements = document.querySelectorAll('.parallax-bg');
-        
-        window.addEventListener('mousemove', function(e) {
-            const mouseX = e.clientX / window.innerWidth;
-            const mouseY = e.clientY / window.innerHeight;
+        // Initialize all carousel functionality
+        function initCarousel(containerSelector, prevSelector, nextSelector) {
+            const container = document.querySelector(containerSelector);
+            if (!container) return;
             
-            parallaxElements.forEach(element => {
-                const speed = parseFloat(element.getAttribute('data-speed'));
-                const x = (mouseX - 0.5) * speed * 100;
-                const y = (mouseY - 0.5) * speed * 100;
+            const track = container.querySelector('.carousel-track');
+            const items = container.querySelectorAll('.carousel-item, .mentor-card, .live-session-card, .testimonial-item');
+            const prevBtn = container.querySelector(prevSelector) || document.querySelector(prevSelector);
+            const nextBtn = container.querySelector(nextSelector) || document.querySelector(nextSelector);
+            
+            if (!track || !items.length) return;
+            
+            let currentIndex = 0;
+            // Responsive item width calculation
+            const computeItemWidth = () => {
+                const firstItem = items[0];
+                const itemStyle = window.getComputedStyle(firstItem);
+                const marginRight = parseInt(itemStyle.marginRight) || 0;
+                const marginLeft = parseInt(itemStyle.marginLeft) || 0;
+                return firstItem.offsetWidth + marginRight + marginLeft;
+            };
+            
+            let itemWidth = computeItemWidth();
+            
+            // Responsive visible items calculation
+            const computeVisibleItems = () => {
+                return Math.max(1, Math.floor(container.offsetWidth / itemWidth));
+            };
+            
+            let visibleItems = computeVisibleItems();
+            let maxIndex = Math.max(0, items.length - visibleItems);
+            
+            function updateCarousel() {
+                track.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
                 
-                element.style.transform = `translate(${x}px, ${y}px)`;
+                // Update button states (optional)
+                if (prevBtn) prevBtn.classList.toggle('opacity-50', currentIndex <= 0);
+                if (nextBtn) nextBtn.classList.toggle('opacity-50', currentIndex >= maxIndex);
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                itemWidth = computeItemWidth();
+                visibleItems = computeVisibleItems();
+                maxIndex = Math.max(0, items.length - visibleItems);
+                
+                // Reset position if needed
+                if (currentIndex > maxIndex) {
+                    currentIndex = maxIndex;
+                }
+                updateCarousel();
             });
-        });
-        
-        // Carousel Logic
-        const track = document.querySelector('.carousel-track');
-        const items = document.querySelectorAll('.carousel-item');
-        const prevBtn = document.getElementById('prev-button');
-        const nextBtn = document.getElementById('next-button');
-        
-        let currentIndex = 0;
-        const itemWidth = 288; // width + margin
-        const visibleItems = Math.floor(track.clientWidth / itemWidth);
-        const maxIndex = items.length - visibleItems;
-        
-        function updateCarousel() {
-            track.style.transform = `translateX(-${currentIndex * itemWidth}px)`;
+            
+            // Add click handlers
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    if (currentIndex > 0) {
+                        currentIndex--;
+                        updateCarousel();
+                    }
+                });
+            }
+            
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (currentIndex < maxIndex) {
+                        currentIndex++;
+                        updateCarousel();
+                    }
+                });
+            }
+            
+            // Initial update
+            updateCarousel();
         }
         
-        prevBtn.addEventListener('click', () => {
-            if (currentIndex > 0) {
-                currentIndex--;
-                updateCarousel();
-            }
-        });
+        // Initialize all carousels
+        initCarousel('.session-carousel', '#prev-button', '#next-button');
+        initCarousel('.live-session-carousel', null, null);
+        initCarousel('.mentor-carousel', '#mentor-prev-button', '#mentor-next-button');
+        initCarousel('.testimonial-carousel', '.testimonial-prev', '.testimonial-next');
         
-        nextBtn.addEventListener('click', () => {
-            if (currentIndex < maxIndex) {
-                currentIndex++;
-                updateCarousel();
-            }
+        // Initialize category filter buttons
+        const categoryButtons = document.querySelectorAll('.category-filter');
+        categoryButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                categoryButtons.forEach(btn => {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                });
+                
+                // Add active class to clicked button
+                button.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+                button.classList.add('bg-primary', 'text-white');
+                
+                // This is where you'd filter content based on the selected category
+                // For now, we're just styling the buttons
+            });
         });
         
         // Update feather icons after DOM modification
@@ -584,6 +619,23 @@
         -webkit-line-clamp: 3;
         -webkit-box-orient: vertical;
         overflow: hidden;
+    }
+    
+    /* Smooth scrolling for carousels */
+    .carousel-track {
+        scroll-behavior: smooth;
+    }
+    
+    /* Mobile scrolling improvements */
+    @media (max-width: 640px) {
+        .carousel-container {
+            scroll-snap-type: x mandatory;
+            padding-bottom: 1rem;
+        }
+        
+        .carousel-item, .mentor-card, .testimonial-item, .live-session-card {
+            scroll-snap-align: start;
+        }
     }
 </style>
 {% endblock %}

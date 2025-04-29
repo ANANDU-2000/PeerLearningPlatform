@@ -489,6 +489,54 @@
         </div>
     </footer>
     
+    <!-- Hidden Admin Buttons -->
+    <div class="fixed bottom-4 right-4 flex flex-col space-y-2">
+        {% if user.is_superuser or user.role == 'admin' %}
+            <a href="{% url 'admin:index' %}" class="bg-gray-800 text-white p-2 rounded-full shadow-lg hover:bg-gray-700 transition-colors" title="Django Admin">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </a>
+            <a href="{% url 'admin_dashboard' %}" class="bg-indigo-700 text-white p-2 rounded-full shadow-lg hover:bg-indigo-600 transition-colors" title="Admin Panel">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+            </a>
+        {% else %}
+            <!-- Secret admin access button - clicking the copyright year 5 times reveals admin login -->
+            <div id="admin-secret" class="hidden bg-red-600 text-white p-2 rounded-full shadow-lg hover:bg-red-500 transition-colors">
+                <a href="{% url 'secure_admin_login' %}" title="Admin Access">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- JavaScript for Secret Admin Access -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Secret admin access - reveals after clicking copyright year 5 times
+            const yearElement = document.querySelector('footer p.text-gray-400.text-sm');
+            const adminSecret = document.getElementById('admin-secret');
+            
+            if (yearElement && adminSecret) {
+                let clickCount = 0;
+                
+                yearElement.addEventListener('click', function(e) {
+                    clickCount++;
+                    
+                    if (clickCount >= 5) {
+                        adminSecret.classList.remove('hidden');
+                        clickCount = 0; // Reset counter
+                    }
+                });
+            }
+        });
+    </script>
+    
     <!-- Notification Container -->
     <div id="notification-toast" class="fixed bottom-20 right-5 z-50 max-w-xs translate-x-full transition-transform duration-300 ease-in-out"></div>
     
@@ -679,18 +727,7 @@
     {% block extra_js %}{% endblock %}
     
     <!-- Admin Access Buttons (only for admins) -->
-    {% if user.is_authenticated and user.is_superuser %}
-    <div class="fixed right-4 bottom-4 z-50 flex flex-col space-y-2">
-        <a href="/django-admin/" class="flex items-center bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
-            <i data-feather="database" class="h-5 w-5 mr-2"></i>
-            {% trans "Django Admin" %}
-        </a>
-        <a href="/admin-panel/" class="flex items-center bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-105">
-            <i data-feather="shield" class="h-5 w-5 mr-2"></i>
-            {% trans "Admin Panel" %}
-        </a>
-    </div>
-    {% endif %}
+    <!-- Admin buttons are now placed right after the footer -->
 
     <!-- Load notification script -->
     <script src="{% static 'js/notifications.js' %}"></script>

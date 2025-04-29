@@ -92,7 +92,11 @@ class SessionUIController {
             onUserLeft: this.handleUserLeft.bind(this),
             onChatMessage: this.handleChatMessage.bind(this),
             onError: this.handleError.bind(this),
-            onConnectionStateChange: this.handleConnectionStateChange.bind(this)
+            onConnectionStateChange: this.handleConnectionStateChange.bind(this),
+            onSessionReconnect: this.handleSessionReconnect.bind(this),
+            onRejoinSuccess: this.handleRejoinSuccess.bind(this),
+            onRejoinFailure: this.handleRejoinFailure.bind(this),
+            debugMode: true
         });
         
         this.rtc.init();

@@ -130,7 +130,7 @@
                         <form action="{% url 'set_language' %}" method="post" id="language-form">
                             {% csrf_token %}
                             <input name="next" type="hidden" value="{{ request.path }}">
-                            <select name="language" onchange="this.form.submit()" class="appearance-none bg-transparent border border-gray-300 rounded-md pl-3 pr-7 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                            <select name="language" onchange="this.form.submit()" class="appearance-none form-select bg-transparent border border-gray-300 rounded-md pl-3 pr-7 py-1 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-30 text-sm">
                                 {% get_current_language as CURRENT_LANGUAGE %}
                                 {% get_available_languages as LANGUAGES %}
                                 {% for lang_code, lang_name in LANGUAGES %}
@@ -149,46 +149,46 @@
                     <div class="ml-3 relative">
                         {% if user.is_authenticated %}
                             <div class="dropdown relative">
-                                <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors" aria-expanded="false" aria-haspopup="true">
+                                <button id="user-menu-button" class="flex items-center space-x-2 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-30 rounded-lg p-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors" aria-expanded="false" aria-haspopup="true">
                                     {% if user.profile_picture %}
                                         <img src="{{ user.profile_picture.url }}" alt="{{ user.get_full_name }}" class="h-8 w-8 rounded-full object-cover border border-gray-200">
                                     {% else %}
-                                        <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-sm">
+                                        <div class="h-8 w-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white font-bold shadow-sm">
                                             {{ user.first_name|first|upper }}
                                         </div>
                                     {% endif %}
                                     <span class="hidden md:block font-medium">{{ user.get_full_name }}</span>
                                     <i data-feather="chevron-down" class="h-4 w-4 transition-transform duration-200" id="user-menu-arrow"></i>
                                 </button>
-                                <div id="user-menu-dropdown" class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 transform origin-top-right transition-all duration-200 ease-in-out opacity-0 scale-95">
-                                    <a href="{{ user.get_dashboard_url }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <div id="user-menu-dropdown" class="dropdown-content hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl py-1 z-50 transform origin-top-right transition-all duration-200 ease-in-out opacity-0 scale-95 border border-gray-100">
+                                    <a href="{{ user.get_dashboard_url }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-light transition-colors">
                                         <i data-feather="grid" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Dashboard" %}
                                     </a>
-                                    <a href="{% url 'profile_settings' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{% url 'profile_settings' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-light transition-colors">
                                         <i data-feather="user" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Profile Settings" %}
                                     </a>
                                     {% if user.role == 'learner' %}
-                                        <a href="{% url 'cart' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <a href="{% url 'cart' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-light transition-colors">
                                             <i data-feather="shopping-cart" class="h-4 w-4 mr-2 text-gray-500"></i>
                                             {% trans "My Cart" %}
                                         </a>
                                     {% endif %}
                                     {% if user.role == 'mentor' %}
-                                        <a href="{% url 'withdrawal_request' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <a href="{% url 'withdrawal_request' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-light transition-colors">
                                             <i data-feather="dollar-sign" class="h-4 w-4 mr-2 text-gray-500"></i>
                                             {% trans "Withdraw Earnings" %}
                                         </a>
                                     {% endif %}
-                                    <a href="{% url 'transaction_history' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <a href="{% url 'transaction_history' %}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-primary-light transition-colors">
                                         <i data-feather="credit-card" class="h-4 w-4 mr-2 text-gray-500"></i>
                                         {% trans "Transaction History" %}
                                     </a>
                                     <div class="border-t border-gray-100 my-1"></div>
                                     <form method="post" action="{% url 'logout' %}" class="block">
                                         {% csrf_token %}
-                                        <button type="submit" class="flex items-center w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                        <button type="submit" class="flex items-center w-full text-left px-4 py-2 text-sm text-danger hover:bg-danger-light transition-colors">
                                             <i data-feather="log-out" class="h-4 w-4 mr-2"></i>
                                             {% trans "Sign out" %}
                                         </button>
@@ -197,10 +197,10 @@
                             </div>
                         {% else %}
                             <div class="space-x-2">
-                                <a href="{% url 'login' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200">
+                                <a href="{% url 'login' %}" class="btn btn-outline inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
                                     {% trans "Log in" %}
                                 </a>
-                                <a href="{% url 'role_selection' %}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                                <a href="{% url 'role_selection' %}" class="btn btn-primary inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white shadow-sm">
                                     {% trans "Sign up" %}
                                 </a>
                             </div>
@@ -208,9 +208,9 @@
                     </div>
 
                     <!-- Dark/Light Mode Toggle -->
-                    <button id="theme-toggle" class="ml-4 p-2 rounded-full hover:bg-gray-200 focus:outline-none">
-                        <i data-feather="moon" id="dark-icon" class="h-5 w-5"></i>
-                        <i data-feather="sun" id="light-icon" class="h-5 w-5 hidden"></i>
+                    <button id="theme-toggle" class="ml-4 p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-30 transition-colors">
+                        <i data-feather="moon" id="dark-icon" class="h-5 w-5 text-gray-600"></i>
+                        <i data-feather="sun" id="light-icon" class="h-5 w-5 text-accent hidden"></i>
                     </button>
                 </div>
             </div>
@@ -218,80 +218,80 @@
     </nav>
     
     <!-- Mobile Bottom Navigation -->
-    <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900">
+    <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900 border-t border-gray-200 shadow-lg">
         <div class="flex justify-around py-2">
             {% if user.is_authenticated %}
                 <!-- Dashboard as home for authenticated users -->
-                <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="grid" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Dashboard" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Dashboard" %}</span>
                 </a>
                 
                 <!-- Session link based on role -->
                 {% if user.role == 'mentor' %}
-                <a href="{% url 'mentor_sessions' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'mentor_sessions' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="calendar" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Sessions" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Sessions" %}</span>
                 </a>
                 {% else %}
-                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="search" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Find" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Find" %}</span>
                 </a>
                 {% endif %}
                 
                 <!-- Role-specific items -->
                 {% if user.role == 'learner' %}
-                    <a href="{% url 'cart' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <a href="{% url 'cart' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                         <i data-feather="shopping-cart" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1">{% trans "Cart" %}</span>
+                        <span class="text-xs mt-1 font-medium">{% trans "Cart" %}</span>
                     </a>
-                    <a href="{% url 'transaction_history' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <a href="{% url 'transaction_history' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                         <i data-feather="credit-card" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1">{% trans "Payments" %}</span>
+                        <span class="text-xs mt-1 font-medium">{% trans "Payments" %}</span>
                     </a>
                 {% elif user.role == 'mentor' %}
-                    <a href="{% url 'create_session' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <a href="{% url 'create_session' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                         <i data-feather="plus-circle" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1">{% trans "Create" %}</span>
+                        <span class="text-xs mt-1 font-medium">{% trans "Create" %}</span>
                     </a>
-                    <a href="{% url 'withdrawal_request' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                    <a href="{% url 'withdrawal_request' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                         <i data-feather="dollar-sign" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1">{% trans "Earnings" %}</span>
+                        <span class="text-xs mt-1 font-medium">{% trans "Earnings" %}</span>
                     </a>
                 {% endif %}
                 
                 <!-- Settings button -->
-                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="settings" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Settings" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Settings" %}</span>
                 </a>
                 
                 <!-- Direct logout button -->
-                <form method="post" action="{% url 'logout' %}" class="flex flex-col items-center text-gray-500 hover:text-red-500">
+                <form method="post" action="{% url 'logout' %}" class="flex flex-col items-center text-gray-600 hover:text-danger transition-colors">
                     {% csrf_token %}
                     <button type="submit" class="flex flex-col items-center focus:outline-none">
                         <i data-feather="log-out" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1">{% trans "Logout" %}</span>
+                        <span class="text-xs mt-1 font-medium">{% trans "Logout" %}</span>
                     </button>
                 </form>
             {% else %}
                 <!-- For non-authenticated users -->
-                <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="home" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Home" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Home" %}</span>
                 </a>
-                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="search" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Find" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Find" %}</span>
                 </a>
-                <a href="{% url 'login' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'login' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="log-in" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Login" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Login" %}</span>
                 </a>
-                <a href="{% url 'role_selection' %}" class="flex flex-col items-center text-gray-500 hover:text-blue-500">
+                <a href="{% url 'role_selection' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
                     <i data-feather="user-plus" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1">{% trans "Sign Up" %}</span>
+                    <span class="text-xs mt-1 font-medium">{% trans "Sign Up" %}</span>
                 </a>
             {% endif %}
         </div>
@@ -301,10 +301,23 @@
     {% if messages %}
         <div class="messages fixed top-5 right-5 z-50 max-w-md">
             {% for message in messages %}
-                <div class="alert px-4 py-3 rounded-lg shadow-lg mb-3 {% if message.tags == 'error' %}bg-red-500 text-white{% elif message.tags == 'success' %}bg-green-500 text-white{% elif message.tags == 'warning' %}bg-yellow-500 text-white{% else %}bg-blue-500 text-white{% endif %} flex items-center justify-between">
-                    <span>{{ message }}</span>
-                    <button class="close-alert ml-3 focus:outline-none">
-                        <i data-feather="x" class="h-4 w-4"></i>
+                <div class="alert rounded-lg shadow-xl mb-3 flex items-center justify-between overflow-hidden border {% if message.tags == 'error' %}alert-danger border-danger{% elif message.tags == 'success' %}alert-success border-success{% elif message.tags == 'warning' %}alert-warning border-warning{% else %}alert-primary border-primary{% endif %}">
+                    <div class="flex items-center p-4">
+                        <div class="flex-shrink-0 mr-3">
+                            {% if message.tags == 'error' %}
+                                <i data-feather="alert-circle" class="h-5 w-5 text-danger"></i>
+                            {% elif message.tags == 'success' %}
+                                <i data-feather="check-circle" class="h-5 w-5 text-success"></i>
+                            {% elif message.tags == 'warning' %}
+                                <i data-feather="alert-triangle" class="h-5 w-5 text-warning"></i>
+                            {% else %}
+                                <i data-feather="info" class="h-5 w-5 text-primary"></i>
+                            {% endif %}
+                        </div>
+                        <span class="font-medium">{{ message }}</span>
+                    </div>
+                    <button class="close-alert h-full px-4 focus:outline-none hover:bg-gray-50 transition-colors">
+                        <i data-feather="x" class="h-4 w-4 {% if message.tags == 'error' %}text-danger{% elif message.tags == 'success' %}text-success{% elif message.tags == 'warning' %}text-warning{% else %}text-primary{% endif %}"></i>
                     </button>
                 </div>
             {% endfor %}
@@ -320,21 +333,23 @@
         
         <!-- Welcome Message - Role-specific content with enhanced design and visibility -->
         {% if user.is_authenticated %}
-            <div class="welcome-message hidden fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg p-4 z-50 w-11/12 max-w-md border border-blue-100 transition-all duration-300 ease-in-out opacity-100" aria-live="polite" data-role="{{ user.role }}">
-                <button type="button" class="close-btn absolute top-3 right-3 text-gray-500 hover:text-gray-800 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full h-8 w-8 flex items-center justify-center cursor-pointer" aria-label="Close welcome message">
+            <div class="welcome-message hidden fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-xl p-5 z-50 w-11/12 max-w-md border border-gray-100 transition-all duration-300 ease-in-out opacity-100 glassmorphism" aria-live="polite" data-role="{{ user.role }}">
+                <button type="button" class="close-btn absolute top-3 right-3 text-gray-500 hover:text-gray-800 transition-colors bg-gray-100 hover:bg-gray-200 rounded-full h-8 w-8 flex items-center justify-center cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-30" aria-label="Close welcome message">
                     <span class="text-lg font-medium">×</span>
                 </button>
-                <div class="flex items-center mb-2">
-                    <i data-feather="info" class="h-5 w-5 text-blue-500 mr-2"></i>
+                <div class="flex items-center mb-3">
+                    <div class="bg-primary-light rounded-full p-2 mr-3">
+                        <i data-feather="info" class="h-5 w-5 text-primary"></i>
+                    </div>
                     {% if user.role == 'mentor' %}
-                        <h3 class="text-lg font-semibold text-gray-800">{% trans "Welcome, Mentor!" %}</h3>
+                        <h3 class="text-lg font-semibold font-heading text-gray-800">{% trans "Welcome, Mentor!" %}</h3>
                     {% elif user.role == 'learner' %}
-                        <h3 class="text-lg font-semibold text-gray-800">{% trans "Welcome, Learner!" %}</h3>
+                        <h3 class="text-lg font-semibold font-heading text-gray-800">{% trans "Welcome, Learner!" %}</h3>
                     {% else %}
-                        <h3 class="text-lg font-semibold text-gray-800">{% trans "Welcome to PeerLearn" %}</h3>
+                        <h3 class="text-lg font-semibold font-heading text-gray-800">{% trans "Welcome to PeerLearn" %}</h3>
                     {% endif %}
                 </div>
-                <div class="ml-7">
+                <div class="ml-10">
                     {% if user.role == 'mentor' %}
                         <p class="text-gray-600">{% trans "Your mentor dashboard is ready. Create and manage your learning sessions!" %}</p>
                     {% elif user.role == 'learner' %}

@@ -233,13 +233,28 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                     
                     # Extract client info if available for diagnostics
                     client_info = data.get('client_info', {})
+                    is_rejoining = client_info.get('is_rejoining', False)
+                    
                     if client_info:
                         print(f"User {self.user.id} joining session with diagnostics: {client_info}")
                     else:
                         print(f"User {self.user.id} ({user_data['user_name']}) joining session")
                     
-                    # No need to broadcast - this happens in the connect handler
-                    # Just acknowledge receipt
+                    # If user is rejoining, we need to notify others so they can reconnect
+                    if is_rejoining:
+                        print(f"User {self.user.id} is rejoining the session - notifying others")
+                        await self.channel_layer.group_send(
+                            self.room_group_name,
+                            {
+                                'type': 'user_rejoin',
+                                'user_id': str(self.user.id),
+                                'user_name': self.user.get_full_name(),
+                                'is_mentor': self.user.role == 'mentor',
+                                'timestamp': timezone.now().isoformat(),
+                            }
+                        )
+                    
+                    # Acknowledge receipt
                     await self.send(text_data=json.dumps({
                         'type': 'join_ack',
                         'message': 'Successfully joined session',
@@ -277,15 +292,61 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                     # Client is requesting current room state (after reconnection)
                     print(f"User {self.user.id} requesting room state (likely after reconnection)")
                     
-                    # Send a room state update to the requesting client
-                    # This is a simplified version - in a real implementation, you'd query
-                    # your database or in-memory state for active participants
-                    await self.send(text_data=json.dumps({
-                        'type': 'room_state',
-                        'message': 'Room state retrieved',
-                        'timestamp': timezone.now().isoformat(),
-                        # This would include active participants, current session status, etc.
-                    }))
+                    # Get all active participants in this session
+                    # First, get all channel names in this group
+                    active_participants = []
+                    
+                    try:
+                        # Collect information about active users in this session
+                        session = await self._get_session()
+                        if session:
+                            # Session details
+                            session_data = {
+                                'id': session.id,
+                                'title': session.title,
+                                'mentor_id': str(session.mentor.user.id) if session.mentor else None,
+                                'mentor_name': session.mentor.user.get_full_name() if session.mentor else None,
+                                'start_time': session.start_time.isoformat() if session.start_time else None,
+                                'end_time': session.end_time.isoformat() if session.end_time else None,
+                                'status': session.status
+                            }
+                            
+                            # Add mentor if present
+                            if session.mentor:
+                                active_participants.append({
+                                    'user_id': str(session.mentor.user.id),
+                                    'user_name': session.mentor.user.get_full_name(),
+                                    'is_mentor': True
+                                })
+                            
+                            # Get learners with confirmed bookings
+                            bookings = await self._get_session_bookings(session.id)
+                            for booking in bookings:
+                                try:
+                                    learner = booking.learner
+                                    active_participants.append({
+                                        'user_id': str(learner.user.id),
+                                        'user_name': learner.user.get_full_name(),
+                                        'is_mentor': False
+                                    })
+                                except Exception as be:
+                                    print(f"Error getting booking information: {str(be)}")
+                        
+                        # Send the complete room state
+                        await self.send(text_data=json.dumps({
+                            'type': 'room_state',
+                            'session': session_data if session else None,
+                            'participants': active_participants,
+                            'timestamp': timezone.now().isoformat(),
+                        }))
+                    except Exception as se:
+                        print(f"Error retrieving room state: {str(se)}")
+                        await self.send(text_data=json.dumps({
+                            'type': 'room_state',
+                            'error': "Could not retrieve room state",
+                            'participants': [],
+                            'timestamp': timezone.now().isoformat(),
+                        }))
                 
                 else:
                     print(f"Unknown WebSocket message type: {message_type} from user: {self.user.id}")
@@ -326,8 +387,29 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
             except Exception:
                 # If even sending the error fails, just log it
                 print(f"Failed to send error message to user {self.user.id}")
-                
-        # Debug logging should be added here if needed
+    
+    @database_sync_to_async
+    def _get_session(self):
+        """Get session details from database."""
+        try:
+            return Session.objects.select_related('mentor__user').get(id=self.session_id)
+        except Session.DoesNotExist:
+            return None
+        except Exception as e:
+            print(f"Error retrieving session: {str(e)}")
+            return None
+    
+    @database_sync_to_async
+    def _get_session_bookings(self, session_id):
+        """Get confirmed bookings for this session."""
+        try:
+            return list(Booking.objects.filter(
+                session_id=session_id, 
+                status='confirmed'
+            ).select_related('learner__user'))
+        except Exception as e:
+            print(f"Error retrieving bookings: {str(e)}")
+            return []
     
     async def webrtc_offer(self, event):
         """Send offer to WebSocket."""
@@ -382,6 +464,16 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
             'type': 'user_leave',
             'user_id': event['user_id'],
             'user_name': event['user_name'],
+            'timestamp': event['timestamp'],
+        }))
+    
+    async def user_rejoin(self, event):
+        """Send user rejoin notification to WebSocket."""
+        await self.send(text_data=json.dumps({
+            'type': 'user_rejoin',
+            'user_id': event['user_id'],
+            'user_name': event['user_name'],
+            'is_mentor': event['is_mentor'],
             'timestamp': event['timestamp'],
         }))
     

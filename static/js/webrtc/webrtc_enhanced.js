@@ -656,6 +656,28 @@ class PeerLearnRTC {
             case 'user_join':
                 this.handleUserJoin(data);
                 break;
+            case 'user_rejoin':
+                // Handle user rejoining separately - this indicates a user has reconnected
+                console.log("User rejoined:", data.user_name);
+                
+                // If we're the mentor and a learner is rejoining, we need to create a new connection to them
+                if (this.isMentor && data.user_id !== this.userId) {
+                    console.log("Mentor received rejoin notification from learner, initiating connection");
+                    setTimeout(() => {
+                        // Small delay to ensure both sides are ready
+                        this.createPeerConnection(data.user_id, data.user_name);
+                        this.createOffer(data.user_id);
+                    }, 1000);
+                }
+                
+                // Also update active participants list
+                this.activeParticipants[data.user_id] = {
+                    name: data.user_name,
+                    is_mentor: data.is_mentor,
+                    joined_at: data.timestamp,
+                    rejoined: true
+                };
+                break;
             case 'user_leave':
                 this.handleUserLeave(data);
                 break;

@@ -466,7 +466,7 @@ class SessionUIController {
     /**
      * Show error message with better user feedback
      */
-    showErrorMessage(message) {
+    showErrorMessage(message, showRefreshButton = false) {
         console.error("WebRTC error:", message);
         
         // Parse the error message to provide more user-friendly information
@@ -648,7 +648,7 @@ class SessionUIController {
         
         // For connection errors, also show a more subtle message in the video grid
         if (['error', 'ice', 'browser'].includes(errorType)) {
-            this.showInlineErrorMessage(userMessage);
+            this.showInlineErrorMessage(userMessage, showRefreshButton);
         }
         
         // For reconnection success, also add a system message in chat
@@ -662,7 +662,7 @@ class SessionUIController {
     /**
      * Show inline error message in the video grid
      */
-    showInlineErrorMessage(message) {
+    showInlineErrorMessage(message, showRefreshButton = true) {
         // Only proceed if we have a video grid
         if (!this.videoGrid) return;
         
@@ -673,6 +673,16 @@ class SessionUIController {
         // Create inline error message
         const inlineError = document.createElement('div');
         inlineError.className = 'inline-error-message p-4 m-2 bg-red-50 border border-red-200 text-red-800 rounded-lg';
+        
+        // Create HTML with conditional refresh button
+        const refreshButtonHTML = showRefreshButton ? `
+            <div class="mt-3 ml-7">
+                <button class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" onclick="location.reload()">
+                    Refresh Page
+                </button>
+            </div>
+        ` : '';
+        
         inlineError.innerHTML = `
             <div class="flex items-center mb-2">
                 <svg class="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
@@ -681,11 +691,7 @@ class SessionUIController {
                 <span class="font-medium">Connection Issue</span>
             </div>
             <p class="ml-7 text-sm">${message}</p>
-            <div class="mt-3 ml-7">
-                <button class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" onclick="location.reload()">
-                    Refresh Page
-                </button>
-            </div>
+            ${refreshButtonHTML}
         `;
         
         // Add to the video grid

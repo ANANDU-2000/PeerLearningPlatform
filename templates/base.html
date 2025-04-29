@@ -56,38 +56,38 @@
 </head>
 <body class="light-mode no-js">
     <!-- Top Navigation -->
-    <nav class="bg-white dark:bg-gray-900 shadow-md z-50 relative">
+    <nav class="bg-white shadow-md z-50 relative transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <!-- Logo -->
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="{% url 'landing_page' %}" class="font-bold text-xl text-blue-600">
-                            <span class="text-primary">Peer</span><span class="text-secondary">Learn</span>
+                        <a href="{% url 'landing_page' %}" class="font-bold text-xl flex items-center">
+                            <span class="text-primary font-heading">Peer</span><span class="text-accent font-heading">Learn</span>
                         </a>
                     </div>
                     
                     <!-- Main Navigation (Desktop) -->
-                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                    <div class="hidden sm:ml-8 sm:flex sm:space-x-6">
                         {% if user.is_authenticated %}
                             <!-- Show dashboard as home for logged in users -->
-                            <a href="{{ user.get_dashboard_url }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{{ user.get_dashboard_url }}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                 {% trans "Dashboard" %}
                             </a>
                         {% else %}
                             <!-- Show landing page as home for non-logged in users -->
-                            <a href="{% url 'landing_page' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{% url 'landing_page' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                 {% trans "Home" %}
                             </a>
                         {% endif %}
                         
                         <!-- Navigation items based on user role -->
                         {% if user.is_authenticated and user.role == 'mentor' %}
-                            <a href="{% url 'mentor_sessions' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{% url 'mentor_sessions' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                 {% trans "My Sessions" %}
                             </a>
                         {% else %}
-                            <a href="{% url 'session_list' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            <a href="{% url 'session_list' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                 {% trans "Find Sessions" %}
                             </a>
                         {% endif %}
@@ -95,14 +95,14 @@
                         <!-- Role-specific navigation items -->
                         {% if user.is_authenticated %}
                             {% if user.role == 'mentor' %}
-                                <a href="{% url 'create_session' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                <a href="{% url 'create_session' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                     {% trans "Create Session" %}
                                 </a>
-                                <a href="{% url 'withdrawal_request' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                <a href="{% url 'withdrawal_request' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                     {% trans "Earnings" %}
                                 </a>
                             {% elif user.role == 'learner' %}
-                                <a href="{% url 'cart' %}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                <a href="{% url 'cart' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                                     {% trans "My Cart" %}
                                 </a>
                             {% endif %}
@@ -115,12 +115,12 @@
                     <!-- Create Live Session Button (For Mentors) -->
                     {% if user.is_authenticated and user.role == 'mentor' %}
                     <div class="relative mr-4">
-                        <a href="{% url 'create_session' %}" class="create-session-btn inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-full h-9 w-9 transition-all duration-200 transform hover:scale-110" title="{% trans 'Create Live Session' %}">
+                        <a href="{% url 'create_session' %}" class="create-session-btn inline-flex items-center justify-center bg-primary hover:bg-primary-dark text-white rounded-full h-9 w-9 transition-all duration-200 transform hover:scale-110 shadow-sm" title="{% trans 'Create Live Session' %}">
                             <i data-feather="plus" class="h-5 w-5"></i>
                         </a>
-                        <div class="create-session-tooltip absolute hidden bg-blue-800 text-white text-xs rounded py-1 px-2 right-0 top-full mt-1 whitespace-nowrap z-10">
+                        <div class="create-session-tooltip absolute hidden bg-primary-dark text-white text-xs rounded-md py-1.5 px-3 right-0 top-full mt-1.5 whitespace-nowrap z-10 shadow-md">
                             {% trans "Create Live Session" %}
-                            <div class="tooltip-arrow absolute -top-1 right-3 w-2 h-2 bg-blue-800 transform rotate-45"></div>
+                            <div class="tooltip-arrow absolute -top-1 right-3.5 w-2 h-2 bg-primary-dark transform rotate-45"></div>
                         </div>
                     </div>
                     {% endif %}
@@ -312,7 +312,7 @@
     {% endif %}
     
     <!-- Main Content -->
-    <main class="pb-16 sm:pb-0">
+    <div class="pb-16 sm:pb-0">
         <!-- Main Content with Page Transitions -->
         <main id="page-content" class="page-transition">
             {% block content %}{% endblock %}
@@ -345,7 +345,7 @@
                 </div>
             </div>
         {% endif %}
-    </main>
+    </div>
     
     <!-- Footer -->
     <footer class="bg-gray-800 text-white py-10">
@@ -454,6 +454,9 @@
     
     <!-- Notification Container -->
     <div id="notification-toast" class="fixed bottom-20 right-5 z-50 max-w-xs translate-x-full transition-transform duration-300 ease-in-out"></div>
+    
+    <!-- Page Transitions -->
+    <script src="{% static 'js/page-transitions.js' %}"></script>
     
     <!-- Core JavaScript -->
     <script>

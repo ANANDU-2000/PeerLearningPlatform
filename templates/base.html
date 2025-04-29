@@ -28,7 +28,7 @@
     <script src="{% static 'js/page-transitions.js' %}"></script>
     <script src="{% static 'js/notifications.js' %}"></script>
     
-    <!-- Prevent Flash of Unstyled Content -->
+    <!-- Prevent Flash of Unstyled Content and Mobile Nav Styles -->
     <style>
         .no-js {
             visibility: hidden;
@@ -39,6 +39,18 @@
             visibility: visible;
             opacity: 1;
             transition: opacity 0.3s ease;
+        }
+        
+        /* Mobile navigation special styling */
+        .mobile-bottom-nav {
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            height: 4.5rem; /* Increase height for better spacing with floating button */
+        }
+        
+        @media (max-width: 640px) {
+            .pb-16 {
+                padding-bottom: 5rem; /* Increase padding to account for taller nav */
+            }
         }
     </style>
     
@@ -59,6 +71,13 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body class="light-mode no-js">
+    <!-- User data for JavaScript -->
+    {% if user.is_authenticated %}
+    <div id="user-data" data-user='{"id": "{{ user.id }}", "role": "{{ user.role }}"}' class="hidden"></div>
+    <meta name="user-id" content="{{ user.id }}">
+    <meta name="user-role" content="{{ user.role }}">
+    {% endif %}
+    
     <!-- Top Navigation -->
     <nav class="bg-white shadow-md z-50 relative transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -206,7 +225,7 @@
     
     <!-- Mobile Bottom Navigation - More compact and cleaner -->
     <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900 border-t border-gray-200 shadow-lg">
-        <div class="flex justify-around py-2">
+        <div class="flex justify-around items-center py-2 relative">
             {% if user.is_authenticated %}
                 <!-- Dashboard as home for authenticated users -->
                 <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
@@ -219,6 +238,14 @@
                 <a href="{% url 'mentor_sessions' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
                     <i data-feather="calendar" class="h-4 w-4"></i>
                     <span class="text-xs mt-1">{% trans "Sessions" %}</span>
+                </a>
+                
+                <!-- Create Session Button (Center, Elevated) -->
+                <a href="{% url 'create_session' %}" class="absolute top-0 transform -translate-y-1/2 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-r from-primary to-primary-dark shadow-lg flex items-center justify-center text-white hover:scale-110 transition-transform duration-200">
+                        <i data-feather="plus" class="h-6 w-6"></i>
+                    </div>
+                    <span class="text-xs mt-1 text-gray-600 font-medium">{% trans "Create" %}</span>
                 </a>
                 {% else %}
                 <a href="{% url 'session_list' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">

@@ -1,299 +1,380 @@
 /**
- * PeerLearn Notifications System
- * 
- * Provides real-time notifications and alerts for user activities.
- * Supports different notification types with customizable behavior.
+ * PeerLearn Notification System
+ * Real-time notifications using WebSockets
  */
 
-// Notification display time in milliseconds
-const NOTIFICATION_DISPLAY_TIME = 5000;
-
-// Maximum number of notifications to show at once
-const MAX_NOTIFICATIONS = 5;
-
-// Store for active notifications
-let activeNotifications = [];
-
-// Initialize notification system
-function initNotifications() {
-    console.log("Notification system initialized");
-    
-    // Create notification container if it doesn't exist
-    createNotificationContainer();
-    
-    // Setup WebSocket connections for real-time notifications
-    setupNotificationSockets();
+// Define EDUCATIONAL_DOMAINS if it doesn't exist
+if (typeof EDUCATIONAL_DOMAINS === 'undefined') {
+    // List of common education domains for smart suggestions
+    const EDUCATIONAL_DOMAINS = [
+        'edu', 'ac.uk', 'edu.au', 'ac.in', 'edu.sg', 'ac.jp',
+        'edu.cn', 'ac.za', 'edu.mx', 'edu.br', 'edu.ar',
+        'ac.nz', 'edu.hk', 'edu.tw', 'ac.kr', 'school'
+    ];
 }
 
-/**
- * Creates the notification container in the DOM
- */
-function createNotificationContainer() {
-    // Check if container already exists
-    if (document.getElementById('notification-container')) {
-        return;
-    }
+// Wait for document to be fully loaded
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('Notification system initialized');
     
-    // Create container
-    const container = document.createElement('div');
-    container.id = 'notification-container';
-    container.className = 'fixed top-20 right-5 z-50 flex flex-col gap-3 items-end max-w-xs w-full';
-    document.body.appendChild(container);
-}
-
-/**
- * Setup WebSocket connection for real-time notifications
- */
-function setupNotificationSockets() {
-    // Check if user is authenticated by looking for user data
-    const userElement = document.getElementById('user-data');
-    if (!userElement) {
-        return; // User not logged in
-    }
-    
-    try {
-        // Get user ID from data attribute
-        const userId = userElement.dataset.userId;
+    // Store notification configuration
+    const NotificationSystem = {
+        // Connection settings
+        socket: null,
+        connected: false,
+        reconnectAttempts: 0,
+        maxReconnectAttempts: 5,
+        reconnectDelay: 3000,
         
-        if (!userId) {
-            return; // No user ID available
-        }
+        // UI Elements
+        notificationsContainer: null,
+        notificationCount: 0,
         
-        // Setup WebSocket connection
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/notifications/${userId}/`;
-        
-        const socket = new WebSocket(wsUrl);
-        
-        socket.onopen = function(e) {
-            console.log('Notification socket connected');
-        };
-        
-        socket.onmessage = function(e) {
-            const data = JSON.parse(e.data);
+        // Initialize the notification system
+        init() {
+            // Create notifications container if it doesn't exist
+            if (!document.querySelector('.notifications-container')) {
+                this.createNotificationsContainer();
+            }
             
-            if (data.type === 'notification') {
-                // Display the notification
-                showNotification(data.message, data.notification_type, data.url);
-                
-                // Play sound if applicable
-                if (data.play_sound) {
-                    playNotificationSound(data.notification_type);
+            // Get current user info if available
+            const currentUser = this.getCurrentUser();
+            
+            // Only connect if user is authenticated
+            if (currentUser && currentUser.id) {
+                this.connectWebSocket(currentUser);
+            }
+            
+            // Setup event handlers for existing notifications
+            this.setupNotificationEvents();
+        },
+        
+        // Get current user info from the document
+        getCurrentUser() {
+            // Check if we have user data embedded in the page
+            const userDataEl = document.getElementById('user-data');
+            if (userDataEl) {
+                try {
+                    return JSON.parse(userDataEl.getAttribute('data-user'));
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
                 }
             }
-        };
-        
-        socket.onclose = function(e) {
-            console.log('Notification socket closed. Reconnecting in 5s...');
-            // Try to reconnect after 5 seconds
-            setTimeout(setupNotificationSockets, 5000);
-        };
-        
-        socket.onerror = function(error) {
-            console.error('Notification socket error:', error);
-        };
-        
-    } catch (error) {
-        console.error('Error setting up notification socket:', error);
-    }
-}
-
-/**
- * Show a notification to the user
- * 
- * @param {string} message - The notification message
- * @param {string} type - Notification type (success, error, info, warning)
- * @param {string|null} url - Optional URL to navigate to when clicked
- */
-function showNotification(message, type = 'info', url = null) {
-    // Get container
-    const container = document.getElementById('notification-container');
-    if (!container) {
-        createNotificationContainer();
-    }
-    
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = 'notification transform transition-all duration-300 translate-x-full';
-    
-    // Add appropriate styles based on type
-    let iconName, bgColor, textColor, borderColor;
-    
-    switch (type) {
-        case 'success':
-            iconName = 'check-circle';
-            bgColor = 'bg-green-50';
-            textColor = 'text-green-800';
-            borderColor = 'border-green-100';
-            break;
-        case 'error':
-            iconName = 'alert-circle';
-            bgColor = 'bg-red-50';
-            textColor = 'text-red-800';
-            borderColor = 'border-red-100';
-            break;
-        case 'warning':
-            iconName = 'alert-triangle';
-            bgColor = 'bg-yellow-50';
-            textColor = 'text-yellow-800'; 
-            borderColor = 'border-yellow-100';
-            break;
-        case 'info':
-        default:
-            iconName = 'info';
-            bgColor = 'bg-blue-50';
-            textColor = 'text-blue-800';
-            borderColor = 'border-blue-100';
-            break;
-    }
-    
-    // Set notification styles
-    notification.className += ` ${bgColor} ${textColor} rounded-lg p-4 shadow-lg border ${borderColor} w-full flex items-start`;
-    
-    // Add click behavior if URL provided
-    if (url) {
-        notification.classList.add('cursor-pointer', 'hover:shadow-md');
-        notification.addEventListener('click', function() {
-            window.location.href = url;
-        });
-    }
-    
-    // Create content
-    notification.innerHTML = `
-        <div class="flex-shrink-0 mr-3">
-            <i data-feather="${iconName}" class="h-5 w-5"></i>
-        </div>
-        <div class="flex-1">
-            <p class="text-sm font-medium">${message}</p>
-        </div>
-        <button class="ml-4 flex-shrink-0 rounded-full p-1 hover:bg-white hover:bg-opacity-25 focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="sr-only">Dismiss</span>
-            <i data-feather="x" class="h-4 w-4"></i>
-        </button>
-    `;
-    
-    // Attach to DOM and animate in
-    const notificationContainer = document.getElementById('notification-container');
-    notificationContainer.appendChild(notification);
-    
-    // Initialize Feather icons for the notification
-    if (typeof feather !== 'undefined') {
-        feather.replace(notification.querySelectorAll('[data-feather]'));
-    }
-    
-    // Track this notification
-    const notificationId = Date.now();
-    activeNotifications.push({
-        id: notificationId,
-        element: notification,
-        timeout: null
-    });
-    
-    // Limit number of notifications
-    enforceNotificationLimit();
-    
-    // Add closing functionality
-    const closeButton = notification.querySelector('button');
-    closeButton.addEventListener('click', function(e) {
-        e.stopPropagation(); // Prevent triggering URL navigation
-        removeNotification(notificationId);
-    });
-    
-    // Animate in
-    setTimeout(() => {
-        notification.classList.remove('translate-x-full');
-    }, 10);
-    
-    // Auto dismiss after timeout
-    const timeout = setTimeout(() => {
-        removeNotification(notificationId);
-    }, NOTIFICATION_DISPLAY_TIME);
-    
-    // Store timeout ID
-    activeNotifications.find(n => n.id === notificationId).timeout = timeout;
-    
-    return notificationId;
-}
-
-/**
- * Enforce the maximum number of notifications
- */
-function enforceNotificationLimit() {
-    if (activeNotifications.length <= MAX_NOTIFICATIONS) {
-        return;
-    }
-    
-    // Remove oldest notifications
-    const excessCount = activeNotifications.length - MAX_NOTIFICATIONS;
-    
-    for (let i = 0; i < excessCount; i++) {
-        const oldest = activeNotifications[0];
-        removeNotification(oldest.id);
-    }
-}
-
-/**
- * Remove a notification by ID
- */
-function removeNotification(id) {
-    const index = activeNotifications.findIndex(n => n.id === id);
-    
-    if (index !== -1) {
-        const notification = activeNotifications[index];
-        
-        // Clear timeout if exists
-        if (notification.timeout) {
-            clearTimeout(notification.timeout);
-        }
-        
-        // Animate out
-        notification.element.classList.add('translate-x-full');
-        
-        // Remove after animation
-        setTimeout(() => {
-            if (notification.element.parentNode) {
-                notification.element.parentNode.removeChild(notification.element);
+            
+            // Default to user info that might be in a meta tag
+            const userIdMeta = document.querySelector('meta[name="user-id"]');
+            const userRoleMeta = document.querySelector('meta[name="user-role"]');
+            
+            if (userIdMeta && userRoleMeta) {
+                return {
+                    id: userIdMeta.getAttribute('content'),
+                    role: userRoleMeta.getAttribute('content')
+                };
             }
-        }, 300);
+            
+            return null;
+        },
         
-        // Remove from tracking array
-        activeNotifications.splice(index, 1);
-    }
-}
-
-/**
- * Play notification sound based on type
- */
-function playNotificationSound(type) {
-    let soundUrl;
+        // Create the notifications container
+        createNotificationsContainer() {
+            const container = document.createElement('div');
+            container.className = 'notifications-container fixed top-5 right-5 z-[9999] max-w-md flex flex-col items-end';
+            document.body.appendChild(container);
+            this.notificationsContainer = container;
+        },
+        
+        // Connect to WebSocket server
+        connectWebSocket(user) {
+            // Determine WebSocket URI based on current protocol
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/notifications/${user.id}/`;
+            
+            try {
+                this.socket = new WebSocket(wsUrl);
+                
+                // Setup event handlers
+                this.socket.onopen = this.handleSocketOpen.bind(this);
+                this.socket.onmessage = this.handleSocketMessage.bind(this);
+                this.socket.onclose = this.handleSocketClose.bind(this);
+                this.socket.onerror = this.handleSocketError.bind(this);
+            } catch (error) {
+                console.error('WebSocket connection error:', error);
+            }
+        },
+        
+        // WebSocket event handlers
+        handleSocketOpen(event) {
+            console.log('WebSocket connection established');
+            this.connected = true;
+            this.reconnectAttempts = 0;
+        },
+        
+        handleSocketMessage(event) {
+            try {
+                const data = JSON.parse(event.data);
+                
+                // Handle different types of notifications
+                if (data.type === 'notification') {
+                    this.showNotification(data);
+                } else if (data.type === 'session_update') {
+                    this.handleSessionUpdate(data);
+                } else if (data.type === 'system_message') {
+                    this.showSystemMessage(data);
+                }
+            } catch (error) {
+                console.error('Error handling WebSocket message:', error);
+            }
+        },
+        
+        handleSocketClose(event) {
+            this.connected = false;
+            console.log('WebSocket connection closed');
+            
+            // Attempt to reconnect if not closed cleanly
+            if (event.code !== 1000) {
+                this.attemptReconnect();
+            }
+        },
+        
+        handleSocketError(error) {
+            console.error('WebSocket error:', error);
+            this.connected = false;
+        },
+        
+        // Reconnection logic
+        attemptReconnect() {
+            if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                this.reconnectAttempts++;
+                console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+                
+                setTimeout(() => {
+                    const currentUser = this.getCurrentUser();
+                    if (currentUser && currentUser.id) {
+                        this.connectWebSocket(currentUser);
+                    }
+                }, this.reconnectDelay);
+            } else {
+                console.log('Maximum reconnection attempts reached');
+            }
+        },
+        
+        // Display a notification
+        showNotification(data) {
+            const { title, message, type, icon, duration, actions } = data;
+            
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification shadow-lg rounded-lg overflow-hidden mt-4 flex transition-all transform-gpu duration-300 ease-out translate-x-full opacity-0 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700`;
+            notification.id = `notification-${Date.now()}`;
+            
+            // Add CSS class based on notification type
+            if (type) {
+                notification.classList.add(`notification-${type}`);
+                
+                // Add border based on type
+                if (type === 'success') {
+                    notification.classList.add('border-l-4', 'border-l-success');
+                } else if (type === 'error') {
+                    notification.classList.add('border-l-4', 'border-l-danger');
+                } else if (type === 'warning') {
+                    notification.classList.add('border-l-4', 'border-l-warning');
+                } else {
+                    notification.classList.add('border-l-4', 'border-l-primary');
+                }
+            }
+            
+            // Determine icon based on notification type
+            let iconName = icon || 'bell';
+            if (!icon) {
+                if (type === 'success') iconName = 'check-circle';
+                else if (type === 'error') iconName = 'alert-circle';
+                else if (type === 'warning') iconName = 'alert-triangle';
+                else if (type === 'info') iconName = 'info';
+            }
+            
+            // Create notification content
+            notification.innerHTML = `
+                <div class="flex flex-1 p-4">
+                    <div class="flex-shrink-0 mr-3">
+                        <i data-feather="${iconName}" class="h-5 w-5 ${this.getIconColorClass(type)}"></i>
+                    </div>
+                    <div class="flex-1">
+                        ${title ? `<h4 class="text-sm font-medium mb-1 text-gray-900 dark:text-gray-100">${title}</h4>` : ''}
+                        <p class="text-sm text-gray-700 dark:text-gray-300">${message}</p>
+                        ${actions ? this.createActionButtons(actions) : ''}
+                    </div>
+                </div>
+                <button class="close-notification p-2 flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <i data-feather="x" class="h-4 w-4 text-gray-500 dark:text-gray-400"></i>
+                </button>
+            `;
+            
+            // Add to container
+            this.notificationsContainer.appendChild(notification);
+            this.notificationCount++;
+            
+            // Initialize Feather icons in the notification
+            if (window.feather) {
+                feather.replace();
+            }
+            
+            // Add event listener to close button
+            const closeButton = notification.querySelector('.close-notification');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => {
+                    this.dismissNotification(notification);
+                });
+            }
+            
+            // Set auto-dismiss timer
+            const autoHideDuration = duration || 5000;
+            if (autoHideDuration > 0) {
+                setTimeout(() => {
+                    this.dismissNotification(notification);
+                }, autoHideDuration);
+            }
+            
+            // Animate in
+            requestAnimationFrame(() => {
+                notification.classList.remove('translate-x-full', 'opacity-0');
+                notification.classList.add('translate-x-0', 'opacity-100');
+            });
+        },
+        
+        // Return appropriate color class based on notification type
+        getIconColorClass(type) {
+            switch (type) {
+                case 'success': return 'text-success';
+                case 'error': return 'text-danger';
+                case 'warning': return 'text-warning';
+                case 'info': return 'text-primary';
+                default: return 'text-gray-500 dark:text-gray-400';
+            }
+        },
+        
+        // Create action buttons for a notification
+        createActionButtons(actions) {
+            if (!actions || !actions.length) return '';
+            
+            const buttonsHtml = actions.map(action => {
+                const buttonClass = action.primary ? 
+                    'btn-sm btn-primary' : 
+                    'btn-sm btn-outline text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600';
+                
+                return `<button 
+                    class="btn ${buttonClass} text-xs mt-2 mr-2" 
+                    data-action="${action.id || ''}"
+                    data-url="${action.url || ''}"
+                >${action.text}</button>`;
+            }).join('');
+            
+            return `<div class="notification-actions mt-1">${buttonsHtml}</div>`;
+        },
+        
+        // Dismiss a notification with animation
+        dismissNotification(notification) {
+            // Animate out
+            notification.classList.add('translate-x-full', 'opacity-0');
+            
+            // Remove after animation completes
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                    this.notificationCount--;
+                }
+            }, 300);
+        },
+        
+        // Handle session updates
+        handleSessionUpdate(data) {
+            // Update UI elements related to a session if necessary
+            if (data.session_id) {
+                const sessionElements = document.querySelectorAll(`[data-session-id="${data.session_id}"]`);
+                if (sessionElements.length > 0) {
+                    // Update status indicators or other dynamic content
+                    sessionElements.forEach(el => {
+                        const statusEl = el.querySelector('.session-status');
+                        if (statusEl && data.status) {
+                            statusEl.textContent = data.status;
+                            // Update status class
+                            statusEl.className = statusEl.className.replace(/status-\w+/, `status-${data.status.toLowerCase()}`);
+                        }
+                    });
+                }
+            }
+            
+            // Show notification about the update
+            this.showNotification({
+                title: data.title || 'Session Update',
+                message: data.message,
+                type: data.notification_type || 'info',
+                icon: data.icon,
+                actions: data.actions
+            });
+        },
+        
+        // Display a system message
+        showSystemMessage(data) {
+            this.showNotification({
+                title: data.title || 'System Message',
+                message: data.message,
+                type: 'info',
+                icon: 'info',
+                duration: 8000
+            });
+        },
+        
+        // Set up event handlers for notification interactions
+        setupNotificationEvents() {
+            // Handle clicks on notification action buttons
+            document.addEventListener('click', (event) => {
+                if (event.target.closest('.notification-actions button')) {
+                    const button = event.target.closest('.notification-actions button');
+                    const actionId = button.getAttribute('data-action');
+                    const actionUrl = button.getAttribute('data-url');
+                    
+                    // Handle action
+                    if (actionUrl) {
+                        window.location.href = actionUrl;
+                    } else if (actionId) {
+                        // Handle custom actions
+                        this.handleNotificationAction(actionId, button);
+                    }
+                }
+            });
+        },
+        
+        // Handle custom notification actions
+        handleNotificationAction(actionId, buttonElement) {
+            console.log(`Handling notification action: ${actionId}`);
+            
+            // Find the parent notification
+            const notification = buttonElement.closest('.notification');
+            
+            // Close the notification
+            if (notification) {
+                this.dismissNotification(notification);
+            }
+        },
+        
+        // Manually send a test notification (for development)
+        testNotification() {
+            this.showNotification({
+                title: 'Test Notification',
+                message: 'This is a test notification from the PeerLearn notification system.',
+                type: 'info',
+                duration: 5000,
+                actions: [
+                    { id: 'dismiss', text: 'Dismiss' },
+                    { id: 'view', text: 'View Details', primary: true }
+                ]
+            });
+        }
+    };
     
-    switch (type) {
-        case 'success':
-            soundUrl = '/static/sounds/notification-success.mp3';
-            break;
-        case 'error':
-            soundUrl = '/static/sounds/notification-error.mp3';
-            break;
-        case 'warning':
-            soundUrl = '/static/sounds/notification-warning.mp3';
-            break;
-        case 'info':
-        default:
-            soundUrl = '/static/sounds/notification-info.mp3';
-            break;
-    }
+    // Initialize the notification system
+    NotificationSystem.init();
     
-    try {
-        const audio = new Audio(soundUrl);
-        audio.volume = 0.5;
-        audio.play().catch(e => {
-            console.log('Auto-play prevented. User interaction required.');
-        });
-    } catch (error) {
-        console.error('Error playing notification sound:', error);
-    }
-}
-
-// Export functions
-window.showNotification = showNotification;
-window.initNotifications = initNotifications;
+    // Expose notification system globally
+    window.NotificationSystem = NotificationSystem;
+});

@@ -1,208 +1,337 @@
 /**
  * PeerLearn Page Transitions
- * Smooth transitions between pages using AJAX and CSS animations
- * Version 1.0.0
+ * Provides smooth page transitions for better UX
  */
 
-class PageTransitions {
-    constructor() {
-        this.isAnimating = false;
-        this.container = document.getElementById('page-content');
-        this.loadingIndicator = null;
-        this.loadingTimeout = null;
+// Create a self-executing function to avoid global namespace pollution
+const PageTransitionSystem = (() => {
+    // Store references to key elements
+    const pageContent = document.getElementById('page-content');
+    let isTransitioning = false;
+    
+    // Default transition settings
+    const defaults = {
+        duration: 300, // ms
+        easing: 'ease-in-out',
+        fadeOut: true,
+        fadeIn: true,
+        slideOut: false,
+        slideIn: false,
+        slideDirection: 'left', // 'left', 'right', 'up', 'down'
+    };
+    
+    // Initialize transitions
+    function init() {
+        // Skip if already initialized or page content not found
+        if (!pageContent || window.pageTransitionsInitialized) return;
         
-        this.init();
+        // Mark as initialized
+        window.pageTransitionsInitialized = true;
+        
+        // Set up link interception for internal navigation
+        setupLinkInterception();
+        
+        // Set up form submission interception
+        setupFormInterception();
+        
+        // Handle initial page load (when returning from another page)
+        handleInitialLoad();
+        
+        console.log('Page transitions initialized');
     }
     
-    /**
-     * Initialize page transitions
-     */
-    init() {
-        if (!this.container) return;
-        
-        // Create loading indicator
-        this.createLoadingIndicator();
-        
-        // Listen for internal link clicks
-        document.body.addEventListener('click', (e) => {
+    // Handle the initial page load
+    function handleInitialLoad() {
+        // Add a small delay for the entry animation
+        setTimeout(() => {
+            pageContent.classList.add('page-transition-enter-active');
+            pageContent.classList.remove('page-transition-enter');
+        }, 50);
+    }
+    
+    // Intercept link clicks for internal navigation
+    function setupLinkInterception() {
+        document.addEventListener('click', (e) => {
+            // Find the closest anchor tag
             const link = e.target.closest('a');
-            if (!link) return;
             
-            // Skip if it's an external link, has target, is a download, or has no href
-            if (
-                link.getAttribute('target') === '_blank' ||
-                link.getAttribute('download') !== null ||
-                link.getAttribute('href') === '#' ||
-                link.getAttribute('href') === '' ||
-                link.getAttribute('href') === null ||
-                link.getAttribute('href').startsWith('http') ||
+            // Skip if not a link or has specific attributes
+            if (!link || 
+                isTransitioning || 
+                link.getAttribute('target') === '_blank' || 
+                link.getAttribute('download') || 
+                link.getAttribute('data-no-transition') === 'true' ||
+                link.getAttribute('href').startsWith('#') ||
                 link.getAttribute('href').startsWith('mailto:') ||
-                link.getAttribute('href').startsWith('tel:') ||
-                link.classList.contains('no-transition') ||
-                e.ctrlKey || e.metaKey || e.shiftKey
-            ) {
+                link.getAttribute('href').startsWith('tel:')) {
                 return;
             }
             
-            this.handleLinkClick(e, link);
+            // Get the URL for navigation
+            const url = link.getAttribute('href');
+            
+            // Only handle internal links
+            if (url && url.startsWith('/') && !url.startsWith('//')) {
+                e.preventDefault();
+                navigateTo(url);
+            }
         });
         
         // Handle browser back/forward buttons
-        window.addEventListener('popstate', this.handlePopState.bind(this));
+        window.addEventListener('popstate', (e) => {
+            // Perform transition for back/forward navigation
+            handlePageTransition(window.location.href, { push: false });
+        });
     }
     
-    /**
-     * Create the loading indicator element
-     */
-    createLoadingIndicator() {
-        this.loadingIndicator = document.createElement('div');
-        this.loadingIndicator.classList.add('page-loading');
-        this.loadingIndicator.innerHTML = `
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-                <span>Loading...</span>
-            </div>
-        `;
-        document.body.appendChild(this.loadingIndicator);
-    }
-    
-    /**
-     * Handle link click events
-     */
-    handleLinkClick(e, link) {
-        e.preventDefault();
-        
-        if (this.isAnimating) return;
-        
-        const url = link.getAttribute('href');
-        this.loadPage(url);
-    }
-    
-    /**
-     * Handle popstate events (browser back/forward buttons)
-     */
-    handlePopState(e) {
-        if (this.isAnimating) return;
-        if (e.state) {
-            this.loadPage(window.location.pathname, false);
-        }
-    }
-    
-    /**
-     * Load page content via AJAX
-     */
-    async loadPage(url, updateHistory = true) {
-        this.isAnimating = true;
-        
-        // Only show loading when network is slow (after 150ms)
-        const loadingTimeout = setTimeout(() => {
-            this.showLoading();
-        }, 150);
-        
-        try {
-            const response = await fetch(url, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html'
-                }
-            });
+    // Intercept form submissions
+    function setupFormInterception() {
+        document.addEventListener('submit', (e) => {
+            const form = e.target;
             
-            // Clear loading timeout if response came back quickly
-            clearTimeout(loadingTimeout);
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Skip if the form has data-no-transition attribute
+            if (form.getAttribute('data-no-transition') === 'true' || 
+                form.getAttribute('method').toLowerCase() !== 'get') {
+                return;
             }
             
-            const html = await response.text();
-            const content = this.extractPageContent(html);
+            // Prevent default form submission
+            e.preventDefault();
             
-            // Update content immediately for fast response
-            this.container.innerHTML = content;
+            // Serialize form data
+            const formData = new FormData(form);
+            const queryString = new URLSearchParams(formData).toString();
             
-            // Update browser history
-            if (updateHistory) {
-                this.updateHistory(url, document.title);
-            }
+            // Create URL with query parameters
+            let url = form.getAttribute('action') || window.location.pathname;
+            url = url + (url.includes('?') ? '&' : '?') + queryString;
             
-            // Initialize scripts for new content
-            this.initializeScripts();
-            
-            // Finish animation
-            this.isAnimating = false;
-            this.hideLoading();
-        } catch (error) {
-            console.error('Error loading page:', error);
-            this.isAnimating = false;
-            this.hideLoading();
-            
-            // If error, redirect normally
-            window.location.href = url;
-        }
+            // Navigate with transition
+            navigateTo(url);
+        });
     }
     
-    /**
-     * Extract main content from full HTML
-     */
-    extractPageContent(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const content = doc.getElementById('page-content');
+    // Core navigation function
+    function navigateTo(url, options = {}) {
+        const transitionOptions = { ...defaults, ...options };
         
-        return content ? content.innerHTML : html;
-    }
-    
-    /**
-     * Update browser history
-     */
-    updateHistory(url, title) {
-        window.history.pushState({}, title, url);
-    }
-    
-    /**
-     * Show loading indicator
-     */
-    showLoading() {
-        // Clear previous timeout
-        if (this.loadingTimeout) {
-            clearTimeout(this.loadingTimeout);
-        }
+        // Prevent rapid navigation attempts
+        if (isTransitioning) return;
         
-        // Show loading after a short delay to avoid flashing for fast loads
-        this.loadingTimeout = setTimeout(() => {
-            this.loadingIndicator.classList.add('active');
-        }, 200);
+        // Start transition
+        handlePageTransition(url, { push: true, ...transitionOptions });
     }
     
-    /**
-     * Hide loading indicator
-     */
-    hideLoading() {
-        // Clear timeout
-        if (this.loadingTimeout) {
-            clearTimeout(this.loadingTimeout);
-        }
+    // Handle the page transition animation and content loading
+    function handlePageTransition(url, options) {
+        isTransitioning = true;
         
-        // Hide loading indicator
-        this.loadingIndicator.classList.remove('active');
+        // Start exit animation
+        pageContent.classList.add('page-transition-exit');
+        
+        // Wait for exit animation to complete
+        setTimeout(() => {
+            // Fetch new page content
+            fetch(url, { credentials: 'same-origin' })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    // Parse the HTML response
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Extract the main content
+                    const newContent = doc.getElementById('page-content');
+                    
+                    if (newContent) {
+                        // Update page title
+                        document.title = doc.title;
+                        
+                        // Update the browser history if needed
+                        if (options.push) {
+                            window.history.pushState({}, doc.title, url);
+                        }
+                        
+                        // Replace the page content
+                        pageContent.innerHTML = newContent.innerHTML;
+                        
+                        // Reinitialize any needed scripts
+                        reinitializeScripts();
+                        
+                        // Set up entry animation
+                        pageContent.classList.remove('page-transition-exit');
+                        pageContent.classList.add('page-transition-enter');
+                        
+                        // Trigger the entry animation after a small delay
+                        setTimeout(() => {
+                            pageContent.classList.add('page-transition-enter-active');
+                            
+                            // Reset after animation completes
+                            setTimeout(() => {
+                                pageContent.classList.remove('page-transition-enter', 'page-transition-enter-active');
+                                isTransitioning = false;
+                            }, options.duration);
+                        }, 50);
+                    } else {
+                        // If content isn't found, do a full page load
+                        window.location.href = url;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during page transition:', error);
+                    // Fallback to regular navigation on error
+                    window.location.href = url;
+                });
+        }, options.duration);
     }
     
-    /**
-     * Re-initialize scripts and components after page load
-     */
-    initializeScripts() {
-        // Re-initialize Feather icons
+    // Reinitialize scripts after content is loaded
+    function reinitializeScripts() {
+        // Reinitialize Feather icons if available
         if (window.feather) {
-            window.feather.replace();
+            feather.replace();
         }
         
-        // Re-initialize other components
+        // Reinitialize dropdowns
+        initializeDropdowns();
+        
+        // Trigger a custom event that other scripts can listen for
         const event = new CustomEvent('page:loaded');
         document.dispatchEvent(event);
     }
-}
+    
+    // Initialize dropdown toggles
+    function initializeDropdowns() {
+        const dropdownToggles = document.querySelectorAll('.dropdown');
+        
+        dropdownToggles.forEach(dropdown => {
+            const button = dropdown.querySelector('button');
+            const content = dropdown.querySelector('.dropdown-content');
+            const arrow = dropdown.querySelector('#user-menu-arrow');
+            
+            if (button && content) {
+                button.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    content.classList.toggle('hidden');
+                    
+                    // Add animation classes for smooth transition
+                    if (content.classList.contains('hidden')) {
+                        content.classList.remove('opacity-100', 'scale-100');
+                        content.classList.add('opacity-0', 'scale-95');
+                        if (arrow) arrow.classList.remove('rotate-180');
+                    } else {
+                        content.classList.remove('opacity-0', 'scale-95');
+                        content.classList.add('opacity-100', 'scale-100');
+                        if (arrow) arrow.classList.add('rotate-180');
+                    }
+                });
+            }
+        });
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdowns = document.querySelectorAll('.dropdown-content');
+            const arrows = document.querySelectorAll('#user-menu-arrow');
+            
+            dropdowns.forEach((dropdown, index) => {
+                if (!dropdown.classList.contains('hidden') && !e.target.closest('.dropdown')) {
+                    dropdown.classList.add('hidden', 'opacity-0', 'scale-95');
+                    dropdown.classList.remove('opacity-100', 'scale-100');
+                    if (arrows[index]) arrows[index].classList.remove('rotate-180');
+                }
+            });
+        });
+    }
+    
+    // Define public API
+    return {
+        init,
+        navigateTo
+    };
+})();
 
-// Initialize page transitions when DOM is loaded
+// Initialize page transitions when the DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.pageTransitions = new PageTransitions();
+    PageTransitionSystem.init();
+    
+    // Initialize dropdowns
+    const dropdownToggles = document.querySelectorAll('.dropdown');
+    
+    dropdownToggles.forEach(dropdown => {
+        const button = dropdown.querySelector('button');
+        const content = dropdown.querySelector('.dropdown-content');
+        const arrow = dropdown.querySelector('#user-menu-arrow');
+        
+        if (button && content) {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                content.classList.toggle('hidden');
+                
+                // Add animation classes for smooth transition
+                if (content.classList.contains('hidden')) {
+                    content.classList.remove('opacity-100', 'scale-100');
+                    content.classList.add('opacity-0', 'scale-95');
+                    if (arrow) arrow.classList.remove('rotate-180');
+                } else {
+                    content.classList.remove('opacity-0', 'scale-95');
+                    content.classList.add('opacity-100', 'scale-100');
+                    if (arrow) arrow.classList.add('rotate-180');
+                }
+            });
+        }
+    });
+    
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdowns = document.querySelectorAll('.dropdown-content');
+        const arrows = document.querySelectorAll('#user-menu-arrow');
+        
+        dropdowns.forEach((dropdown, index) => {
+            if (!dropdown.classList.contains('hidden') && !e.target.closest('.dropdown')) {
+                dropdown.classList.add('hidden', 'opacity-0', 'scale-95');
+                dropdown.classList.remove('opacity-100', 'scale-100');
+                if (arrows[index]) arrows[index].classList.remove('rotate-180');
+            }
+        });
+    });
+});
+
+// Add page transition styles
+document.addEventListener('DOMContentLoaded', () => {
+    // Check if styles already exist
+    if (!document.getElementById('page-transition-styles')) {
+        // Create style element
+        const style = document.createElement('style');
+        style.id = 'page-transition-styles';
+        
+        // Add transition styles
+        style.textContent = `
+            .page-transition {
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            
+            .page-transition-enter {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            
+            .page-transition-enter-active {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            
+            .page-transition-exit {
+                opacity: 0;
+                transform: translateY(-10px);
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+        `;
+        
+        // Add to document head
+        document.head.appendChild(style);
+    }
 });

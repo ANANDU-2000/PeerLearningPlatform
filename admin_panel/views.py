@@ -514,6 +514,11 @@ def secure_admin_login(request):
     Secure admin login view with multiple layers of protection.
     This is separate from Django's built-in admin and the regular user login.
     """
+    # Check if user is already authenticated
+    if request.user.is_authenticated and request.user.is_superuser:
+        # If user is already a superuser, allow direct access
+        return redirect('admin_dashboard')
+    
     # Get client information
     client_ip = request.META.get('REMOTE_ADDR', '')
     user_agent = request.META.get('HTTP_USER_AGENT', '')
@@ -531,35 +536,39 @@ def secure_admin_login(request):
     # Log in security log file
     security_logger.info(f"Admin login attempt from IP: {client_ip}")
     
-    # Check if IP is in allowed list from database
-    ip_allowed = False
-    try:
-        client_ip_obj = ipaddress.ip_address(client_ip)
-        allowed_ips = AllowedIP.objects.filter(is_active=True)
+    # For development environment, allow all IPs
+    ip_allowed = True
         
-        if not allowed_ips.exists():
-            # If no IPs are configured, temporarily allow all for first setup
-            ip_allowed = True
-        else:
-            for allowed_ip in allowed_ips:
-                # Check if it's a network range or single IP
-                if '/' in allowed_ip.ip_address:
-                    network = ipaddress.ip_network(allowed_ip.ip_address)
-                    if client_ip_obj in network:
+    # Check if IP is in allowed list from database (in production)
+    if not settings.DEBUG:
+        ip_allowed = False
+        try:
+            client_ip_obj = ipaddress.ip_address(client_ip)
+            allowed_ips = AllowedIP.objects.filter(is_active=True)
+            
+            if not allowed_ips.exists():
+                # If no IPs are configured, temporarily allow all for first setup
+                ip_allowed = True
+            else:
+                for allowed_ip in allowed_ips:
+                    # Check if it's a network range or single IP
+                    if '/' in allowed_ip.ip_address:
+                        network = ipaddress.ip_network(allowed_ip.ip_address)
+                        if client_ip_obj in network:
+                            ip_allowed = True
+                            break
+                    elif client_ip == allowed_ip.ip_address:
                         ip_allowed = True
                         break
-                elif client_ip == allowed_ip.ip_address:
-                    ip_allowed = True
-                    break
-    except ValueError:
-        # Invalid IP format
-        security_logger.warning(f"Invalid IP format in admin login: {client_ip}")
-        ip_allowed = False
-        
-        # Update access log
-        access_log.status = 'failed'
-        access_log.details = 'Invalid IP format'
-        access_log.save()
+        except ValueError:
+            # Invalid IP format
+            security_logger.warning(f"Invalid IP format in admin login: {client_ip}")
+            ip_allowed = False
+            
+            # Update access log
+            access_log.status = 'failed'
+            access_log.details = 'Invalid IP format'
+            access_log.save()
     
     # Block if IP is not allowed
     if not ip_allowed:

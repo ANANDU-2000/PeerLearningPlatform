@@ -58,8 +58,8 @@ class AdminSecurityMiddleware:
                 messages.error(request, _("You must login to access this area."))
                 return redirect('secure_admin_login')
             
-            # Check if user is admin
-            if not request.user.role == 'admin':
+            # Check if user is admin or superuser
+            if not (request.user.role == 'admin' or request.user.is_superuser):
                 # Log unauthorized access attempt
                 security_logger.warning(f"Non-admin access attempt to admin panel: {request.path} by user: {request.user.username} from IP: {client_ip}")
                 
@@ -77,8 +77,8 @@ class AdminSecurityMiddleware:
                 messages.error(request, _("You do not have permissions to access this area."))
                 return redirect('landing_page')  # Redirect to landing page
             
-            # Check admin session verification flag
-            if not request.session.get('admin_verified'):
+            # Check admin session verification flag (skip for superusers)
+            if not request.session.get('admin_verified') and not request.user.is_superuser:
                 # Log unauthorized access attempt
                 security_logger.warning(f"Admin access attempt without verification: {request.path} by user: {request.user.username} from IP: {client_ip}")
                 

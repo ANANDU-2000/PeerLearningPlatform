@@ -117,7 +117,36 @@ class PeerLearnRTC {
     handleDeviceOrientationChange() {
         if (this.isMobile) {
             console.log("Device orientation changed, adjusting video streams");
-            this.adjustVideoForOrientation();
+            
+            // Delay adjustment slightly to ensure new dimensions are available
+            setTimeout(() => {
+                this.adjustVideoForOrientation();
+                
+                // Also trigger browser layout recalculation for video containers
+                if (this.localVideo) {
+                    const container = this.localVideo.closest('.video-container');
+                    if (container) {
+                        // Force layout recalculation
+                        container.style.display = 'none';
+                        // Use requestAnimationFrame for smoother transition
+                        requestAnimationFrame(() => {
+                            container.style.display = '';
+                        });
+                    }
+                }
+                
+                // Request full screen in landscape mode on mobile for better experience
+                if (window.innerWidth > window.innerHeight) {
+                    // Only try to request fullscreen if it's not already fullscreen
+                    if (document.fullscreenElement === null && 
+                        document.webkitFullscreenElement === null && 
+                        typeof document.documentElement.requestFullscreen === 'function') {
+                        
+                        document.documentElement.requestFullscreen()
+                            .catch(err => console.log("Fullscreen request rejected:", err));
+                    }
+                }
+            }, 500);
             
             // If connections exist, check their status
             if (Object.keys(this.peerConnections).length > 0) {
@@ -141,24 +170,82 @@ class PeerLearnRTC {
         const videoTrack = this.localStream.getVideoTracks()[0];
         if (!videoTrack) return;
         
+        console.log(`Adjusting video for ${isLandscape ? 'landscape' : 'portrait'} orientation on ${this.isMobile ? 'mobile' : 'desktop'} device`);
+        
         // Adjust constraints for current orientation if supported
         if (videoTrack.getConstraints && videoTrack.applyConstraints) {
             try {
                 const currentConstraints = videoTrack.getConstraints();
                 let newConstraints = { ...currentConstraints };
                 
-                // Swap width and height if needed
-                if (isLandscape && currentConstraints.height && currentConstraints.height.ideal > currentConstraints.width.ideal) {
+                // Special handling for iOS devices
+                if (this.isIOS) {
+                    // iOS works better with specific simple constraints
+                    if (isLandscape) {
+                        newConstraints = {
+                            width: { ideal: 640, max: 1280 },
+                            height: { ideal: 360, max: 720 },
+                            frameRate: { ideal: 20, max: 30 }
+                        };
+                    } else {
+                        newConstraints = {
+                            width: { ideal: 360, max: 720 },
+                            height: { ideal: 640, max: 1280 },
+                            frameRate: { ideal: 20, max: 30 }
+                        };
+                    }
+                } 
+                // Special handling for Android devices
+                else if (this.isAndroid) {
+                    // Android often works better with facingMode user constraint
                     newConstraints = {
-                        ...currentConstraints,
-                        width: currentConstraints.height,
-                        height: currentConstraints.width
+                        ...newConstraints,
+                        facingMode: { ideal: 'user' }
                     };
                     
-                    videoTrack.applyConstraints(newConstraints)
-                        .then(() => console.log("Applied landscape video constraints"))
-                        .catch(err => console.error("Failed to apply orientation constraints:", err));
+                    // Swap width and height based on orientation
+                    if (isLandscape) {
+                        newConstraints = {
+                            ...newConstraints,
+                            width: { ideal: 640, max: 1280 },
+                            height: { ideal: 360, max: 720 }
+                        };
+                    } else {
+                        newConstraints = {
+                            ...newConstraints,
+                            width: { ideal: 360, max: 720 },
+                            height: { ideal: 640, max: 1280 }
+                        };
+                    }
                 }
+                // For desktop and other devices
+                else {
+                    // Swap width and height if needed
+                    if (isLandscape && currentConstraints.height && currentConstraints.height.ideal > currentConstraints.width.ideal) {
+                        newConstraints = {
+                            ...currentConstraints,
+                            width: currentConstraints.height,
+                            height: currentConstraints.width
+                        };
+                    }
+                }
+                
+                // Apply the new constraints
+                videoTrack.applyConstraints(newConstraints)
+                    .then(() => console.log(`Applied ${isLandscape ? 'landscape' : 'portrait'} video constraints successfully`))
+                    .catch(err => {
+                        console.error("Failed to apply orientation constraints:", err);
+                        // Fallback to simpler constraints if failed
+                        if (this.isMobile) {
+                            const fallbackConstraints = {
+                                width: { ideal: 640 },
+                                height: { ideal: 480 }
+                            };
+                            videoTrack.applyConstraints(fallbackConstraints)
+                                .then(() => console.log("Applied fallback video constraints"))
+                                .catch(err => console.error("Failed to apply fallback constraints:", err));
+                        }
+                    });
             } catch (e) {
                 console.error("Error adjusting video for orientation:", e);
             }

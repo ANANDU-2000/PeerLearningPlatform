@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mobile Compatibility Test - PeerLearn{% endblock %}
+
+{% block extra_css %}
+<style>
+    .test-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .test-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .test-header h1 {
+        color: #3a3a3a;
+        margin-bottom: 10px;
+    }
+    .test-header p {
+        color: #666;
+        font-size: 1.1rem;
+    }
+    .test-button {
+        display: block;
+        margin: 20px auto;
+        padding: 12px 25px;
+        background-color: #4f46e5;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    .test-button:hover {
+        background-color: #4338ca;
+    }
+    .results-container {
+        margin-top: 30px;
+        min-height: 200px;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="test-container">
+    <div class="test-header">
+        <h1>Mobile Compatibility Test</h1>
+        <p>This page tests the compatibility of your device with PeerLearn's WebRTC video sessions.</p>
+    </div>
+    
+    <button class="test-button" id="run-test-button">Run Compatibility Tests</button>
+    
+    <div class="results-container" id="results-container">
+        <p class="text-center text-gray-500">Click the button above to run compatibility tests.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/webrtc/mobile-compatibility-test.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const runTestButton = document.getElementById('run-test-button');
+        const resultsContainer = document.getElementById('results-container');
+        
+        if (runTestButton) {
+            runTestButton.addEventListener('click', async function() {
+                // Update button text
+                runTestButton.textContent = 'Running Tests...';
+                runTestButton.disabled = true;
+                
+                // Display loading message
+                resultsContainer.innerHTML = '<p class="text-center">Running compatibility tests... Please wait and allow any permission requests.</p>';
+                
+                try {
+                    // Initialize and run tests
+                    const mobileTest = new MobileCompatibilityTest();
+                    await mobileTest.runAllTests();
+                    
+                    // Display results
+                    mobileTest.displayResults('results-container');
+                } catch (error) {
+                    resultsContainer.innerHTML = `<p class="text-center text-red-500">Error running tests: ${error.message}</p>`;
+                } finally {
+                    // Restore button
+                    runTestButton.textContent = 'Run Compatibility Tests Again';
+                    runTestButton.disabled = false;
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

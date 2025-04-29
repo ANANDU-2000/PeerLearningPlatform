@@ -93,7 +93,11 @@ class PageTransitions {
      */
     async loadPage(url, updateHistory = true) {
         this.isAnimating = true;
-        this.showLoading();
+        
+        // Only show loading when network is slow (after 150ms)
+        const loadingTimeout = setTimeout(() => {
+            this.showLoading();
+        }, 150);
         
         try {
             const response = await fetch(url, {
@@ -103,6 +107,9 @@ class PageTransitions {
                 }
             });
             
+            // Clear loading timeout if response came back quickly
+            clearTimeout(loadingTimeout);
+            
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -110,33 +117,20 @@ class PageTransitions {
             const html = await response.text();
             const content = this.extractPageContent(html);
             
-            // Start the page transition out
-            this.container.classList.add('page-exit');
+            // Update content immediately for fast response
+            this.container.innerHTML = content;
             
-            // Wait for exit animation to complete
-            setTimeout(() => {
-                // Update content
-                this.container.innerHTML = content;
-                
-                // Update browser history
-                if (updateHistory) {
-                    this.updateHistory(url, document.title);
-                }
-                
-                // Remove exit class and add entrance class
-                this.container.classList.remove('page-exit');
-                this.container.classList.add('page-enter');
-                
-                // Initialize scripts for new content
-                this.initializeScripts();
-                
-                // After animation, remove entrance class
-                setTimeout(() => {
-                    this.container.classList.remove('page-enter');
-                    this.isAnimating = false;
-                    this.hideLoading();
-                }, 300);
-            }, 300);
+            // Update browser history
+            if (updateHistory) {
+                this.updateHistory(url, document.title);
+            }
+            
+            // Initialize scripts for new content
+            this.initializeScripts();
+            
+            // Finish animation
+            this.isAnimating = false;
+            this.hideLoading();
         } catch (error) {
             console.error('Error loading page:', error);
             this.isAnimating = false;

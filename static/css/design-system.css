@@ -408,33 +408,100 @@ a:hover {
 
 /* ========== CARDS ========== */
 .card {
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background-color: var(--bg-primary);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition: all var(--transition-fast);
 }
 
 .card-hover:hover {
-  transform: translateY(-4px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
 }
 
 .card-body {
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md);
 }
 
 .card-header {
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
   background-color: var(--bg-secondary);
 }
 
 .card-footer {
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-top: 1px solid var(--border-color);
   background-color: var(--bg-secondary);
+}
+
+/* Session Cards */
+.session-card {
+  max-width: 340px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-card .card-header {
+  padding-bottom: var(--spacing-sm);
+}
+
+.session-card .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-card .mentor-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+}
+
+.session-card .mentor-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 9999px;
+  object-fit: cover;
+  margin-right: var(--spacing-sm);
+}
+
+.session-card .session-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--spacing-xs);
+  color: var(--text-primary);
+}
+
+.session-card .session-price {
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-top: auto;
+}
+
+/* Live Session Card */
+.live-session-card {
+  border-left: 3px solid var(--color-accent);
+}
+
+.live-session-card:hover {
+  border-left-color: var(--color-accent-dark);
+}
+
+/* Card sizes for mobile */
+@media (max-width: 639px) {
+  .card-body {
+    padding: var(--spacing-sm);
+  }
+  
+  .session-card {
+    max-width: 100%;
+  }
 }
 
 /* ========== BADGES ========== */

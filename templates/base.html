@@ -126,24 +126,7 @@
                     {% endif %}
 
                     <!-- Language Selector -->
-                    <div class="relative mr-4">
-                        <form action="{% url 'set_language' %}" method="post" id="language-form">
-                            {% csrf_token %}
-                            <input name="next" type="hidden" value="{{ request.path }}">
-                            <select name="language" onchange="this.form.submit()" class="appearance-none form-select bg-transparent border border-gray-300 rounded-md pl-3 pr-7 py-1 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-30 text-sm">
-                                {% get_current_language as CURRENT_LANGUAGE %}
-                                {% get_available_languages as LANGUAGES %}
-                                {% for lang_code, lang_name in LANGUAGES %}
-                                    <option value="{{ lang_code }}" {% if lang_code == CURRENT_LANGUAGE %}selected{% endif %}>
-                                        {{ lang_name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <div class="absolute right-0 top-0 bottom-0 flex items-center pointer-events-none pr-2">
-                                <i data-feather="chevron-down" class="h-4 w-4 text-gray-500"></i>
-                            </div>
-                        </form>
-                    </div>
+                    <!-- Language selector removed as requested -->
                     
                     <!-- Auth / User Menu -->
                     <div class="ml-3 relative">
@@ -196,11 +179,11 @@
                                 </div>
                             </div>
                         {% else %}
-                            <div class="space-x-2">
-                                <a href="{% url 'login' %}" class="btn btn-outline inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+                            <div class="space-x-1">
+                                <a href="{% url 'login' %}" class="btn btn-outline inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
                                     {% trans "Log in" %}
                                 </a>
-                                <a href="{% url 'role_selection' %}" class="btn btn-primary inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white shadow-sm">
+                                <a href="{% url 'role_selection' %}" class="btn btn-primary inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white shadow-sm">
                                     {% trans "Sign up" %}
                                 </a>
                             </div>
@@ -217,81 +200,64 @@
         </div>
     </nav>
     
-    <!-- Mobile Bottom Navigation -->
+    <!-- Mobile Bottom Navigation - More compact and cleaner -->
     <div class="sm:hidden fixed bottom-0 left-0 right-0 z-50 mobile-bottom-nav bg-white dark:bg-gray-900 border-t border-gray-200 shadow-lg">
         <div class="flex justify-around py-2">
             {% if user.is_authenticated %}
                 <!-- Dashboard as home for authenticated users -->
-                <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="grid" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Dashboard" %}</span>
+                <a href="{{ user.get_dashboard_url }}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
+                    <i data-feather="grid" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Home" %}</span>
                 </a>
                 
-                <!-- Session link based on role -->
+                <!-- Sessions - both roles need this -->
                 {% if user.role == 'mentor' %}
-                <a href="{% url 'mentor_sessions' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="calendar" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Sessions" %}</span>
+                <a href="{% url 'mentor_sessions' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
+                    <i data-feather="calendar" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Sessions" %}</span>
                 </a>
                 {% else %}
-                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="search" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Find" %}</span>
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
+                    <i data-feather="search" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Find" %}</span>
                 </a>
                 {% endif %}
                 
-                <!-- Role-specific items -->
+                <!-- Primary action based on role -->
                 {% if user.role == 'learner' %}
-                    <a href="{% url 'cart' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                        <i data-feather="shopping-cart" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1 font-medium">{% trans "Cart" %}</span>
-                    </a>
-                    <a href="{% url 'transaction_history' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                        <i data-feather="credit-card" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1 font-medium">{% trans "Payments" %}</span>
+                    <a href="{% url 'cart' %}" class="flex flex-col items-center justify-center text-primary hover:text-primary-dark transition-colors px-2">
+                        <i data-feather="shopping-cart" class="h-4 w-4"></i>
+                        <span class="text-xs mt-1">{% trans "Cart" %}</span>
                     </a>
                 {% elif user.role == 'mentor' %}
-                    <a href="{% url 'create_session' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                        <i data-feather="plus-circle" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1 font-medium">{% trans "Create" %}</span>
-                    </a>
-                    <a href="{% url 'withdrawal_request' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                        <i data-feather="dollar-sign" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1 font-medium">{% trans "Earnings" %}</span>
+                    <a href="{% url 'create_session' %}" class="flex flex-col items-center justify-center text-primary hover:text-primary-dark transition-colors px-2">
+                        <i data-feather="plus-circle" class="h-4 w-4"></i>
+                        <span class="text-xs mt-1">{% trans "Create" %}</span>
                     </a>
                 {% endif %}
                 
-                <!-- Settings button -->
-                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="settings" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Settings" %}</span>
+                <!-- Profile settings as more/menu option -->
+                <a href="{% url 'profile_settings' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-2">
+                    <i data-feather="user" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Profile" %}</span>
                 </a>
-                
-                <!-- Direct logout button -->
-                <form method="post" action="{% url 'logout' %}" class="flex flex-col items-center text-gray-600 hover:text-danger transition-colors">
-                    {% csrf_token %}
-                    <button type="submit" class="flex flex-col items-center focus:outline-none">
-                        <i data-feather="log-out" class="h-5 w-5"></i>
-                        <span class="text-xs mt-1 font-medium">{% trans "Logout" %}</span>
-                    </button>
-                </form>
             {% else %}
-                <!-- For non-authenticated users -->
-                <a href="{% url 'landing_page' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="home" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Home" %}</span>
+                <!-- For non-authenticated users - simplified -->
+                <a href="{% url 'landing_page' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-3">
+                    <i data-feather="home" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Home" %}</span>
                 </a>
-                <a href="{% url 'session_list' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="search" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Find" %}</span>
+                <a href="{% url 'session_list' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-3">
+                    <i data-feather="search" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Find" %}</span>
                 </a>
-                <a href="{% url 'login' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="log-in" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Login" %}</span>
+                <a href="{% url 'login' %}" class="flex flex-col items-center justify-center text-primary hover:text-primary-dark transition-colors px-3">
+                    <i data-feather="log-in" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Login" %}</span>
                 </a>
-                <a href="{% url 'role_selection' %}" class="flex flex-col items-center text-gray-600 hover:text-primary transition-colors">
-                    <i data-feather="user-plus" class="h-5 w-5"></i>
-                    <span class="text-xs mt-1 font-medium">{% trans "Sign Up" %}</span>
+                <a href="{% url 'role_selection' %}" class="flex flex-col items-center justify-center text-gray-600 hover:text-primary transition-colors px-3">
+                    <i data-feather="user-plus" class="h-4 w-4"></i>
+                    <span class="text-xs mt-1">{% trans "Join" %}</span>
                 </a>
             {% endif %}
         </div>

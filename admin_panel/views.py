@@ -353,56 +353,64 @@ def payment_management(request):
 @login_required
 @user_passes_test(is_admin)
 def analytics(request):
-    """View for analytics and reporting."""
+    """View for advanced analytics and reporting."""
+    # Import analytics utilities
+    from .analytics_utils import (
+        get_revenue_forecast,
+        get_learner_engagement_stats,
+        get_session_quality_metrics,
+        get_mentor_performance_metrics
+    )
+    
     # Time period selection
     period = request.GET.get('period', '30')  # Default to 30 days
     
     if period == '7':
-        start_date = timezone.now() - timedelta(days=7)
+        days = 7
         period_name = _('Last 7 Days')
     elif period == '30':
-        start_date = timezone.now() - timedelta(days=30)
+        days = 30
         period_name = _('Last 30 Days')
     elif period == '90':
-        start_date = timezone.now() - timedelta(days=90)
+        days = 90
         period_name = _('Last 90 Days')
     elif period == 'all':
-        start_date = None
+        days = 365  # Use last year for 'All Time' calculations
         period_name = _('All Time')
     else:
-        start_date = timezone.now() - timedelta(days=30)
+        days = 30
         period_name = _('Last 30 Days')
+    
+    start_date = timezone.now() - timedelta(days=days)
     
     # Base queryset filtering by date
     transactions_query = Transaction.objects.filter(status='completed')
     sessions_query = Session.objects.all()
     users_query = User.objects.all()
     
-    if start_date:
-        transactions_query = transactions_query.filter(created_at__gte=start_date)
-        sessions_query = sessions_query.filter(created_at__gte=start_date)
-        users_query = users_query.filter(date_joined__gte=start_date)
+    transactions_period = transactions_query.filter(created_at__gte=start_date)
+    sessions_period = sessions_query.filter(created_at__gte=start_date)
+    users_period = users_query.filter(date_joined__gte=start_date)
     
     # Calculate metrics
-    total_revenue = transactions_query.aggregate(Sum('amount'))['amount__sum'] or 0
-    total_sessions = sessions_query.count()
-    total_new_users = users_query.count()
+    total_revenue = transactions_period.aggregate(Sum('amount'))['amount__sum'] or 0
+    total_sessions = sessions_period.count()
+    total_new_users = users_period.count()
     
-    avg_session_price = sessions_query.aggregate(Avg('price'))['price__avg'] or 0
-    avg_booking_value = transactions_query.aggregate(Avg('amount'))['amount__avg'] or 0
+    avg_session_price = sessions_period.aggregate(Avg('price'))['price__avg'] or 0
+    avg_booking_value = transactions_period.aggregate(Avg('amount'))['amount__avg'] or 0
     
     # Revenue by day for chart
     revenue_by_day = {}
-    if start_date:
-        days = (timezone.now().date() - start_date.date()).days + 1
-        for i in range(days):
-            day = (timezone.now().date() - timedelta(days=i))
-            revenue_by_day[day.strftime('%Y-%m-%d')] = 0
-        
-        for transaction in transactions_query:
-            day = transaction.created_at.date().strftime('%Y-%m-%d')
-            if day in revenue_by_day:
-                revenue_by_day[day] += float(transaction.amount)
+    days_to_include = days
+    for i in range(days_to_include):
+        day = (timezone.now().date() - timedelta(days=i))
+        revenue_by_day[day.strftime('%Y-%m-%d')] = 0
+    
+    for transaction in transactions_period:
+        day = transaction.created_at.date().strftime('%Y-%m-%d')
+        if day in revenue_by_day:
+            revenue_by_day[day] += float(transaction.amount)
     
     # Format chart data
     chart_dates = sorted(revenue_by_day.keys())
@@ -411,12 +419,13 @@ def analytics(request):
     # Top mentors by earnings
     top_mentors = MentorProfile.objects.annotate(
         total_earnings=Sum('sessions__bookings__transactions__amount', 
-                           filter=Q(sessions__bookings__transactions__status='completed'))
+                           filter=Q(sessions__bookings__transactions__status='completed',
+                                   sessions__bookings__transactions__created_at__gte=start_date))
     ).filter(total_earnings__gt=0).order_by('-total_earnings')[:5]
     
     # Popular session topics
     all_tags = {}
-    for session in sessions_query:
+    for session in sessions_period:
         if session.tags:
             for tag in session.tags.split(','):
                 tag = tag.strip()
@@ -424,6 +433,19 @@ def analytics(request):
                     all_tags[tag] = all_tags.get(tag, 0) + 1
     
     popular_tags = sorted(all_tags.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Advanced Analytics
+    # Get revenue forecast (predictions)
+    revenue_forecast = get_revenue_forecast(days=days, prediction_days=14)
+    
+    # Get learner engagement metrics
+    engagement_stats = get_learner_engagement_stats(days=days)
+    
+    # Get session quality metrics
+    quality_metrics = get_session_quality_metrics(days=days)
+    
+    # Get mentor performance metrics
+    mentor_metrics = get_mentor_performance_metrics(days=days)
     
     context = {
         'period': period,
@@ -437,6 +459,15 @@ def analytics(request):
         'chart_revenue': chart_revenue,
         'top_mentors': top_mentors,
         'popular_tags': popular_tags,
+        
+        # Add advanced analytics data
+        'revenue_forecast': revenue_forecast,
+        'engagement_stats': engagement_stats,
+        'quality_metrics': quality_metrics,
+        'mentor_metrics': mentor_metrics,
+        
+        # Active tab
+        'active_tab': request.GET.get('tab', 'overview')
     }
     
     return render(request, 'admin_panel/analytics.html', context)

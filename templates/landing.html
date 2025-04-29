@@ -4,158 +4,181 @@
 {% block title %}PeerLearn - Connect with Expert Mentors{% endblock %}
 
 {% block content %}
-<!-- Hero Section with Glassmorphism -->
-<section class="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-    <!-- Parallax Background Elements -->
+<!-- Hero Section - Clean Modern Design -->
+<section class="relative flex items-center overflow-hidden bg-white text-gray-800 py-16">
+    <!-- Clean Background -->
     <div class="absolute inset-0 w-full h-full overflow-hidden">
-        <div class="parallax-bg absolute -top-20 -left-20 w-96 h-96 rounded-full bg-blue-300 opacity-20 blur-3xl transform translate-y-0" data-speed="0.05"></div>
-        <div class="parallax-bg absolute top-40 right-20 w-64 h-64 rounded-full bg-purple-500 opacity-20 blur-3xl transform translate-y-0" data-speed="0.1"></div>
-        <div class="parallax-bg absolute bottom-20 left-1/4 w-80 h-80 rounded-full bg-pink-400 opacity-20 blur-3xl transform translate-y-0" data-speed="0.08"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50"></div>
+        <div class="absolute right-0 top-0 h-full w-1/2 bg-primary opacity-5"></div>
     </div>
     
-    <div class="container mx-auto px-6 z-10 py-12 lg:py-24">
-        <div class="flex flex-col lg:flex-row items-center">
-            <div class="lg:w-1/2 lg:pr-12 mb-10 lg:mb-0">
-                <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+    <div class="container mx-auto px-4 sm:px-6 z-10 py-8 lg:py-16">
+        <div class="flex flex-col lg:flex-row items-center justify-between">
+            <div class="lg:w-1/2 lg:pr-10 mb-8 lg:mb-0">
+                <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-gray-900 font-heading">
                     {% trans "Learn Directly from" %}<br>
-                    <span class="text-yellow-300">{% trans "Industry Experts" %}</span>
+                    <span class="text-primary">{% trans "Industry Experts" %}</span>
                 </h1>
-                <p class="text-xl mb-8 text-blue-100">
+                <p class="text-lg mb-6 text-gray-600 max-w-lg">
                     {% trans "Connect with accomplished mentors for personalized 1-on-1 sessions. Advance your skills and achieve your career goals faster." %}
                 </p>
-                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                    <a href="{% url 'session_list' %}" class="btn-primary px-8 py-4 rounded-lg font-bold text-center transform transition hover:scale-105">
+                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                    <a href="{% url 'session_list' %}" class="btn btn-primary px-6 py-2.5 rounded-md font-medium text-center inline-flex items-center justify-center">
+                        <i data-feather="search" class="h-4 w-4 mr-2"></i>
                         {% trans "Browse Sessions" %}
                     </a>
-                    <a href="{% url 'role_selection' %}" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-center transform transition hover:scale-105">
+                    <a href="{% url 'role_selection' %}" class="btn btn-outline border-primary text-primary px-6 py-2.5 rounded-md font-medium text-center inline-flex items-center justify-center">
+                        <i data-feather="users" class="h-4 w-4 mr-2"></i>
                         {% trans "Become a Mentor" %}
                     </a>
                 </div>
                 
-                <!-- Key Stats -->
-                <div class="flex flex-wrap mt-12">
-                    <div class="mr-12 mb-6">
-                        <p class="text-3xl font-bold">1000+</p>
-                        <p class="text-blue-200">{% trans "Expert Mentors" %}</p>
+                <!-- Key Stats - Based on Actual Data -->
+                <div class="flex flex-wrap mt-8 gap-6">
+                    {% with mentor_count=featured_mentors.count %}
+                    <div class="stat-card bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-100">
+                        <p class="text-2xl font-bold text-primary">{{ mentor_count|default:"0" }}+</p>
+                        <p class="text-gray-500 text-sm">{% trans "Verified Mentors" %}</p>
                     </div>
-                    <div class="mr-12 mb-6">
-                        <p class="text-3xl font-bold">50,000+</p>
-                        <p class="text-blue-200">{% trans "Live Sessions" %}</p>
+                    {% endwith %}
+                    
+                    {% with session_count=upcoming_sessions.count|add:live_sessions.count %}
+                    <div class="stat-card bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-100">
+                        <p class="text-2xl font-bold text-primary">{{ session_count|default:"0" }}+</p>
+                        <p class="text-gray-500 text-sm">{% trans "Available Sessions" %}</p>
                     </div>
-                    <div class="mb-6">
-                        <p class="text-3xl font-bold">4.8/5</p>
-                        <p class="text-blue-200">{% trans "Satisfaction Score" %}</p>
+                    {% endwith %}
+                    
+                    <div class="stat-card bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-100">
+                        <p class="text-2xl font-bold text-success">{% trans "100%" %}</p>
+                        <p class="text-gray-500 text-sm">{% trans "Live Interaction" %}</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Glassmorphism Hero Card -->
-            <div class="lg:w-1/2 glass-card p-6 rounded-xl overflow-hidden relative">
-                <div class="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/10 to-white/5 pointer-events-none"></div>
-                <img src="https://cdn.jsdelivr.net/gh/mockingbot/MockingBot/public/images/illustration/online-learning.svg" alt="Online Learning Illustration" class="w-full">
+            <!-- Clean Hero Image -->
+            <div class="lg:w-2/5 relative rounded-2xl overflow-hidden shadow-lg">
+                <div class="aspect-w-4 aspect-h-3">
+                    <img src="https://cdn.jsdelivr.net/gh/mockingbot/MockingBot/public/images/illustration/online-learning.svg" alt="Online Learning Illustration" class="w-full h-full object-cover rounded-2xl">
+                </div>
+                <div class="absolute bottom-3 right-3 bg-primary text-white py-1.5 px-3 rounded-full text-sm font-medium">
+                    {% trans "Real-Time Learning" %}
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- How It Works Section -->
-<section class="py-20 bg-gray-50">
-    <div class="container mx-auto px-6">
-        <div class="text-center mb-16">
-            <h2 class="text-3xl md:text-4xl font-bold mb-4 text-gray-800">{% trans "How PeerLearn Works" %}</h2>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">{% trans "Three simple steps to start learning from the best in the industry" %}</p>
+<!-- How It Works Section - Compact Design -->
+<section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="text-center mb-8">
+            <h2 class="text-2xl md:text-3xl font-bold mb-3 text-gray-800 font-heading">{% trans "How PeerLearn Works" %}</h2>
+            <p class="text-base text-gray-600 max-w-xl mx-auto">{% trans "Three simple steps to start learning from the best in the industry" %}</p>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <!-- Step 1 -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                <div class="p-6">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                        <i data-feather="search" class="h-8 w-8 text-blue-600"></i>
+            <div class="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100 hover:border-primary hover:shadow-md transition-all">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-primary-light rounded-full flex items-center justify-center mr-3">
+                            <i data-feather="search" class="h-5 w-5 text-primary"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800">{% trans "1. Find Your Mentor" %}</h3>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">{% trans "1. Find Your Perfect Mentor" %}</h3>
-                    <p class="text-gray-600">{% trans "Browse through our curated list of industry experts and find someone who aligns with your learning goals." %}</p>
+                    <p class="text-sm text-gray-600 pl-13">{% trans "Browse through our curated list of industry experts and find someone who aligns with your learning goals." %}</p>
                 </div>
             </div>
             
             <!-- Step 2 -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                <div class="p-6">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                        <i data-feather="calendar" class="h-8 w-8 text-blue-600"></i>
+            <div class="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100 hover:border-primary hover:shadow-md transition-all">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-primary-light rounded-full flex items-center justify-center mr-3">
+                            <i data-feather="calendar" class="h-5 w-5 text-primary"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800">{% trans "2. Book a Session" %}</h3>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">{% trans "2. Book a Live Session" %}</h3>
-                    <p class="text-gray-600">{% trans "Choose a convenient time slot and book a personalized one-on-one session with your selected mentor." %}</p>
+                    <p class="text-sm text-gray-600 pl-13">{% trans "Choose a convenient time slot and book a personalized one-on-one session with your selected mentor." %}</p>
                 </div>
             </div>
             
             <!-- Step 3 -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect">
-                <div class="p-6">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
-                        <i data-feather="video" class="h-8 w-8 text-blue-600"></i>
+            <div class="bg-white rounded-md shadow-sm overflow-hidden border border-gray-100 hover:border-primary hover:shadow-md transition-all">
+                <div class="p-4">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 bg-primary-light rounded-full flex items-center justify-center mr-3">
+                            <i data-feather="video" class="h-5 w-5 text-primary"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-800">{% trans "3. Learn & Grow" %}</h3>
                     </div>
-                    <h3 class="text-xl font-bold mb-3 text-gray-800">{% trans "3. Learn & Grow Together" %}</h3>
-                    <p class="text-gray-600">{% trans "Join the live video session, collaborate on the interactive whiteboard, and accelerate your learning journey." %}</p>
+                    <p class="text-sm text-gray-600 pl-13">{% trans "Join the live video session, collaborate on the interactive whiteboard, and accelerate your learning journey." %}</p>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Featured Sessions Carousel (Netflix-style) -->
-<section class="py-20 bg-white">
-    <div class="container mx-auto px-6">
-        <h2 class="text-3xl font-bold mb-10 text-gray-800">{% trans "Upcoming Sessions" %}</h2>
+<!-- Upcoming Sessions with Horizontal Scrolling -->
+<section class="py-12 bg-white">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 font-heading">{% trans "Upcoming Sessions" %}</h2>
+            <a href="{% url 'session_list' %}" class="text-sm inline-flex items-center text-primary hover:text-primary-dark">
+                {% trans "View All" %}
+                <i data-feather="arrow-right" class="ml-1 h-4 w-4"></i>
+            </a>
+        </div>
         
-        <div class="relative featured-carousel">
-            <button class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 focus:outline-none" id="prev-button">
-                <i data-feather="chevron-left" class="h-6 w-6 text-gray-600"></i>
+        <div class="relative session-carousel">
+            <button class="absolute -left-2 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow p-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 hidden sm:block" id="prev-button">
+                <i data-feather="chevron-left" class="h-5 w-5 text-gray-600"></i>
             </button>
             
-            <div class="carousel-container overflow-x-auto hide-scrollbar">
-                <div class="carousel-track flex space-x-6 transition-transform duration-500 ease-out">
+            <div class="carousel-container overflow-x-auto hide-scrollbar pb-4">
+                <div class="carousel-track flex gap-3 transition-transform duration-300 ease-out snap-x">
                     {% if upcoming_sessions %}
                         {% for session in upcoming_sessions %}
-                            <div class="carousel-item flex-none w-72">
-                                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full">
-                                    <div class="h-40 bg-blue-100 relative">
+                            <div class="carousel-item flex-none w-64 sm:w-56 snap-start session-card">
+                                <div class="bg-white rounded-md shadow-sm overflow-hidden h-full border border-gray-100 hover:border-primary hover:shadow-md transition-all">
+                                    <div class="h-28 bg-gray-100 relative">
                                         {% if session.thumbnail %}
                                             <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover">
                                         {% else %}
-                                            <div class="absolute inset-0 flex items-center justify-center">
-                                                <i data-feather="book-open" class="h-12 w-12 text-blue-500"></i>
+                                            <div class="absolute inset-0 flex items-center justify-center bg-primary-light">
+                                                <i data-feather="book-open" class="h-8 w-8 text-primary"></i>
                                             </div>
                                         {% endif %}
                                         {% if session.tags %}
-                                            <div class="absolute bottom-0 left-0 bg-blue-600 text-white px-3 py-1 text-sm font-bold">
+                                            <div class="absolute bottom-0 left-0 bg-primary text-white px-2 py-0.5 text-xs font-medium">
                                                 {{ session.tags.split|first|title }}
                                             </div>
                                         {% endif %}
                                     </div>
-                                    <div class="p-4">
-                                        <h3 class="text-lg font-bold mb-2 text-gray-800 truncate">{{ session.title }}</h3>
-                                        <div class="flex items-center mb-2">
+                                    <div class="p-3">
+                                        <h3 class="text-base font-bold mb-1.5 text-gray-800 truncate">{{ session.title }}</h3>
+                                        <div class="flex items-center mb-1.5">
                                             {% if session.mentor.user.profile_picture %}
-                                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="w-8 h-8 rounded-full object-cover mr-2">
+                                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="w-6 h-6 rounded-full object-cover mr-1.5">
                                             {% else %}
-                                                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold mr-2">
+                                                <div class="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold mr-1.5">
                                                     {{ session.mentor.user.first_name|first|upper }}
                                                 </div>
                                             {% endif %}
-                                            <span class="text-sm text-gray-600 truncate">{{ session.mentor.user.get_full_name }}</span>
+                                            <span class="text-xs text-gray-600 truncate">{{ session.mentor.user.get_full_name }}</span>
                                         </div>
-                                        <div class="text-xs text-gray-500 mb-2">
-                                            <i data-feather="calendar" class="inline h-3 w-3 mr-1"></i>
-                                            {{ session.start_time|date:"M j, Y • g:i A" }}
+                                        <div class="text-xs text-gray-500 mb-2 flex items-center">
+                                            <i data-feather="calendar" class="inline h-3 w-3 mr-1 flex-shrink-0"></i>
+                                            <span class="truncate">{{ session.start_time|date:"M j, Y • g:i A" }}</span>
                                         </div>
-                                        <div class="flex justify-between items-center mt-4">
+                                        <div class="flex justify-between items-center">
                                             {% if session.price > 0 %}
-                                                <span class="text-blue-600 font-bold">₹{{ session.price }}</span>
+                                                <span class="text-primary text-sm font-medium">₹{{ session.price }}</span>
                                             {% else %}
-                                                <span class="text-green-600 font-bold">{% trans "Free" %}</span>
+                                                <span class="text-success text-sm font-medium">{% trans "Free" %}</span>
                                             {% endif %}
-                                            <a href="{% url 'session_detail' session.id %}" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-md">{% trans "View Details" %}</a>
+                                            <a href="{% url 'session_detail' session.id %}" class="text-xs bg-primary text-white px-2 py-1 rounded">{% trans "Details" %}</a>
                                         </div>
                                     </div>
                                 </div>
@@ -163,73 +186,78 @@
                         {% endfor %}
                     {% else %}
                         <!-- Fallback if no sessions available -->
-                        <div class="carousel-item flex-none w-full text-center py-8">
-                            <p class="text-gray-500">{% trans "No upcoming sessions available at the moment." %}</p>
+                        <div class="w-full text-center py-6">
+                            <p class="text-gray-500 text-sm">{% trans "No upcoming sessions available at the moment." %}</p>
                         </div>
                     {% endif %}
                 </div>
             </div>
             
-            <button class="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow-lg p-2 focus:outline-none" id="next-button">
-                <i data-feather="chevron-right" class="h-6 w-6 text-gray-600"></i>
+            <button class="absolute -right-2 top-1/2 transform -translate-y-1/2 z-10 bg-white rounded-full shadow p-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 hidden sm:block" id="next-button">
+                <i data-feather="chevron-right" class="h-5 w-5 text-gray-600"></i>
             </button>
-        </div>
-        
-        <div class="text-center mt-8">
-            <a href="{% url 'session_list' %}" class="inline-flex items-center text-blue-600 font-bold hover:text-blue-800">
-                {% trans "View All Sessions" %}
-                <i data-feather="arrow-right" class="ml-2 h-4 w-4"></i>
-            </a>
         </div>
     </div>
 </section>
 
 <!-- Live Now Sessions -->
 {% if live_sessions %}
-<section class="py-16 bg-gray-50">
-    <div class="container mx-auto px-6">
-        <div class="flex items-center mb-10">
-            <h2 class="text-3xl font-bold text-gray-800">{% trans "Live Now" %}</h2>
-            <div class="ml-3 px-3 py-1 bg-red-100 text-red-700 rounded-full flex items-center">
-                <span class="h-2 w-2 bg-red-600 rounded-full mr-2 animate-pulse"></span>
-                <span class="text-sm font-bold">{% trans "LIVE" %}</span>
+<section class="py-10 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center mb-6">
+            <div class="flex items-center">
+                <h2 class="text-2xl font-bold text-gray-800 font-heading">{% trans "Live Now" %}</h2>
+                <div class="ml-2 px-2 py-0.5 bg-red-100 text-red-700 rounded-full flex items-center">
+                    <span class="h-1.5 w-1.5 bg-red-600 rounded-full mr-1 animate-pulse"></span>
+                    <span class="text-xs font-medium">{% trans "LIVE" %}</span>
+                </div>
             </div>
+            <a href="{% url 'session_list' %}?status=in_progress" class="text-sm inline-flex items-center text-red-600 hover:text-red-700">
+                {% trans "View All" %}
+                <i data-feather="arrow-right" class="ml-1 h-4 w-4"></i>
+            </a>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {% for session in live_sessions %}
-                <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover-effect h-full border-2 border-red-400">
-                    <div class="h-40 bg-red-50 relative">
-                        {% if session.thumbnail %}
-                            <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover">
-                        {% else %}
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <i data-feather="video" class="h-12 w-12 text-red-500"></i>
-                            </div>
-                        {% endif %}
-                        <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center">
-                            <span class="h-2 w-2 bg-white rounded-full mr-1 animate-pulse"></span>
-                            {% trans "LIVE NOW" %}
-                        </div>
-                    </div>
-                    <div class="p-4">
-                        <h3 class="text-lg font-bold mb-2 text-gray-800 truncate">{{ session.title }}</h3>
-                        <div class="flex items-center mb-3">
-                            {% if session.mentor.user.profile_picture %}
-                                <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="w-8 h-8 rounded-full object-cover mr-2">
-                            {% else %}
-                                <div class="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center font-bold mr-2">
-                                    {{ session.mentor.user.first_name|first|upper }}
+        <div class="relative live-session-carousel">            
+            <div class="carousel-container overflow-x-auto hide-scrollbar pb-4">
+                <div class="carousel-track flex gap-3 transition-transform duration-300 ease-out snap-x">
+                    {% for session in live_sessions %}
+                        <div class="carousel-item flex-none w-64 sm:w-56 snap-start live-session-card">
+                            <div class="bg-white rounded-md shadow-sm overflow-hidden h-full border border-red-300 hover:border-red-500 hover:shadow-md transition-all">
+                                <div class="h-28 bg-gray-100 relative">
+                                    {% if session.thumbnail %}
+                                        <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover">
+                                    {% else %}
+                                        <div class="absolute inset-0 flex items-center justify-center bg-red-50">
+                                            <i data-feather="video" class="h-8 w-8 text-red-500"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div class="absolute top-2 right-2 bg-red-600 text-white px-2 py-0.5 rounded-full text-xs font-medium flex items-center">
+                                        <span class="h-1.5 w-1.5 bg-white rounded-full mr-1 animate-pulse"></span>
+                                        {% trans "LIVE" %}
+                                    </div>
                                 </div>
-                            {% endif %}
-                            <span class="text-sm text-gray-600 truncate">{{ session.mentor.user.get_full_name }}</span>
+                                <div class="p-3">
+                                    <h3 class="text-base font-bold mb-1.5 text-gray-800 truncate">{{ session.title }}</h3>
+                                    <div class="flex items-center mb-1.5">
+                                        {% if session.mentor.user.profile_picture %}
+                                            <img src="{{ session.mentor.user.profile_picture.url }}" alt="{{ session.mentor.user.get_full_name }}" class="w-6 h-6 rounded-full object-cover mr-1.5">
+                                        {% else %}
+                                            <div class="w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center text-xs font-bold mr-1.5">
+                                                {{ session.mentor.user.first_name|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <span class="text-xs text-gray-600 truncate">{{ session.mentor.user.get_full_name }}</span>
+                                    </div>
+                                    <a href="{% url 'session_room' session.id %}" class="block w-full bg-red-600 hover:bg-red-700 text-white text-center py-1.5 rounded text-sm font-medium mt-2">
+                                        {% trans "Join Now" %}
+                                    </a>
+                                </div>
+                            </div>
                         </div>
-                        <a href="{% url 'session_room' session.id %}" class="block w-full bg-red-600 hover:bg-red-700 text-white text-center py-2 rounded-md font-bold">
-                            {% trans "Join Now" %}
-                        </a>
-                    </div>
+                    {% endfor %}
                 </div>
-            {% endfor %}
+            </div>
         </div>
     </div>
 </section>

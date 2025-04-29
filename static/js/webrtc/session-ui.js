@@ -1327,6 +1327,96 @@ class SessionUIController {
     }
     
     /**
+     * Handle session reconnect notification
+     */
+    handleSessionReconnect() {
+        console.log("Attempting to reconnect to session...");
+        
+        // Show reconnecting message
+        this.showReconnectingMessage();
+        
+        // Update network quality indicator
+        this.updateNetworkQualityIndicator('medium', 'Reconnecting...');
+        
+        // Add system message
+        this.addSystemMessage("Connection lost. Attempting to reconnect...");
+    }
+    
+    /**
+     * Handle successful session rejoin
+     */
+    handleRejoinSuccess() {
+        console.log("Successfully rejoined session");
+        
+        // Hide reconnecting message
+        this.hideReconnectingMessage();
+        
+        // Update network quality indicator
+        this.updateNetworkQualityIndicator('good', 'Good');
+        
+        // Add system message
+        this.addSystemMessage("Reconnected to session successfully.");
+        
+        // Show success notification
+        this.showNotification("Session reconnected");
+    }
+    
+    /**
+     * Handle failed session rejoin
+     */
+    handleRejoinFailure() {
+        console.log("Failed to rejoin session");
+        
+        // Hide reconnecting message
+        this.hideReconnectingMessage();
+        
+        // Update network quality indicator
+        this.updateNetworkQualityIndicator('poor', 'Disconnected');
+        
+        // Add system message
+        this.addSystemMessage("Failed to reconnect to session. Please try refreshing the page.");
+        
+        // Show error message with refresh button
+        this.showErrorMessage("Connection lost. Unable to reconnect to the session. Try refreshing the page.", true);
+    }
+    
+    /**
+     * Show reconnecting message
+     */
+    showReconnectingMessage() {
+        // Create or update reconnecting overlay if not exists
+        let reconnectingOverlay = document.getElementById('reconnecting-overlay');
+        
+        if (!reconnectingOverlay) {
+            reconnectingOverlay = document.createElement('div');
+            reconnectingOverlay.id = 'reconnecting-overlay';
+            reconnectingOverlay.className = 'fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex flex-col items-center justify-center z-50';
+            reconnectingOverlay.innerHTML = `
+                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-4"></div>
+                <p class="text-white text-lg mb-2">Reconnecting to session...</p>
+                <p class="text-gray-300 text-sm max-w-xs text-center">This may take a few moments. Please don't close this page.</p>
+            `;
+            
+            document.body.appendChild(reconnectingOverlay);
+        }
+    }
+    
+    /**
+     * Hide reconnecting message
+     */
+    hideReconnectingMessage() {
+        const reconnectingOverlay = document.getElementById('reconnecting-overlay');
+        if (reconnectingOverlay) {
+            reconnectingOverlay.classList.add('opacity-0');
+            setTimeout(() => {
+                if (reconnectingOverlay.parentNode) {
+                    reconnectingOverlay.parentNode.removeChild(reconnectingOverlay);
+                }
+            }, 300);
+        }
+    }
+    
+    /**
      * Update the network quality indicator in the UI
      */
     updateNetworkQualityIndicator(quality, text) {

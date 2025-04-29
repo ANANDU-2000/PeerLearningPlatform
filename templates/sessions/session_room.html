@@ -885,6 +885,19 @@
                 
                 // Then handle our custom message types
                 switch (data.type) {
+                    case 'user_rejoin':
+                        // Handle a user who has rejoined the session
+                        sessionUI.addSystemMessage(`${data.user_name} has reconnected to the session.`);
+                        // If we're the mentor and a learner is rejoining, we need to create a new connection to them
+                        if (sessionUI.rtc.isMentor && data.user_id !== sessionUI.rtc.userId) {
+                            console.log("Mentor received rejoin notification from learner, initiating connection");
+                            setTimeout(() => {
+                                // Small delay to ensure both sides are ready
+                                sessionUI.rtc.createPeerConnection(data.user_id, data.user_name);
+                                sessionUI.rtc.createOffer(data.user_id);
+                            }, 1000);
+                        }
+                        break;
                     case 'raise_hand':
                         sessionUI.handleRaiseHand(data);
                         break;

@@ -9,331 +9,594 @@
 <meta name="keywords" content="create online course, teach online, host webinar, educational session, expert mentoring, knowledge sharing, online teaching">
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    .wizard-step {
+        display: none;
+    }
+    .wizard-step.active {
+        display: block;
+    }
+    .step-indicator.active {
+        background-color: var(--color-primary);
+        color: white;
+    }
+    .step-indicator.completed {
+        background-color: var(--color-success);
+        color: white;
+    }
+    .step-connector.active, .step-connector.completed {
+        background-color: var(--color-primary);
+    }
+    .form-control {
+        transition: all 0.2s ease;
+    }
+    .form-control:focus {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+    .button-primary {
+        background-image: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
+    }
+    .button-primary:hover {
+        background-image: linear-gradient(to right, var(--color-primary-dark), var(--color-primary-dark));
+    }
+    .participant-options label {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .participant-options input:checked + label {
+        border-color: var(--color-primary);
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .price-options label {
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .price-options input:checked + label {
+        border-color: var(--color-primary);
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    .card-hover:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+    .thumbnail-option:hover {
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="bg-gray-50 min-h-screen py-6">
+<div class="bg-gray-50 min-h-screen py-4 md:py-6">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header with Navigation -->
-        <div class="flex justify-between items-center mb-6">
-            <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{% trans "Create Your Session" %}</h1>
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-gray-900">{% trans "Create Live Session" %}</h1>
+                <p class="text-sm text-gray-600 mt-1">{% trans "Share your knowledge with learners in real-time" %}</p>
+            </div>
             
-            <a href="{% url 'mentor_dashboard' %}" class="inline-flex items-center text-gray-700 hover:text-blue-600">
+            <a href="{% url 'mentor_dashboard' %}" class="inline-flex items-center text-gray-700 hover:text-primary transition-colors">
                 <i data-feather="arrow-left" class="h-4 w-4 mr-1"></i>
                 {% trans "Back to Dashboard" %}
             </a>
         </div>
         
-        <!-- Value Proposition Banner -->
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 mb-6 border border-blue-100">
-            <div class="flex flex-col md:flex-row items-start md:items-center gap-4">
-                <div class="bg-white p-3 rounded-full">
-                    <i data-feather="award" class="h-8 w-8 text-blue-600"></i>
+        <!-- Session Creation Wizard -->
+        <div class="bg-white shadow-md rounded-xl overflow-hidden">
+            <!-- Progress Indicators -->
+            <div class="px-6 pt-6 pb-4">
+                <div class="flex items-center justify-between w-full">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col items-center">
+                        <div id="step-indicator-1" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full text-white bg-primary mb-1 text-sm font-medium">
+                            1
+                        </div>
+                        <span class="text-xs font-medium">{% trans "Basics" %}</span>
+                    </div>
+                    
+                    <!-- Connector 1 -->
+                    <div class="step-connector w-full h-1 bg-gray-200 mx-2" id="step-connector-1"></div>
+                    
+                    <!-- Step 2 -->
+                    <div class="flex flex-col items-center">
+                        <div id="step-indicator-2" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                            2
+                        </div>
+                        <span class="text-xs font-medium">{% trans "Schedule" %}</span>
+                    </div>
+                    
+                    <!-- Connector 2 -->
+                    <div class="step-connector w-full h-1 bg-gray-200 mx-2" id="step-connector-2"></div>
+                    
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center">
+                        <div id="step-indicator-3" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                            3
+                        </div>
+                        <span class="text-xs font-medium">{% trans "Participants" %}</span>
+                    </div>
+                    
+                    <!-- Connector 3 -->
+                    <div class="step-connector w-full h-1 bg-gray-200 mx-2" id="step-connector-3"></div>
+                    
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center">
+                        <div id="step-indicator-4" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                            4
+                        </div>
+                        <span class="text-xs font-medium">{% trans "Pricing" %}</span>
+                    </div>
+                    
+                    <!-- Connector 4 -->
+                    <div class="step-connector w-full h-1 bg-gray-200 mx-2" id="step-connector-4"></div>
+                    
+                    <!-- Step 5 -->
+                    <div class="flex flex-col items-center">
+                        <div id="step-indicator-5" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                            5
+                        </div>
+                        <span class="text-xs font-medium">{% trans "Media" %}</span>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="text-lg font-semibold text-blue-800">{% trans "Why Create a Session?" %}</h2>
-                    <p class="text-sm text-gray-600">{% trans "Share your expertise, build your reputation, and earn while making an impact. Well-crafted sessions attract more learners and increase your visibility on our platform." %}</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Main Form Card -->
-        <div class="bg-white shadow rounded-xl overflow-hidden">
-            <!-- Form Tabs -->
-            <div class="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-gray-200">
-                <nav class="flex">
-                    <button id="tab-basics" class="tab-btn text-blue-600 border-b-2 border-blue-600 py-3 px-6 font-medium focus:outline-none">
-                        <i data-feather="info" class="h-4 w-4 inline-block mr-1"></i> {% trans "Session Basics" %}
-                    </button>
-                    <button id="tab-details" class="tab-btn text-gray-500 py-3 px-6 font-medium focus:outline-none">
-                        <i data-feather="settings" class="h-4 w-4 inline-block mr-1"></i> {% trans "Additional Details" %}
-                    </button>
-                </nav>
             </div>
             
             <!-- Form Container -->
-            <div class="p-5 md:p-6">
-                <form method="post" id="session-form" enctype="multipart/form-data" class="space-y-4">
-                    {% csrf_token %}
-                    <input type="hidden" id="selected-thumbnail" name="selected_thumbnail" value="">
-                    <input type="hidden" id="selected-thumbnail-name" name="selected_thumbnail_name" value="">
+            <form method="post" id="session-form" enctype="multipart/form-data" class="p-6 border-t border-gray-100">
+                {% csrf_token %}
+                <input type="hidden" id="selected-thumbnail" name="selected_thumbnail" value="">
+                <input type="hidden" id="selected-thumbnail-name" name="selected_thumbnail_name" value="">
+                
+                {% if form.non_field_errors %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-6" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                
+                <!-- Form Status Indicator -->
+                <div id="form-status" class="hidden mb-6"></div>
+                
+                <!-- Step 1: Session Basics -->
+                <div class="wizard-step active" id="step-1">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Details" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Enter basic information about your live session" %}</p>
+                    </div>
                     
-                    {% if form.non_field_errors %}
-                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative" role="alert">
-                            {{ form.non_field_errors }}
+                    <!-- Session Title -->
+                    <div class="mb-5">
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {% trans "Session Title" %} <span class="text-red-600">*</span>
+                        </label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.title.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">
+                            {% trans "A clear, descriptive title helps learners discover your session" %}
+                        </p>
+                    </div>
+                    
+                    <!-- Session Description -->
+                    <div class="mb-5">
+                        <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {% trans "Description" %} <span class="text-red-600">*</span>
+                        </label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.description.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">
+                            {% trans "Tip: Include what learners will gain, what you'll cover, and who this is ideal for" %}
+                        </p>
+                    </div>
+                    
+                    <!-- Next Button -->
+                    <div class="mt-8 flex justify-end">
+                        <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
+                            {% trans "Next: Schedule" %}
+                            <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Schedule -->
+                <div class="wizard-step" id="step-2">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Schedule" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Set when your live session will take place" %}</p>
+                    </div>
+                    
+                    <!-- Date & Time Selection -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                        <div>
+                            <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                {% trans "Start Time" %} <span class="text-red-600">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.start_time }}
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i data-feather="calendar" class="h-4 w-4 text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.start_time.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.start_time.errors }}</p>
+                            {% endif %}
                         </div>
+                        
+                        <div>
+                            <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                {% trans "End Time" %} <span class="text-red-600">*</span>
+                            </label>
+                            <div class="relative">
+                                {{ form.end_time }}
+                                <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                    <i data-feather="clock" class="h-4 w-4 text-gray-400"></i>
+                                </div>
+                            </div>
+                            {% if form.end_time.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.end_time.errors }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Duration Information -->
+                    <div class="bg-blue-50 rounded-md p-4 mb-6 border border-blue-100">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i data-feather="info" class="h-5 w-5 text-blue-500"></i>
+                            </div>
+                            <div class="ml-3">
+                                <h4 class="text-sm font-medium text-blue-800">{% trans "Session Duration" %}</h4>
+                                <p class="text-xs text-blue-600 mt-1">{% trans "The duration will be calculated automatically based on your start and end times. For best engagement, we recommend 60-90 minute sessions." %}</p>
+                                <p class="text-xs font-medium text-blue-800 mt-2" id="duration-display">{% trans "Selected duration:" %} <span id="duration-value">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Topics to Cover -->
+                    <div class="mb-5">
+                        <label for="{{ form.topics_to_cover.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {% trans "Topics to Cover" %}
+                        </label>
+                        {{ form.topics_to_cover }}
+                        {% if form.topics_to_cover.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.topics_to_cover.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">
+                            {% trans "List the key topics you'll cover in this session, one per line" %}
+                        </p>
+                    </div>
+                    
+                    <!-- Step Navigation -->
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" class="prev-step py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 flex items-center">
+                            <i data-feather="arrow-left" class="h-4 w-4 mr-2"></i>
+                            {% trans "Previous" %}
+                        </button>
+                        <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
+                            {% trans "Next: Participants" %}
+                            <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Participants -->
+                <div class="wizard-step" id="step-3">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Participant Settings" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Choose your audience size for optimal engagement" %}</p>
+                    </div>
+                    
+                    <!-- Participant Options (Radio buttons with modern styling) -->
+                    <div class="participant-options grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                        <!-- Option 1: One-on-One -->
+                        <div>
+                            <input type="radio" id="participants-1" name="max_participants" value="1" class="sr-only" />
+                            <label for="participants-1" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
+                                <div class="flex flex-col items-center text-center">
+                                    <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center mb-3">
+                                        <i data-feather="user" class="h-5 w-5 text-indigo-600"></i>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900">{% trans "One-on-One" %}</h4>
+                                    <p class="text-xs text-gray-500 mt-1">{% trans "Private session with just one learner" %}</p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Option 2: Small Group (2-5) -->
+                        <div>
+                            <input type="radio" id="participants-5" name="max_participants" value="5" class="sr-only" checked />
+                            <label for="participants-5" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
+                                <div class="flex flex-col items-center text-center">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mb-3">
+                                        <i data-feather="users" class="h-5 w-5 text-blue-600"></i>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900">{% trans "Small Group" %}</h4>
+                                    <p class="text-xs text-gray-500 mt-1">{% trans "2-5 learners for personalized interaction" %}</p>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Option 3: Custom -->
+                        <div>
+                            <input type="radio" id="participants-custom" name="max_participants_type" value="custom" class="sr-only" />
+                            <label for="participants-custom" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
+                                <div class="flex flex-col items-center text-center">
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mb-3">
+                                        <i data-feather="sliders" class="h-5 w-5 text-purple-600"></i>
+                                    </div>
+                                    <h4 class="font-medium text-gray-900">{% trans "Custom" %}</h4>
+                                    <p class="text-xs text-gray-500 mt-1">{% trans "Specify your preferred group size" %}</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Custom Participants Input (shows only when custom is selected) -->
+                    <div id="custom-participants-container" class="mb-6 hidden">
+                        <label for="custom-participants" class="block text-sm font-medium text-gray-700 mb-1">
+                            {% trans "Number of Participants" %} <span class="text-red-600">*</span>
+                        </label>
+                        <div class="flex items-center">
+                            <input type="number" id="custom-participants" min="1" max="50" value="10" class="form-control shadow-sm focus:ring-primary focus:border-primary block w-full sm:text-sm border-gray-300 rounded-md">
+                            <button type="button" id="apply-custom-participants" class="ml-2 inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                {% trans "Apply" %}
+                            </button>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">
+                            {% trans "For optimal experience, we recommend between 2-20 participants" %}
+                        </p>
+                    </div>
+                    
+                    <!-- Hidden actual max_participants field that will be submitted -->
+                    {{ form.max_participants }}
+                    {% if form.max_participants.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.max_participants.errors }}</p>
                     {% endif %}
                     
-                    <!-- Form Status Indicator -->
-                    <div id="form-status" class="hidden"></div>
+                    <!-- Tags -->
+                    <div class="mb-5">
+                        <label for="{{ form.tags.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {% trans "Tags" %}
+                        </label>
+                        {{ form.tags }}
+                        {% if form.tags.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.tags.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">
+                            {% trans "Tags help learners find your session. Separate with commas (e.g., Python, Web Development)" %}
+                        </p>
+                    </div>
                     
-                    <!-- Tab Content: Basics -->
-                    <div id="content-basics" class="tab-content">
-                        <!-- Session Title -->
-                        <div class="mb-4">
-                            <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                {% trans "Session Title" %} <span class="text-red-600">*</span>
-                            </label>
-                            {{ form.title }}
-                            {% if form.title.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.title.errors }}</p>
-                            {% endif %}
-                            <p class="mt-1 text-xs text-gray-500">
-                                {% trans "A clear, descriptive title helps learners discover your session" %}
-                            </p>
-                        </div>
-                        
-                        <!-- Session Description -->
-                        <div class="mb-4">
-                            <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                {% trans "Description" %} <span class="text-red-600">*</span>
-                            </label>
-                            {{ form.description }}
-                            {% if form.description.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.description.errors }}</p>
-                            {% endif %}
-                            <p class="mt-1 text-xs text-gray-500">
-                                {% trans "Tip: Include what learners will gain, what you'll cover, and who this is ideal for" %}
-                            </p>
-                        </div>
-                        
-                        <!-- Topics to Cover -->
-                        <div class="mb-4">
-                            <label for="{{ form.topics_to_cover.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                {% trans "Topics to Cover" %}
-                            </label>
-                            {{ form.topics_to_cover }}
-                            {% if form.topics_to_cover.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.topics_to_cover.errors }}</p>
-                            {% endif %}
-                            <p class="mt-1 text-xs text-gray-500">
-                                {% trans "List the key topics you'll cover in this session. This helps learners understand what to expect." %}
-                            </p>
-                        </div>
-                        
-                        <!-- Session Details Row -->
-                        <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 mb-4">
-                            <!-- Time and Duration -->
-                            <div class="md:w-7/12 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                                <div class="sm:w-1/2">
-                                    <label for="{{ form.start_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                        {% trans "Start Time" %} <span class="text-red-600">*</span>
-                                    </label>
-                                    {{ form.start_time }}
-                                    {% if form.start_time.errors %}
-                                        <p class="mt-1 text-sm text-red-600">{{ form.start_time.errors }}</p>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="sm:w-1/2">
-                                    <label for="{{ form.end_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                        {% trans "End Time" %} <span class="text-red-600">*</span>
-                                    </label>
-                                    {{ form.end_time }}
-                                    {% if form.end_time.errors %}
-                                        <p class="mt-1 text-sm text-red-600">{{ form.end_time.errors }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <!-- Max Participants -->
-                            <div class="md:w-5/12">
-                                <label for="{{ form.max_participants.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                    {% trans "Maximum Participants" %} <span class="text-red-600">*</span>
-                                </label>
-                                {{ form.max_participants }}
-                                {% if form.max_participants.errors %}
-                                    <p class="mt-1 text-sm text-red-600">{{ form.max_participants.errors }}</p>
-                                {% endif %}
-                                <p class="mt-1 text-xs text-gray-500">
-                                    {% trans "Smaller groups often lead to better interaction" %}
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <!-- Pricing Options -->
-                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100 mb-4">
-                            <h3 class="font-medium text-blue-800 mb-2">{% trans "Pricing Details" %}</h3>
-                            <div class="flex items-start mb-3">
-                                <div class="flex h-5 items-center">
-                                    {{ form.is_free }}
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="{{ form.is_free.id_for_label }}" class="font-medium text-gray-700">{{ form.is_free.label }}</label>
-                                    <p class="text-gray-500">{{ form.is_free.help_text }}</p>
-                                </div>
-                            </div>
-                            
-                            <div id="price-field" class="mt-3">
-                                <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                    {% trans "Price (INR)" %} <span class="text-red-600">*</span>
-                                </label>
-                                <div class="relative rounded-md shadow-sm">
-                                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                                        <span class="text-gray-500 sm:text-sm">₹</span>
+                    <!-- Step Navigation -->
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" class="prev-step py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 flex items-center">
+                            <i data-feather="arrow-left" class="h-4 w-4 mr-2"></i>
+                            {% trans "Previous" %}
+                        </button>
+                        <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
+                            {% trans "Next: Pricing" %}
+                            <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Pricing -->
+                <div class="wizard-step" id="step-4">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Pricing" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Set the price for your live session" %}</p>
+                    </div>
+                    
+                    <!-- Price Options -->
+                    <div class="price-options grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                        <!-- Free Option -->
+                        <div>
+                            <input type="radio" id="price-free" name="pricing_option" value="free" class="sr-only" />
+                            <label for="price-free" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                                            <i data-feather="gift" class="h-5 w-5 text-green-600"></i>
+                                        </div>
                                     </div>
-                                    {{ form.price }}
+                                    <div class="ml-3">
+                                        <h4 class="font-medium text-gray-900">{% trans "Free Session" %}</h4>
+                                        <p class="text-xs text-gray-500 mt-1">{% trans "Offer this session at no cost to reach more learners" %}</p>
+                                    </div>
                                 </div>
-                                {% if form.price.errors %}
-                                    <p class="mt-1 text-sm text-red-600">{{ form.price.errors }}</p>
-                                {% endif %}
-                            </div>
+                            </label>
                         </div>
                         
-                        <!-- Next Step Button -->
-                        <div class="mt-6">
-                            <button type="button" id="next-to-details" class="w-full py-3 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                {% trans "Continue to Additional Details" %}
-                                <i data-feather="arrow-right" class="h-4 w-4 inline ml-1"></i>
-                            </button>
+                        <!-- Paid Option -->
+                        <div>
+                            <input type="radio" id="price-paid" name="pricing_option" value="paid" class="sr-only" checked />
+                            <label for="price-paid" class="block p-4 bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer h-full card-hover">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                            <i data-feather="dollar-sign" class="h-5 w-5 text-blue-600"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="font-medium text-gray-900">{% trans "Paid Session" %}</h4>
+                                        <p class="text-xs text-gray-500 mt-1">{% trans "Set a price for your valuable expertise" %}</p>
+                                    </div>
+                                </div>
+                            </label>
                         </div>
                     </div>
                     
-                    <!-- Tab Content: Additional Details -->
-                    <div id="content-details" class="tab-content hidden">
-                        <!-- Tags -->
-                        <div class="mb-4">
-                            <label for="{{ form.tags.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                {% trans "Tags" %}
-                            </label>
-                            {{ form.tags }}
-                            {% if form.tags.errors %}
-                                <p class="mt-1 text-sm text-red-600">{{ form.tags.errors }}</p>
-                            {% endif %}
-                            <p class="mt-1 text-xs text-gray-500">
-                                {% trans "Tags help learners find your session. Separate with commas (e.g., Python, Web Development)" %}
-                            </p>
-                        </div>
-                        
-                        <!-- SEO Keywords -->
-                        <div class="mb-4">
-                            <label for="{{ form.seo_keywords.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-                                {{ form.seo_keywords.label }}
-                            </label>
-                            {{ form.seo_keywords }}
-                            <p class="mt-1 text-xs text-gray-500">
-                                {{ form.seo_keywords.help_text }}
-                            </p>
-                        </div>
-                        
-                        <!-- Thumbnail Selection -->
-                        <div class="mb-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">
-                                {% trans "Session Thumbnail" %}
-                            </label>
-                            
-                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-                                <!-- Preset thumbnails -->
-                                <div class="thumbnail-option bg-white rounded-lg p-2 border-2 border-transparent hover:border-blue-500 cursor-pointer shadow-sm hover:shadow transition-all duration-200">
-                                    <img src="{% static 'images/thumbnails/tech-programming.svg' %}" alt="Programming" class="mx-auto h-20 w-full object-contain">
-                                    <p class="text-xs text-center mt-1 font-medium">Programming</p>
-                                </div>
-                                <div class="thumbnail-option bg-white rounded-lg p-2 border-2 border-transparent hover:border-blue-500 cursor-pointer shadow-sm hover:shadow transition-all duration-200">
-                                    <img src="{% static 'images/thumbnails/data-science.svg' %}" alt="Data Science" class="mx-auto h-20 w-full object-contain">
-                                    <p class="text-xs text-center mt-1 font-medium">Data Science</p>
-                                </div>
-                                <div class="thumbnail-option bg-white rounded-lg p-2 border-2 border-transparent hover:border-blue-500 cursor-pointer shadow-sm hover:shadow transition-all duration-200">
-                                    <img src="{% static 'images/thumbnails/design-ux.svg' %}" alt="Design & UX" class="mx-auto h-20 w-full object-contain">
-                                    <p class="text-xs text-center mt-1 font-medium">Design & UX</p>
-                                </div>
-                                <div class="thumbnail-option bg-white rounded-lg p-2 border-2 border-transparent hover:border-blue-500 cursor-pointer shadow-sm hover:shadow transition-all duration-200">
-                                    <img src="{% static 'images/thumbnails/business.svg' %}" alt="Business" class="mx-auto h-20 w-full object-contain">
-                                    <p class="text-xs text-center mt-1 font-medium">Business</p>
-                                </div>
+                    <!-- Price Input (shows when paid is selected) -->
+                    <div id="price-input-container" class="mb-6">
+                        <label for="{{ form.price.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {% trans "Session Price (INR)" %} <span class="text-red-600">*</span>
+                        </label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">₹</span>
                             </div>
-                            
-                            <!-- Custom thumbnail upload -->
-                            <div class="mt-3">
-                                <label class="block text-xs font-medium text-gray-700 mb-1">
-                                    {% trans "Or upload your own thumbnail" %}
+                            {{ form.price }}
+                        </div>
+                        {% if form.price.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.price.errors }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-500">
+                            {% trans "Set a fair price that reflects your expertise and session duration" %}
+                        </p>
+                    </div>
+                    
+                    <!-- Hidden is_free field that will be submitted -->
+                    {{ form.is_free }}
+                    {% if form.is_free.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.is_free.errors }}</p>
+                    {% endif %}
+                    
+                    <!-- SEO Keywords -->
+                    <div class="mb-5">
+                        <label for="{{ form.seo_keywords.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ form.seo_keywords.label }}
+                        </label>
+                        {{ form.seo_keywords }}
+                        <p class="mt-1 text-xs text-gray-500">
+                            {{ form.seo_keywords.help_text }}
+                        </p>
+                    </div>
+                    
+                    <!-- Step Navigation -->
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" class="prev-step py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 flex items-center">
+                            <i data-feather="arrow-left" class="h-4 w-4 mr-2"></i>
+                            {% trans "Previous" %}
+                        </button>
+                        <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
+                            {% trans "Next: Media" %}
+                            <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 5: Media & Final Details -->
+                <div class="wizard-step" id="step-5">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Media" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Add an image to make your session more appealing" %}</p>
+                    </div>
+                    
+                    <!-- Thumbnail Selection -->
+                    <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                            {% trans "Choose a Thumbnail" %}
+                        </label>
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                            <!-- Preset thumbnails -->
+                            <div class="thumbnail-option bg-white rounded-lg p-3 border-2 border-transparent hover:border-primary cursor-pointer shadow-sm hover:shadow transition-all duration-200">
+                                <img src="{% static 'images/thumbnails/tech-programming.svg' %}" alt="Programming" class="mx-auto h-20 w-full object-contain">
+                                <p class="text-xs text-center mt-2 font-medium">Programming</p>
+                            </div>
+                            <div class="thumbnail-option bg-white rounded-lg p-3 border-2 border-transparent hover:border-primary cursor-pointer shadow-sm hover:shadow transition-all duration-200">
+                                <img src="{% static 'images/thumbnails/data-science.svg' %}" alt="Data Science" class="mx-auto h-20 w-full object-contain">
+                                <p class="text-xs text-center mt-2 font-medium">Data Science</p>
+                            </div>
+                            <div class="thumbnail-option bg-white rounded-lg p-3 border-2 border-transparent hover:border-primary cursor-pointer shadow-sm hover:shadow transition-all duration-200">
+                                <img src="{% static 'images/thumbnails/design-ux.svg' %}" alt="Design & UX" class="mx-auto h-20 w-full object-contain">
+                                <p class="text-xs text-center mt-2 font-medium">Design & UX</p>
+                            </div>
+                            <div class="thumbnail-option bg-white rounded-lg p-3 border-2 border-transparent hover:border-primary cursor-pointer shadow-sm hover:shadow transition-all duration-200">
+                                <img src="{% static 'images/thumbnails/business.svg' %}" alt="Business" class="mx-auto h-20 w-full object-contain">
+                                <p class="text-xs text-center mt-2 font-medium">Business</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Custom thumbnail upload -->
+                        <div class="mt-4">
+                            <div class="flex items-center">
+                                <label for="{{ form.thumbnail.id_for_label }}" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-sm leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200">
+                                    <i data-feather="upload" class="h-4 w-4 inline mr-1"></i> 
+                                    {% trans "Upload Your Own" %}
                                 </label>
-                                <div class="flex items-center">
-                                    <label for="{{ form.thumbnail.id_for_label }}" class="cursor-pointer bg-white py-2 px-3 border border-gray-300 rounded-md shadow-sm text-xs leading-4 font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                        <i data-feather="upload" class="h-3 w-3 inline mr-1"></i> 
-                                        {% trans "Choose Image" %}
-                                    </label>
-                                    <span id="thumbnail-filename" class="ml-3 text-xs text-gray-500"></span>
-                                    {{ form.thumbnail }}
-                                </div>
-                                <p class="mt-1 text-xs text-gray-500">
-                                    {{ form.thumbnail.help_text }}
-                                </p>
+                                <span id="thumbnail-filename" class="ml-3 text-sm text-gray-500"></span>
+                                {{ form.thumbnail }}
                             </div>
+                            <p class="mt-2 text-xs text-gray-500">
+                                {{ form.thumbnail.help_text }}
+                            </p>
                         </div>
-                        
-                        <!-- Submit Buttons -->
-                        <div class="flex justify-between space-x-3 pt-5 border-t border-gray-100">
-                            <button type="button" id="back-to-basics" class="flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                <i data-feather="arrow-left" class="h-4 w-4 mr-1"></i>
-                                {% trans "Back" %}
-                            </button>
-                            <div>
-                                <a href="{% url 'mentor_dashboard' %}" class="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                    {% trans "Cancel" %}
-                                </a>
-                                <button type="submit" id="create-session-button" class="ml-3 inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200">
-                                    <i data-feather="plus-circle" class="h-4 w-4 mr-1"></i>
-                                    {% trans "Create Session" %}
-                                </button>
+                    </div>
+                    
+                    <!-- Session Review -->
+                    <div class="bg-blue-50 p-5 rounded-lg border border-blue-100 mb-6">
+                        <h4 class="font-medium text-blue-800 mb-3">{% trans "Session Summary" %}</h4>
+                        <div class="space-y-2">
+                            <div class="flex">
+                                <span class="text-sm font-medium text-gray-700 w-1/3">{% trans "Title:" %}</span>
+                                <span class="text-sm text-gray-600 w-2/3" id="summary-title">-</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-sm font-medium text-gray-700 w-1/3">{% trans "Date & Time:" %}</span>
+                                <span class="text-sm text-gray-600 w-2/3" id="summary-datetime">-</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-sm font-medium text-gray-700 w-1/3">{% trans "Duration:" %}</span>
+                                <span class="text-sm text-gray-600 w-2/3" id="summary-duration">-</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-sm font-medium text-gray-700 w-1/3">{% trans "Participants:" %}</span>
+                                <span class="text-sm text-gray-600 w-2/3" id="summary-participants">-</span>
+                            </div>
+                            <div class="flex">
+                                <span class="text-sm font-medium text-gray-700 w-1/3">{% trans "Price:" %}</span>
+                                <span class="text-sm text-gray-600 w-2/3" id="summary-price">-</span>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Submission Success Modal -->
-                    <div id="success-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
-                        <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-                        <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10 relative transform transition-all">
-                            <div class="text-center">
-                                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-                                    <i data-feather="check" class="h-6 w-6 text-green-600"></i>
-                                </div>
-                                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">{% trans "Session Created!" %}</h3>
-                                <p class="text-sm text-gray-500 mb-5">{% trans "Your session has been created successfully and will be available to learners." %}</p>
-                                <div class="flex justify-center space-x-3">
-                                    <a href="{% url 'mentor_sessions' %}" class="inline-flex justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                                        {% trans "View My Sessions" %}
-                                    </a>
-                                    <a href="{% url 'create_session' %}" class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                        {% trans "Create Another" %}
-                                    </a>
-                                </div>
+                    <!-- Final Submit Buttons -->
+                    <div class="pt-5 flex justify-between border-t border-gray-200">
+                        <button type="button" class="prev-step py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 flex items-center">
+                            <i data-feather="arrow-left" class="h-4 w-4 mr-2"></i>
+                            {% trans "Previous" %}
+                        </button>
+                        <div>
+                            <a href="{% url 'mentor_dashboard' %}" class="inline-flex items-center py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200">
+                                {% trans "Cancel" %}
+                            </a>
+                            <button type="submit" id="create-session-button" class="ml-3 inline-flex items-center py-2 px-4 border border-transparent rounded-md text-white shadow-md bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200">
+                                <i data-feather="check-circle" class="h-4 w-4 mr-2"></i>
+                                {% trans "Create Session" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Success Modal -->
+                <div id="success-modal" class="fixed inset-0 flex items-center justify-center z-50 hidden">
+                    <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+                    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4 z-10 relative transform transition-all">
+                        <div class="text-center">
+                            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+                                <i data-feather="check" class="h-6 w-6 text-green-600"></i>
+                            </div>
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-2">{% trans "Session Created!" %}</h3>
+                            <p class="text-sm text-gray-500 mb-5">{% trans "Your session has been created successfully and will be available to learners." %}</p>
+                            <div class="flex justify-center space-x-3">
+                                <a href="{% url 'mentor_sessions' %}" class="inline-flex justify-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                    {% trans "View My Sessions" %}
+                                </a>
+                                <a href="{% url 'create_session' %}" class="inline-flex justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                                    {% trans "Create Another" %}
+                                </a>
                             </div>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
-        
-        <!-- Tips Section -->
-        <div class="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <h3 class="text-lg font-bold text-gray-800 mb-3">{% trans "Tips for Creating Successful Sessions" %}</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="flex items-start">
-                    <div class="flex-shrink-0 bg-green-100 rounded-full p-2 mr-3">
-                        <i data-feather="target" class="h-5 w-5 text-green-600"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold">{% trans "Be Specific" %}</h4>
-                        <p class="text-sm text-gray-600">{% trans "Clearly define what you'll teach and the specific outcomes for learners." %}</p>
-                    </div>
                 </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0 bg-blue-100 rounded-full p-2 mr-3">
-                        <i data-feather="clock" class="h-5 w-5 text-blue-600"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold">{% trans "Optimal Duration" %}</h4>
-                        <p class="text-sm text-gray-600">{% trans "60-90 minute sessions tend to perform best for maintaining learner engagement." %}</p>
-                    </div>
-                </div>
-                <div class="flex items-start">
-                    <div class="flex-shrink-0 bg-purple-100 rounded-full p-2 mr-3">
-                        <i data-feather="users" class="h-5 w-5 text-purple-600"></i>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold">{% trans "Engage Participants" %}</h4>
-                        <p class="text-sm text-gray-600">{% trans "Plan for interaction through Q&A, exercises, or collaborative activities." %}</p>
-                    </div>
-                </div>
-            </div>
+            </form>
         </div>
     </div>
 </div>
@@ -358,132 +621,327 @@
             initNotifications();
         }
         
-        // Form submission and validation
-        const sessionForm = document.getElementById('session-form');
-        const createButton = document.getElementById('create-session-button');
-        const formStatus = document.getElementById('form-status');
-        const successModal = document.getElementById('success-modal');
+        // Step navigation
+        const wizardSteps = document.querySelectorAll('.wizard-step');
+        const stepIndicators = document.querySelectorAll('.step-indicator');
+        const stepConnectors = document.querySelectorAll('.step-connector');
+        const nextButtons = document.querySelectorAll('.next-step');
+        const prevButtons = document.querySelectorAll('.prev-step');
         
-        if (sessionForm && createButton) {
-            sessionForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // Validate form before submission
-                if (validateSessionForm()) {
-                    // Show loading state
-                    createButton.disabled = true;
-                    createButton.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating...';
-                    
-                    // Submit form data via AJAX
-                    const formData = new FormData(sessionForm);
-                    
-                    fetch(sessionForm.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    })
-                    .then(response => {
-                        if (response.redirected) {
-                            // If standard redirect happens (non-AJAX response)
-                            window.location.href = response.url;
-                            return;
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data && data.success) {
-                            // Show success modal
-                            successModal.classList.remove('hidden');
-                            
-                            // Create notification
-                            if (typeof showNotification === 'function') {
-                                showNotification('Session created successfully!', 'success');
-                            }
-                        } else {
-                            // Show errors
-                            createButton.disabled = false;
-                            createButton.innerHTML = '<i data-feather="plus-circle" class="h-4 w-4 mr-1"></i> Create Session';
-                            feather.replace();
-                            
-                            // Display error message
-                            formStatus.classList.remove('hidden');
-                            formStatus.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4">' +
-                                '<p>There was an error creating your session. Please check the form and try again.</p>' +
-                                '</div>';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error submitting form:', error);
-                        
-                        // Revert button state
-                        createButton.disabled = false;
-                        createButton.innerHTML = '<i data-feather="plus-circle" class="h-4 w-4 mr-1"></i> Create Session';
-                        feather.replace();
-                        
-                        // Fallback to standard form submission
-                        sessionForm.submit();
-                    });
-                }
-            });
+        let currentStep = 1;
+        
+        // Form elements
+        const form = document.getElementById('session-form');
+        const titleInput = document.getElementById('{{ form.title.id_for_label }}');
+        const descriptionInput = document.getElementById('{{ form.description.id_for_label }}');
+        const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
+        const endTimeInput = document.getElementById('{{ form.end_time.id_for_label }}');
+        const maxParticipantsInput = document.getElementById('{{ form.max_participants.id_for_label }}');
+        const isFreeInput = document.getElementById('{{ form.is_free.id_for_label }}');
+        const priceInput = document.getElementById('{{ form.price.id_for_label }}');
+        
+        // Initialize datetime inputs
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        
+        if (startTimeInput) {
+            startTimeInput.min = now.toISOString().slice(0, 16);
+            
+            // Default to the next hour, rounded to :00
+            const defaultStart = new Date(now);
+            defaultStart.setHours(defaultStart.getHours() + 1);
+            defaultStart.setMinutes(0);
+            defaultStart.setSeconds(0);
+            startTimeInput.value = defaultStart.toISOString().slice(0, 16);
+            
+            // Default end time is 1 hour after start time
+            if (endTimeInput) {
+                const defaultEnd = new Date(defaultStart);
+                defaultEnd.setHours(defaultEnd.getHours() + 1);
+                endTimeInput.value = defaultEnd.toISOString().slice(0, 16);
+                endTimeInput.min = startTimeInput.value;
+            }
         }
         
-        // Close success modal when clicking outside
-        if (successModal) {
-            successModal.addEventListener('click', function(e) {
-                if (e.target === successModal || e.target.classList.contains('bg-black')) {
-                    successModal.classList.add('hidden');
-                }
-            });
-        }
-        
-        // Form validation function
-        function validateSessionForm() {
-            let isValid = true;
-            formStatus.classList.add('hidden');
-            
-            // Required fields
-            const titleInput = document.getElementById('{{ form.title.id_for_label }}');
-            const descInput = document.getElementById('{{ form.description.id_for_label }}');
-            const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
-            const endTimeInput = document.getElementById('{{ form.end_time.id_for_label }}');
-            const priceInput = document.getElementById('{{ form.price.id_for_label }}');
-            const maxParticipantsInput = document.getElementById('{{ form.max_participants.id_for_label }}');
-            
-            // Simple validation
-            if (!titleInput.value.trim()) {
-                highlightError(titleInput, 'Please enter a session title');
-                isValid = false;
-            }
-            
-            if (!descInput.value.trim()) {
-                highlightError(descInput, 'Please provide a session description');
-                isValid = false;
-            }
-            
-            if (!startTimeInput.value) {
-                highlightError(startTimeInput, 'Please select a start time');
-                isValid = false;
-            }
-            
-            if (!endTimeInput.value) {
-                highlightError(endTimeInput, 'Please select an end time');
-                isValid = false;
-            }
-            
-            if (!maxParticipantsInput.value || maxParticipantsInput.value < 1) {
-                highlightError(maxParticipantsInput, 'Please enter a valid number of participants');
-                isValid = false;
-            }
-            
-            // Ensure start time is before end time
+        // Calculate and display duration
+        function updateDuration() {
             if (startTimeInput.value && endTimeInput.value) {
-                const startDate = new Date(startTimeInput.value);
+                const start = new Date(startTimeInput.value);
+                const end = new Date(endTimeInput.value);
+                
+                if (end > start) {
+                    const durationMs = end - start;
+                    const hours = Math.floor(durationMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+                    
+                    let durationText = '';
+                    if (hours > 0) {
+                        durationText += hours + ' hour' + (hours > 1 ? 's' : '');
+                    }
+                    if (minutes > 0) {
+                        durationText += (hours > 0 ? ' ' : '') + minutes + ' minute' + (minutes > 1 ? 's' : '');
+                    }
+                    
+                    document.getElementById('duration-value').textContent = durationText;
+                    document.getElementById('summary-duration').textContent = durationText;
+                }
+            }
+        }
+        
+        if (startTimeInput && endTimeInput) {
+            startTimeInput.addEventListener('change', function() {
+                // Ensure end time is after start time
+                const startDate = new Date(this.value);
                 const endDate = new Date(endTimeInput.value);
                 
                 if (endDate <= startDate) {
-                    highlightError(endTimeInput, 'End time must be after start time');
+                    // Set end time to start time + 1 hour
+                    const newEndDate = new Date(startDate);
+                    newEndDate.setHours(newEndDate.getHours() + 1);
+                    endTimeInput.value = newEndDate.toISOString().slice(0, 16);
+                }
+                
+                endTimeInput.min = this.value;
+                updateDuration();
+                updateSummary();
+            });
+            
+            endTimeInput.addEventListener('change', function() {
+                updateDuration();
+                updateSummary();
+            });
+            
+            // Initial duration calculation
+            updateDuration();
+        }
+        
+        // Participant option handling
+        const participantOptions = document.querySelectorAll('input[name="max_participants"], input[name="max_participants_type"]');
+        const customParticipantsContainer = document.getElementById('custom-participants-container');
+        const customParticipantsInput = document.getElementById('custom-participants');
+        const applyCustomParticipantsBtn = document.getElementById('apply-custom-participants');
+        
+        participantOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.id === 'participants-custom') {
+                    customParticipantsContainer.classList.remove('hidden');
+                    maxParticipantsInput.value = customParticipantsInput.value;
+                } else if (this.name === 'max_participants') {
+                    customParticipantsContainer.classList.add('hidden');
+                    maxParticipantsInput.value = this.value;
+                }
+                updateSummary();
+            });
+        });
+        
+        if (applyCustomParticipantsBtn) {
+            applyCustomParticipantsBtn.addEventListener('click', function() {
+                if (customParticipantsInput.value && !isNaN(customParticipantsInput.value)) {
+                    maxParticipantsInput.value = customParticipantsInput.value;
+                    updateSummary();
+                }
+            });
+        }
+        
+        // Price option handling
+        const priceOptions = document.querySelectorAll('input[name="pricing_option"]');
+        const priceInputContainer = document.getElementById('price-input-container');
+        
+        priceOptions.forEach(option => {
+            option.addEventListener('change', function() {
+                if (this.value === 'free') {
+                    priceInputContainer.classList.add('opacity-50');
+                    priceInput.value = '0.00';
+                    priceInput.setAttribute('readonly', true);
+                    isFreeInput.checked = true;
+                } else {
+                    priceInputContainer.classList.remove('opacity-50');
+                    priceInput.removeAttribute('readonly');
+                    priceInput.value = '';
+                    priceInput.focus();
+                    isFreeInput.checked = false;
+                }
+                updateSummary();
+            });
+        });
+        
+        // Initialize price input to handle currency formatting
+        if (priceInput) {
+            priceInput.addEventListener('blur', function() {
+                if (!isFreeInput.checked && this.value) {
+                    const value = parseFloat(this.value);
+                    if (!isNaN(value)) {
+                        this.value = value.toFixed(2);
+                        updateSummary();
+                    }
+                }
+            });
+        }
+        
+        // Thumbnail selection
+        const thumbnailOptions = document.querySelectorAll('.thumbnail-option');
+        const thumbnailInput = document.getElementById('{{ form.thumbnail.id_for_label }}');
+        const thumbnailFilename = document.getElementById('thumbnail-filename');
+        const selectedThumbnail = document.getElementById('selected-thumbnail');
+        const selectedThumbnailName = document.getElementById('selected-thumbnail-name');
+        
+        thumbnailOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Clear all selected thumbnails
+                thumbnailOptions.forEach(opt => opt.classList.remove('border-primary'));
+                
+                // Mark this one as selected
+                this.classList.add('border-primary');
+                
+                // Clear file input
+                if (thumbnailInput) {
+                    thumbnailInput.value = '';
+                    thumbnailFilename.textContent = '';
+                }
+                
+                // Store the selected preset thumbnail
+                const imgSrc = this.querySelector('img').getAttribute('src');
+                const imgName = this.querySelector('p').textContent;
+                
+                if (selectedThumbnail && selectedThumbnailName) {
+                    selectedThumbnail.value = imgSrc;
+                    selectedThumbnailName.value = imgName;
+                }
+            });
+        });
+        
+        // Display filename when custom thumbnail is selected
+        if (thumbnailInput) {
+            thumbnailInput.addEventListener('change', function() {
+                // Clear preset thumbnail selection
+                thumbnailOptions.forEach(opt => opt.classList.remove('border-primary'));
+                
+                // Show filename
+                if (this.files.length > 0) {
+                    thumbnailFilename.textContent = this.files[0].name;
+                    
+                    // Clear preset thumbnail selection
+                    if (selectedThumbnail && selectedThumbnailName) {
+                        selectedThumbnail.value = '';
+                        selectedThumbnailName.value = '';
+                    }
+                } else {
+                    thumbnailFilename.textContent = '';
+                }
+            });
+        }
+        
+        // Update step navigation
+        function updateStepDisplay(newStep) {
+            // Hide all steps
+            wizardSteps.forEach(step => step.classList.remove('active'));
+            
+            // Show current step
+            document.getElementById(`step-${newStep}`).classList.add('active');
+            
+            // Update step indicators and connectors
+            stepIndicators.forEach((indicator, index) => {
+                const stepNum = index + 1;
+                
+                indicator.classList.remove('active', 'completed');
+                
+                if (stepNum === newStep) {
+                    indicator.classList.add('active');
+                } else if (stepNum < newStep) {
+                    indicator.classList.add('completed');
+                }
+            });
+            
+            stepConnectors.forEach((connector, index) => {
+                const connectorNum = index + 1;
+                connector.classList.remove('active', 'completed');
+                
+                if (connectorNum < newStep) {
+                    connector.classList.add('completed');
+                }
+            });
+            
+            currentStep = newStep;
+        }
+        
+        // Next button click
+        nextButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (validateCurrentStep()) {
+                    updateStepDisplay(currentStep + 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Previous button click
+        prevButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                if (currentStep > 1) {
+                    updateStepDisplay(currentStep - 1);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
+        });
+        
+        // Validate current step
+        function validateCurrentStep() {
+            let isValid = true;
+            const formStatus = document.getElementById('form-status');
+            formStatus.classList.add('hidden');
+            
+            // Clear previous errors
+            document.querySelectorAll('.error-message').forEach(el => el.remove());
+            
+            // Step 1 validation
+            if (currentStep === 1) {
+                if (!titleInput.value.trim()) {
+                    highlightError(titleInput, 'Please enter a session title');
+                    isValid = false;
+                }
+                
+                if (!descriptionInput.value.trim()) {
+                    highlightError(descriptionInput, 'Please provide a session description');
+                    isValid = false;
+                }
+            }
+            
+            // Step 2 validation
+            else if (currentStep === 2) {
+                if (!startTimeInput.value) {
+                    highlightError(startTimeInput, 'Please select a start time');
+                    isValid = false;
+                }
+                
+                if (!endTimeInput.value) {
+                    highlightError(endTimeInput, 'Please select an end time');
+                    isValid = false;
+                }
+                
+                // Ensure start time is before end time
+                if (startTimeInput.value && endTimeInput.value) {
+                    const startDate = new Date(startTimeInput.value);
+                    const endDate = new Date(endTimeInput.value);
+                    
+                    if (endDate <= startDate) {
+                        highlightError(endTimeInput, 'End time must be after start time');
+                        isValid = false;
+                    }
+                }
+            }
+            
+            // Step 3 validation
+            else if (currentStep === 3) {
+                if (!maxParticipantsInput.value || maxParticipantsInput.value < 1) {
+                    highlightError(maxParticipantsInput, 'Please enter a valid number of participants');
+                    isValid = false;
+                }
+            }
+            
+            // Step 4 validation
+            else if (currentStep === 4) {
+                if (!isFreeInput.checked && (!priceInput.value || isNaN(parseFloat(priceInput.value)) || parseFloat(priceInput.value) < 0)) {
+                    highlightError(priceInput, 'Please enter a valid price');
                     isValid = false;
                 }
             }
@@ -491,19 +949,9 @@
             // Show form-level error if validation fails
             if (!isValid) {
                 formStatus.classList.remove('hidden');
-                formStatus.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded relative mb-4">' +
-                    '<p>Please correct the errors in the form before submitting.</p>' +
+                formStatus.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">' +
+                    '<p>Please correct the errors before proceeding.</p>' +
                     '</div>';
-                
-                // Show the first tab if we're on the second tab and there are errors in the first tab
-                if (!contentBasics.classList.contains('hidden') && 
-                    (titleInput.classList.contains('border-red-500') || 
-                     descInput.classList.contains('border-red-500') ||
-                     startTimeInput.classList.contains('border-red-500') ||
-                     endTimeInput.classList.contains('border-red-500') ||
-                     maxParticipantsInput.classList.contains('border-red-500'))) {
-                    showTab(tabBasics, contentBasics);
-                }
             }
             
             return isValid;
@@ -541,132 +989,154 @@
             }, { once: true });
         }
         
-        // Tab functionality
-        const tabBasics = document.getElementById('tab-basics');
-        const tabDetails = document.getElementById('tab-details');
-        const contentBasics = document.getElementById('content-basics');
-        const contentDetails = document.getElementById('content-details');
-        const nextToDetails = document.getElementById('next-to-details');
-        const backToBasics = document.getElementById('back-to-basics');
-        
-        function showTab(tab, content) {
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
-                btn.classList.add('text-gray-500');
-            });
-            tab.classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
-            tab.classList.remove('text-gray-500');
+        // Update summary in step 5
+        function updateSummary() {
+            // Title
+            document.getElementById('summary-title').textContent = titleInput.value || '-';
             
-            // Update content visibility
-            document.querySelectorAll('.tab-content').forEach(c => {
-                c.classList.add('hidden');
-            });
-            content.classList.remove('hidden');
-        }
-        
-        tabBasics.addEventListener('click', () => showTab(tabBasics, contentBasics));
-        tabDetails.addEventListener('click', () => showTab(tabDetails, contentDetails));
-        nextToDetails.addEventListener('click', () => showTab(tabDetails, contentDetails));
-        backToBasics.addEventListener('click', () => showTab(tabBasics, contentBasics));
-        
-        // Free session checkbox
-        const isFreeCheckbox = document.getElementById('{{ form.is_free.id_for_label }}');
-        const priceField = document.getElementById('price-field');
-        const priceInput = document.getElementById('{{ form.price.id_for_label }}');
-        
-        if (isFreeCheckbox && priceInput) {
-            isFreeCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    priceField.classList.add('opacity-50');
-                    priceInput.value = '0.00';
-                    priceInput.setAttribute('readonly', true);
+            // Date & Time
+            if (startTimeInput.value && endTimeInput.value) {
+                const startDate = new Date(startTimeInput.value);
+                const endDate = new Date(endTimeInput.value);
+                
+                const options = { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                };
+                
+                document.getElementById('summary-datetime').textContent = 
+                    startDate.toLocaleDateString(undefined, options) + ' to ' + 
+                    endDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+            } else {
+                document.getElementById('summary-datetime').textContent = '-';
+            }
+            
+            // Participants
+            const maxParticipants = maxParticipantsInput.value;
+            if (maxParticipants) {
+                if (maxParticipants == 1) {
+                    document.getElementById('summary-participants').textContent = 'One-on-One (1 participant)';
                 } else {
-                    priceField.classList.remove('opacity-50');
-                    priceInput.removeAttribute('readonly');
-                    priceInput.value = '';
+                    document.getElementById('summary-participants').textContent = maxParticipants + ' participants';
                 }
-            });
-        }
-        
-        // Set minimum date for datetime inputs
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        
-        const startTimeInput = document.getElementById('{{ form.start_time.id_for_label }}');
-        const endTimeInput = document.getElementById('{{ form.end_time.id_for_label }}');
-        
-        if (startTimeInput) {
-            startTimeInput.min = now.toISOString().slice(0, 16);
+            } else {
+                document.getElementById('summary-participants').textContent = '-';
+            }
             
-            startTimeInput.addEventListener('change', function() {
-                if (endTimeInput) {
-                    const startDate = new Date(this.value);
-                    
-                    // Ensure end time is after start time
-                    if (endTimeInput.value && new Date(endTimeInput.value) <= startDate) {
-                        // Set end time to start time + 1 hour
-                        startDate.setHours(startDate.getHours() + 1);
-                        endTimeInput.value = startDate.toISOString().slice(0, 16);
-                    }
-                    
-                    // Update min value of end time input
-                    endTimeInput.min = this.value;
-                }
-            });
+            // Price
+            if (isFreeInput.checked) {
+                document.getElementById('summary-price').textContent = 'Free';
+            } else if (priceInput.value) {
+                document.getElementById('summary-price').textContent = '₹' + parseFloat(priceInput.value).toFixed(2);
+            } else {
+                document.getElementById('summary-price').textContent = '-';
+            }
         }
         
-        // Initialize price input to handle currency formatting
-        if (priceInput) {
-            priceInput.addEventListener('blur', function() {
-                if (!isFreeCheckbox.checked) {
-                    const value = parseFloat(this.value);
-                    if (!isNaN(value)) {
-                        this.value = value.toFixed(2);
+        // Form submission
+        const createButton = document.getElementById('create-session-button');
+        const successModal = document.getElementById('success-modal');
+        
+        if (form && createButton) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate all steps before submission
+                let allValid = true;
+                
+                // Save current step to restore it after validation
+                const savedStep = currentStep;
+                
+                // Validate each step
+                for (let i = 1; i <= 5; i++) {
+                    updateStepDisplay(i);
+                    if (!validateCurrentStep()) {
+                        allValid = false;
+                        break;
                     }
                 }
-            });
-        }
-        
-        // Thumbnail selection
-        const thumbnailOptions = document.querySelectorAll('.thumbnail-option');
-        const thumbnailInput = document.getElementById('{{ form.thumbnail.id_for_label }}');
-        const thumbnailFilename = document.getElementById('thumbnail-filename');
-        
-        thumbnailOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                // Clear all selected thumbnails
-                thumbnailOptions.forEach(opt => opt.classList.remove('border-blue-500'));
                 
-                // Mark this one as selected
-                this.classList.add('border-blue-500');
-                
-                // Clear file input
-                if (thumbnailInput) {
-                    thumbnailInput.value = '';
-                    thumbnailFilename.textContent = '';
-                }
-                
-                // Store the selected preset thumbnail
-                const imgSrc = this.querySelector('img').src;
-                const imgName = this.querySelector('p').textContent;
-                document.getElementById('selected-thumbnail').value = imgSrc;
-                document.getElementById('selected-thumbnail-name').value = imgName;
-            });
-        });
-        
-        if (thumbnailInput) {
-            thumbnailInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    thumbnailFilename.textContent = this.files[0].name;
+                // If everything is valid, submit the form
+                if (allValid) {
+                    // Show loading state
+                    createButton.disabled = true;
+                    createButton.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Creating...';
                     
-                    // Clear any selected preset thumbnail
-                    thumbnailOptions.forEach(opt => opt.classList.remove('border-blue-500'));
+                    // Submit form data via AJAX
+                    const formData = new FormData(form);
+                    
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => {
+                        if (response.redirected) {
+                            // If standard redirect happens (non-AJAX response)
+                            window.location.href = response.url;
+                            return;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data && data.success) {
+                            // Show success modal
+                            successModal.classList.remove('hidden');
+                            
+                            // Create notification
+                            if (typeof showNotification === 'function') {
+                                showNotification('Session created successfully!', 'success');
+                            }
+                        } else {
+                            // Show errors
+                            createButton.disabled = false;
+                            createButton.innerHTML = '<i data-feather="check-circle" class="h-4 w-4 mr-2"></i> Create Session';
+                            feather.replace();
+                            
+                            // Display error message
+                            const formStatus = document.getElementById('form-status');
+                            formStatus.classList.remove('hidden');
+                            formStatus.innerHTML = '<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md mb-4">' +
+                                '<p>There was an error creating your session. Please check the form and try again.</p>' +
+                                '</div>';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error submitting form:', error);
+                        
+                        // Revert button state
+                        createButton.disabled = false;
+                        createButton.innerHTML = '<i data-feather="check-circle" class="h-4 w-4 mr-2"></i> Create Session';
+                        feather.replace();
+                        
+                        // Fallback to standard form submission
+                        form.submit();
+                    });
                 } else {
-                    thumbnailFilename.textContent = '';
+                    // Restore to the first invalid step
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             });
         }
+        
+        // Close success modal when clicking outside
+        if (successModal) {
+            successModal.addEventListener('click', function(e) {
+                if (e.target === successModal || e.target.classList.contains('bg-black')) {
+                    successModal.classList.add('hidden');
+                }
+            });
+        }
+        
+        // Initialize
+        updateDuration();
+        updateSummary();
     });
 </script>
 {% endblock %}

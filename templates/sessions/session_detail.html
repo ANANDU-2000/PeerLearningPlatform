@@ -258,11 +258,18 @@
                                 {% elif is_booked %}
                                     <!-- Already booked this session -->
                                     {% if session.is_ongoing %}
-                                        <a href="{% url 'session_room' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
-                                            {% trans "Join Session" %}
+                                        <a href="{% url 'session_room' session_id=session.id %}" class="join-session-btn w-full block text-center bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-4 rounded-md transition flex items-center justify-center">
+                                            <div class="animate-pulse h-3 w-3 bg-white rounded-full mr-2"></div>
+                                            <i data-feather="video" class="h-5 w-5 mr-2"></i>
+                                            {% trans "JOIN LIVE SESSION" %}
                                         </a>
+                                        <p class="text-sm text-gray-600 text-center mt-2">
+                                            <i data-feather="info" class="h-3 w-3 inline"></i>
+                                            {% trans "Session started" %} {{ session.start_time|timesince }} {% trans "ago" %}
+                                        </p>
                                     {% else %}
                                         <div class="w-full block text-center bg-green-600 text-white font-medium py-3 px-4 rounded-md mb-2">
+                                            <i data-feather="check-circle" class="h-5 w-5 inline-block mr-1"></i>
                                             {% trans "Booked" %}
                                         </div>
                                         <p class="text-sm text-gray-600 text-center">
@@ -406,6 +413,48 @@
 {% endblock %}
 
 {% block extra_js %}
+<style>
+    /* Animations for the session detail page */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(20px); }
+    }
+    
+    @keyframes pulse-glow {
+        0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+    
+    .animate-fadeIn {
+        animation: fadeIn 0.5s ease forwards;
+    }
+    
+    .animate-fadeOut {
+        animation: fadeOut 0.5s ease forwards;
+    }
+    
+    /* Pulsing effect for live session indicators */
+    .join-session-btn {
+        animation: pulse-glow 2s infinite;
+    }
+    
+    /* Text shadow for better contrast on banner images */
+    .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+    
+    /* Modern CSS countdown timer styles */
+    .countdown-days, .countdown-hours, .countdown-minutes, .countdown-seconds {
+        font-variant-numeric: tabular-nums;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize feather icons
@@ -475,6 +524,24 @@
                     timeDiff = endTime - currentTime;
                     statusPrefix = '<span class="text-red-600 font-bold mr-2">LIVE NOW</span> <span class="text-gray-600">Ends in: </span>';
                     
+                    // Auto-redirect for booked sessions - check if this is a booked session by the user
+                    const isBooked = {% if is_booked %}true{% else %}false{% endif %};
+                    const autoRedirectToRoom = {% if auto_redirect_enabled|default:True %}true{% else %}false{% endif %};
+                    
+                    if (isBooked && autoRedirectToRoom && !hasNotifiedStart) {
+                        // Show a notification that we'll be redirecting
+                        showNotification(
+                            "Session is Live",
+                            "This session is now live! Redirecting you to the session room...",
+                            "success"
+                        );
+                        
+                        // Wait 3 seconds and redirect to the session room
+                        setTimeout(function() {
+                            window.location.href = "{% url 'session_room' session_id=session.id %}";
+                        }, 3000);
+                    }
+                    
                     // Update Join button to be prominent
                     if (joinSessionBtn) {
                         joinSessionBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'bg-gray-500');
@@ -529,6 +596,12 @@
                 
                 // Update the element with prefix and time
                 element.innerHTML = statusPrefix + countdownStr;
+                
+                // Update modern countdown elements if they exist
+                if (countdownDays) countdownDays.textContent = days.toString().padStart(2, '0');
+                if (countdownHours) countdownHours.textContent = hours.toString().padStart(2, '0');
+                if (countdownMinutes) countdownMinutes.textContent = minutes.toString().padStart(2, '0');
+                if (countdownSeconds) countdownSeconds.textContent = seconds.toString().padStart(2, '0');
             });
         }
         

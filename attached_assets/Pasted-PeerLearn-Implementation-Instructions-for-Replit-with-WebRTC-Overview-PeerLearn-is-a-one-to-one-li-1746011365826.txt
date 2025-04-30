@@ -1,0 +1,1941 @@
+PeerLearn Implementation Instructions for Replit with WebRTC
+Overview
+PeerLearn is a one-to-one live video EdTech platform built using advanced Python with Django and SQLite3 as the sole database, designed to connect mentors and learners through real-time, simultaneous live video sessions using advanced WebRTC for high-quality, low-latency video streaming. The platform enables mentors and learners to interact face-to-face in a virtual room, with both video feeds displayed live at the same time, supported by features like chat, whiteboard, and topics checklist. This prompt provides comprehensive instructions for implementing the platform in a Replit environment, covering all key pages: Landing Page, Mentor Dashboard, Learner Dashboard, Live Session Room, Profile/Settings Page, and Admin Panel. The implementation ensures a premium, honest, and impactful experience with real-time data, no fake numbers, and the following features:
+
+Main Feature: Real-time, simultaneous live video for mentor and learner using WebRTC, ensuring low-latency, high-quality streaming with robust error handling.
+Navigation: Specific items (e.g., Sessions, Mentors) with enhanced interactions (hover pulses, tap ripples, real-time badges).
+Real-Time: WebSocket updates for sessions, bookings, earnings, and analytics using django-channels.
+Payments: Razorpay INR integration, 90% to mentors, 20% app profit, automatic splitting.
+Role-Based Access: Strict restrictions, immediate dashboard redirects post-login/registration.
+Error Handling: Comprehensive for payments, network, server, WebRTC connectivity, and concurrency issues.
+Scalability: Supports 1000+ simultaneous users with Redis queues and SQLite3 optimizations.
+Constraints: Uses only Python/Django (with packages like django-channels, redis, razorpay) and SQLite3, no external databases or non-Python tools.
+
+This prompt is designed to be pasted into a Replit Core AI Agent or similar environment, providing all requirements and step-by-step instructions for building the app, with a focus on the WebRTC-powered Live Session Room.
+
+Requirements
+Django Requirements
+
+Python Version: 3.10 or higher.
+Django Version: 4.2 or higher.
+Python Packages (install via requirements.txt):
+django==4.2.*: Core framework for web development.
+django-channels==4.0.*: Real-time WebSocket support for live updates and WebRTC signaling.
+redis==5.0.*: Caching and queuing for concurrency and performance.
+asgiref==3.7.*: Async support for Django Channels.
+razorpay==1.4.*: INR payment processing for sessions and withdrawals.
+python-decouple==3.8.*: Manage environment variables (e.g., API keys).
+django-otp==1.3.*: Two-factor authentication (2FA) for admin panel.
+
+
+Replit Configuration:
+Create a requirements.txt file listing the above packages.
+Run pip install -r requirements.txt in Replit’s shell to install dependencies.
+Set up a .replit file to run the Django server:
+Command: python manage.py runserver 0.0.0.0:8000.
+Include migrate in the run script to initialize the SQLite3 database.
+
+
+Configure environment variables in Replit’s “Secrets” tab:
+RAZORPAY_KEY: Razorpay API key for payments.
+RAZORPAY_SECRET: Razorpay API secret.
+REDIS_URL: Redis server URL (e.g., redis://localhost:6379 or cloud provider).
+SECRET_KEY: Django secret key for security.
+WEBRTC_ICE_SERVERS: JSON string for WebRTC STUN/TURN servers (e.g., [{"urls": "stun:stun.l.google.com:19302"}]).
+
+
+
+
+Django Settings:
+Add channels, otp, and a custom app (core) to INSTALLED_APPS.
+Configure DATABASES to use SQLite3 (django.db.backends.sqlite3, file: db.sqlite3).
+Set CHANNEL_LAYERS to use Redis for WebSocket communication.
+Configure ASGI_APPLICATION to point to the ASGI configuration for WebSocket support.
+Set up static file handling (STATIC_URL, STATICFILES_DIRS) for CSS, JavaScript, and images.
+Add custom middleware for role-based access control.
+
+
+Static Files:
+Create a static directory for CSS, JavaScript (including WebRTC scripts), and images (e.g., logo, Heroicons).
+Run manage.py collectstatic to serve static files in production.
+
+
+
+General Requirements
+
+Hardware:
+Replit Hacker plan or equivalent (512MB RAM, 1GB storage) to support Django, Redis, WebRTC, and WebSocket.
+Stable internet connection for real-time WebRTC video streaming and Razorpay API calls.
+
+
+External Services:
+Razorpay Account: Sign up at razorpay.com to obtain API keys for INR payments (sessions, withdrawals, gifts).
+Redis Server: Use a local Redis instance (via Replit’s shell) or a cloud provider (e.g., Redis Labs). Set REDIS_URL in environment variables.
+WebRTC ICE Servers: Use free STUN servers (e.g., Google’s stun.l.google.com:19302) or subscribe to a TURN server provider (e.g., Twilio, Xirsys) for NAT traversal. Configure in environment variables.
+
+
+Environment Setup:
+Create a Django project (peerlearn) and app (core) in Replit.
+Initialize SQLite3 database (db.sqlite3) in the project root.
+Enable HTTPS (Replit provides HTTPS by default) for secure WebRTC and payment communication.
+Use Replit’s “Secrets” tab to store environment variables securely.
+
+
+Development Tools:
+Use Replit’s built-in editor and shell for development and package management.
+Enable Replit’s “Always On” feature (Hacker plan) for continuous server uptime.
+Use Replit’s database viewer to inspect SQLite3 tables during development.
+
+
+Frontend Assets:
+Download Heroicons for navigation icons (e.g., play, star, user, video).
+Use Tailwind CSS (via CDN) for responsive, premium styling.
+Include JavaScript for client-side WebRTC handling (peer connections, signaling) and interactions (hover effects, WebSocket).
+
+
+
+
+SQLite3 Database Schema
+
+Users Table:
+Fields: Unique ID, email (unique), name, role (enum: learner, mentor, admin), password (hashed), interests (JSON, e.g., ["Coding", "Math"] for learners), career goals (text for learners), domains (JSON, e.g., ["AI"] for mentors), skills (JSON, e.g., ["Python"] for mentors), intro video (file path for mentors, optional).
+
+
+Sessions Table:
+Fields: Unique ID, title, mentor ID (foreign key to Users), description, topics (JSON, e.g., ["Loops"]), price (decimal, INR), date/time, status (enum: active, completed, cancelled).
+
+
+Bookings Table:
+Fields: Unique ID, session ID (foreign key), learner ID (foreign key), status (enum: pending, confirmed, rejected).
+
+
+Payments Table:
+Fields: Unique ID, booking ID (foreign key), amount (decimal, INR), mentor share (decimal, 90%), app share (decimal, 20%), status (enum: success, failed, pending), Razorpay transaction ID.
+
+
+Withdrawals Table:
+Fields: Unique ID, user ID (foreign key, mentors or admin), amount (decimal, INR), bank/UPI details, status (enum: pending, completed).
+
+
+Optimization:
+Add indexes on frequently queried fields (e.g., Sessions.status, Users.role, Bookings.session_id).
+Use JSON fields for flexible storage (e.g., interests, topics).
+Implement row-level locks for concurrent transactions (e.g., bookings, payments).
+
+
+
+
+Advanced Django Features
+
+Authentication: Use Django’s built-in auth system with JWT tokens for secure login, and django-otp for 2FA in the admin panel.
+Middleware: Create custom middleware to enforce role-based access, redirecting users to /dashboard/[role]/ post-login or registration.
+Channels: Implement django-channels for WebSocket-based real-time updates (sessions, bookings, earnings) and WebRTC signaling.
+Celery: Use Celery for asynchronous tasks (e.g., email notifications, payment processing, report generation).
+Signals: Automatically split payments (90% mentor, 20% app) when a payment is saved to the Payments table.
+Admin: Customize Django admin with charts for revenue, user growth, and session metrics.
+Caching: Use Redis to cache session lists, analytics, and dashboard data for <50ms response times.
+Concurrency: Implement SQLite3 row-level locks and Redis queues for simultaneous actions (e.g., bookings, payments).
+Security: Enforce HTTPS, CSRF protection, Razorpay encryption, and audit logs in SQLite3 for all actions (e.g., user blocks, session removals).
+WebRTC Integration: Use django-channels for WebRTC signaling, enabling peer-to-peer video connections with STUN/TURN servers for NAT traversal.
+
+
+Design System
+
+Colors:
+Primary: Orange (#FF5734) for CTAs and active items.
+Accent: Purple (#BE94F5) for hover/tap highlights.
+Background: Light Gray (#F7F7F5) for a clean, honest look.
+
+
+Typography:
+Navigation: Poppins Medium (16px web, 18px mobile).
+Content: Inter Regular (14–16px).
+Tooltips: Inter Regular (12px).
+
+
+Icons: Heroicons (e.g., play for Sessions, star for Mentors, video for Camera), sized 24px (web) or 20px (mobile).
+Glassmorphism: Apply backdrop-filter: blur(8px) to nav bars and cards for a premium aesthetic.
+Interactions:
+Web Hover: Scale up (1.1x), purple glow, 0.2s transition, show tooltips.
+Click/Tap: Orange ripple effect, content fades in (0.3s, no page refresh).
+Active Item: Orange underline or border, pulsing icon (2s interval).
+Mobile Menu: Slide-in from right (0.4s), items fade in sequentially (0.1s stagger).
+
+
+Web Layout:
+Sticky sidebar (dashboards, admin) or header (landing, session, profile).
+Horizontal (header) or vertical (sidebar) nav, 20px spacing.
+
+
+Mobile Layout:
+Bottom nav (dashboards, admin) or hamburger menu (landing, session, profile).
+Full-screen slide-in menu, swipe to close.
+
+
+Performance:
+Lazy-load icons, images, and WebRTC scripts for <50ms nav response.
+Cache data in Redis for <300ms page loads.
+Use WebSocket for real-time updates without refreshes.
+
+
+Accessibility:
+Add ARIA labels (e.g., “Explore sessions”, “Toggle video”).
+Support keyboard navigation (Tab to focus, Enter to activate).
+Ensure high contrast (#333 text on #F7F7F5, >4.5:1 ratio).
+Enable screen reader announcements (e.g., “Opening login modal”, “Video started”).
+
+
+
+
+Implementation Instructions for Each Page
+1. Landing Page (/)
+Purpose
+Attract users, showcase real-time top live sessions and best mentor sessions in horizontally scrollable cards, and initiate role-based registration with Razorpay INR payments.
+Navigation Structure
+
+Web:
+Sticky header, full-width.
+Items (right-aligned, 20px spacing): Sessions (Play icon), Mentors (Star icon), Login (User icon), Register (Plus icon).
+Left: Logo (clickable, refreshes page).
+Styling: Glassmorphism, orange underline for active item.
+
+
+Mobile:
+Top-right hamburger icon (3 lines).
+Slide-in menu: Sessions, Mentors, Login, Register, Close (X icon).
+Header: Logo and hamburger.
+Styling: Full-screen menu, purple tap highlights, haptic feedback.
+
+
+
+Implementation Steps
+
+Set Up View:
+Create a Django view to render the landing page.
+Query SQLite3 for active sessions (status=‘active’, future date/time) and top mentors (sorted by ratings), limiting to 10 each.
+Cache query results in Redis with a 60-second TTL to reduce database load.
+Subscribe to a WebSocket channel for real-time session and mentor updates.
+
+
+Design Template:
+Build a header with the logo on the left and navigation items on the right.
+Add a hero section with a tagline (“Learn or Teach with Real Impact!”) and two clickable role cards (Join as Learner, Join as Mentor).
+Create a “Top Live Sessions” section with horizontally scrollable cards displaying session title, mentor name, topics, INR price (e.g., ₹500), and a “Join Now” button.
+Create a “Best Mentor Sessions” section with similar cards showing mentor name, rating (★★★★★), session title, INR price (e.g., ₹1000), and a “Book” button.
+Apply glassmorphism styling to cards, lazy-load thumbnails, and enable smooth scrolling for sections.
+
+
+Implement Navigation Actions:
+Sessions: Scroll to the live sessions section or open a modal listing all active sessions (1 click).
+Mentors: Scroll to the mentor sessions section or open a modal with top mentors (1 click).
+Login: Open a modal with email and password fields, submit to authenticate (1–2 clicks).
+Register: Open a multi-step modal for role selection (Learner/Mentor), basic info, role-specific details, and OTP verification (1–4 clicks).
+Logo: Refresh the landing page (1 click).
+
+
+Add Enhanced Interactions:
+Web: On hover, scale navigation items (1.1x), apply purple glow, show tooltips (e.g., “Browse live sessions”). On click, trigger an orange ripple effect and fade in content (0.3s).
+Mobile: On tap, apply purple highlight, animate icons (e.g., Play icon pulses, Star twinkles). Enable swipe-to-close menu and haptic feedback (if supported).
+Real-Time: Display a badge on Sessions (e.g., “3 Live”) and Mentors (e.g., “5 Top Mentors”), updated via WebSocket when new sessions or mentors are added.
+
+
+Handle Registration Process:
+Step 1: Present a modal to select role (Learner or Mentor, 1 click).
+Step 2: Collect basic info (email, password, name), auto-correct email typos (e.g., “gmial” → “gmail”).
+Step 3: For learners, collect interests (e.g., “Coding”) and career goals; for mentors, collect domains (e.g., “AI”), skills (e.g., “Python”), and an optional intro video. Suggest values (e.g., “Cod” → “Coding”).
+Step 4: Send an OTP to the user’s email, verify the code (1 click).
+Upon successful registration, redirect to /dashboard/[role]/ and prevent access to the homepage without logging out.
+
+
+Integrate Razorpay:
+For “Join Now” or “Book” buttons, open a Razorpay modal to process INR payments (e.g., ₹1000 for a session).
+Save payment details to the Payments table, splitting 90% to the mentor (₹900) and 20% to the app (₹200).
+
+
+
+Error Handling
+
+Navigation Failure: Display a “Action failed, retry?” pop-up, allow 3 retries.
+Login Errors: Show “Invalid credentials” after failed attempts (3 retries), provide a “Forgot password?” link to send an OTP for password reset.
+Registration Errors: Display “Email taken” or “Invalid OTP” alerts, highlight missing or invalid fields.
+Session Load Failure: Use cached session data from Redis, show a “Loading...” spinner for 5 seconds, then display a “Retry?” pop-up.
+Server Failure: Switch to a fallback server, show a “Retrying...” alert.
+
+Real-Time Data
+
+Query SQLite3 for active sessions and top mentors, limiting to recent or high-rated entries.
+Use django-channels to push WebSocket updates when new sessions are created or mentor ratings change.
+Cache session and mentor lists in Redis to ensure <50ms response times.
+
+
+2. Mentor Dashboard (/dashboard/mentor/)
+Purpose
+Restricted to mentors, enabling them to create sessions, manage booking requests, track earnings (90% of INR payments), withdraw funds, and analyze performance metrics.
+Navigation Structure
+
+Web:
+Sticky sidebar (left, 200px wide).
+Items (vertical, 24px spacing): Home (House icon), Create Session (Plus icon), Bookings (Book icon), Earnings (Rupee icon), Withdrawals (Bank icon), Analytics (Chart icon), Profile (User icon), Logout (Exit icon).
+Header: Mentor’s name, profile picture, notification bell with badge (e.g., “2” for pending bookings).
+Styling: Glassmorphism, orange left border for active item.
+
+
+Mobile:
+Bottom navigation bar with Home, Create Session, Bookings, Earnings, and More (hamburger menu for Withdrawals, Analytics, Profile, Logout).
+Header: Mentor’s name, notification bell.
+Styling: Glassmorphism, purple tap highlights, haptic feedback.
+
+
+
+Implementation Steps
+
+Set Up View:
+Create a Django view restricted to users with role=‘mentor’ using custom middleware.
+Query SQLite3 for the mentor’s upcoming sessions, pending booking requests, and total earnings.
+Subscribe to a WebSocket channel for real-time updates on bookings and earnings.
+Cache dashboard data in Redis with a 30-second TTL to minimize database queries.
+
+
+Design Template:
+Build a sticky sidebar with navigation items and a header displaying the mentor’s name, profile picture, and notifications.
+Home Section: Display upcoming sessions as cards (title, learner, topics, “Join” button linking to Live Session Room), a list of pending booking requests (learner, session, “Accept”/“Reject” buttons), and a snapshot of total earnings in INR.
+Create Session Section: Provide a form with fields for title, description, date/time, price (INR), topics (multi-select), and an optional thumbnail upload.
+Bookings Section: Show a table with columns for learner, session, status (pending/confirmed/rejected), and action buttons (Accept/Reject).
+Earnings Section: Display a table listing sessions, learners, amounts (INR, e.g., ₹900 per ₹1000 session), and any gift payments.
+Withdrawals Section: Include a form to enter withdrawal amount and bank/UPI details.
+Analytics Section: Render charts for earnings trends, booking counts, and follower growth.
+Profile Section: Provide a form to edit bio, skills, domains, and intro video.
+Apply glassmorphism to cards and tables, lazy-load images, and ensure responsive design.
+
+
+Implement Navigation Actions:
+Home: Load the dashboard overview (1 click).
+Create Session: Open the session creation form, submit to save (1–2 clicks).
+Bookings: Display the bookings table, allow accept/reject actions (1 click each).
+Earnings: Show the earnings table with real-time INR updates (1 click).
+Withdrawals: Open the withdrawal form, submit to Razorpay (1–2 clicks).
+Analytics: Render performance charts (1 click).
+Profile: Open the profile edit form, save changes (1 click).
+Logout: Clear the session and redirect to / (1 click).
+
+
+Add Enhanced Interactions:
+Web: On hover, scale sidebar items (e.g., Plus icon spins for Create Session), apply purple glow, show tooltips (e.g., “Create a new session”). On click, trigger an orange ripple effect and fade in content.
+Mobile: On tap, apply purple highlight, animate icons (e.g., Rupee icon shines for Earnings). Enable swipe-to-close for the More menu, add haptic feedback.
+Real-Time: Display badges on Bookings (e.g., “2 Pending”) and Earnings (e.g., “₹900 New”), updated via WebSocket for new bookings or payments.
+Notifications: Make the bell icon shake when new alerts arrive (e.g., booking requests).
+
+
+Handle Session Creation:
+Validate the session form, auto-correct typos (e.g., “Pyhton” → “Python”), and suggest SEO-friendly titles (e.g., “Python” → “Master Python in 1 Hour”).
+Save the session to the Sessions table in SQLite3.
+Broadcast the new session to learners via WebSocket for real-time visibility.
+
+
+Handle Bookings:
+Allow mentors to accept or reject booking requests, updating the Bookings table.
+Notify learners of status changes via WebSocket.
+
+
+Handle Withdrawals:
+Validate the withdrawal amount against available earnings.
+Submit the request to Razorpay for bank/UPI transfer, save to the Withdrawals table (processed in 1–3 days).
+Use Celery to handle async payment processing.
+
+
+
+Error Handling
+
+Form Errors: Display a “Missing topics” or “Invalid date” pop-up, highlight invalid fields.
+Booking Conflict: Show a “Session already booked” alert if the time slot is taken.
+Withdrawal Failure: Display “Retry payment?” with 3 retry attempts.
+Server Failure: Use cached dashboard data from Redis, show a “Retrying...” alert.
+Concurrency Issues: Use Redis queues to handle simultaneous booking actions, show “Action in progress” alert.
+
+Real-Time Data
+
+Query SQLite3 for the mentor’s sessions, bookings, and earnings.
+Use django-channels to push WebSocket updates for new bookings or payments.
+Cache dashboard data in Redis for <50ms response times.
+
+
+3. Learner Dashboard (/dashboard/learner/)
+Purpose
+Restricted to learners, enabling them to browse and book sessions, join live sessions, track INR payments, and monitor learning progress.
+Navigation Structure
+
+Web:
+Sticky sidebar (left, 200px wide).
+Items (vertical, 24px spacing): Home (House icon), Booked Sessions (Book icon), Payments (Rupee icon), Progress (Chart icon), Profile (User icon), Logout (Exit icon).
+Header: Learner’s name, notification bell with badge (e.g., “1” for upcoming sessions).
+Styling: Glassmorphism, orange left border for active item.
+
+
+Mobile:
+Bottom navigation bar with Home, Booked Sessions, Payments, Progress, and More (hamburger menu for Profile, Logout).
+Header: Learner’s name, notification bell.
+Styling: Glassmorphism, purple tap highlights, haptic feedback.
+
+
+
+Implementation Steps
+
+Set Up View:
+Create a Django view restricted to users with role=‘learner’ using custom middleware.
+Query SQLite3 for recommended sessions (based on interests), booked sessions, and payment history.
+Subscribe to a WebSocket channel for real-time booking and session updates.
+Cache recommended sessions in Redis with a 60-second TTL.
+
+
+Design Template:
+Build a sticky sidebar with navigation items and a header displaying the learner’s name and notifications.
+Home Section: Display recommended sessions as cards (title, mentor, topics, INR price, “Book” button) and booked sessions as cards (title, mentor, status, “Join” button linking to Live Session Room).
+Booked Sessions Section: Show a list of past and upcoming sessions, including recordings (if available), topics, and status.
+Payments Section: Display a table with columns for session, mentor, amount (INR, e.g., ₹1000), and gift payments sent.
+Progress Section: Show stats (total hours, badges earned) and charts (topic mastery, e.g., “80% Python”).
+Profile Section: Provide a form to edit name, interests, career goals, and profile photo.
+Apply glassmorphism to cards and tables, lazy-load images, and ensure responsive design.
+
+
+Implement Navigation Actions:
+Home: Load recommended and booked sessions (1 click).
+Booked Sessions: Display session list, join live sessions (1 click).
+Payments: Show payment history, allow sending gifts (1–2 clicks).
+Progress: Render stats and charts (1 click).
+Profile: Open the profile edit form, save changes (1 click).
+Logout: Clear the session and redirect to / (1 click).
+
+
+Add Enhanced Interactions:
+Web: On hover, scale sidebar items (e.g., Book icon flips for Booked Sessions), apply purple glow, show tooltips (e.g., “View your sessions”). On click, trigger an orange ripple effect.
+Mobile: On tap, apply purple highlight, animate icons (e.g., Chart icon spins for Progress). Enable swipe-to-close for the More menu, add haptic feedback.
+Real-Time: Display badges on Booked Sessions (e.g., “1 Upcoming”) and Payments (e.g., “₹1000 Paid”), updated via WebSocket.
+Notifications: Make the bell icon shake for session reminders (e.g., “Session in 10 minutes”).
+
+
+Handle Booking:
+For “Book” buttons, open a Razorpay modal to process INR payments.
+Save the booking to the Bookings table and payment to the Payments table, splitting 90% to the mentor and 20% to the app.
+Notify the mentor via WebSocket and update the learner’s dashboard.
+
+
+Handle Progress:
+Track completed sessions and topics in SQLite3, award badges (e.g., “Python Pro” for 10 sessions) stored in the Users table.
+Update progress charts in real-time via WebSocket.
+
+
+
+Error Handling
+
+Booking Failure: Display a “Session unavailable” or “Payment failed” pop-up, suggest retrying (3 attempts).
+Payment Error: Show “Retry payment?” with 3 attempts, suggest alternate payment methods.
+Server Failure: Use cached recommendations from Redis, show a “Retrying...” alert.
+
+Real-Time Data
+
+Query SQLite3 for recommended sessions, booked sessions, and payments.
+Use django-channels to push WebSocket updates for booking confirmations and new recommendations.
+Cache recommendations in Redis for <50ms response times.
+
+
+4. Live Session Room (/session/<room_id>/)
+Purpose
+Facilitates real-time, simultaneous live video sessions between a mentor and learner using advanced WebRTC, ensuring both participants’ video feeds are displayed live at the same time. Includes interactive tools like chat, whiteboard, topics checklist, and gift payments.
+Navigation Structure
+
+Web:
+Bottom bar (fixed, 60px height).
+Items (icons, horizontal): Mute (Mic icon), Camera (Video icon), Share Screen (Screen icon), Chat (Chat icon), Whiteboard (Board icon), Gift (Gift icon), End (Exit icon).
+Top bar: Session title, timer, topics checklist toggle.
+Styling: Glassmorphism, orange border for active item.
+
+
+Mobile:
+Bottom bar (swipe to access additional items).
+Hamburger menu (top-right) for topics checklist.
+Top bar: Session title, timer.
+Styling: Glassmorphism, purple tap highlights, haptic feedback.
+
+
+
+Implementation Steps
+
+Set Up View:
+Create a Django view to verify session access by checking the Bookings table (ensure the user is the mentor or learner for the session).
+Initialize a WebSocket connection via django-channels for WebRTC signaling and real-time tool updates.
+Query SQLite3 for session details (title, topics, mentor, learner) and store session metadata in Redis (1-hour TTL).
+
+
+Design Template:
+Build a video area with two live video feeds: mentor’s video (large, 70% width) and learner’s video (small, 30% width, pinnable to swap sizes).
+Add a bottom bar with control icons for Mute, Camera, Share Screen, Chat, Whiteboard, Gift, and End.
+Include a top bar showing the session title, a running timer (starts when both join), and a toggle for the topics checklist.
+Create a sidebar (web) or swipe-up panel (mobile) for real-time chat and a shared whiteboard.
+Add a gift modal for sending INR tips via Razorpay.
+Apply glassmorphism to bars and panels, lazy-load WebRTC scripts, and ensure responsive design.
+
+
+Implement WebRTC for Live Video:
+Use WebRTC for peer-to-peer video streaming, with django-channels handling signaling (exchange of ICE candidates and SDP offers/answers).
+Configure WebRTC with STUN/TURN servers (from environment variables) for NAT traversal, ensuring connectivity across networks.
+Establish a peer connection for each participant (mentor and learner), streaming both video feeds simultaneously.
+Support HD video (720p, 30fps) with fallback to 480p for low bandwidth.
+Implement controls for muting audio, disabling video, and sharing screen, updating the peer connection in real-time.
+Store WebRTC session metadata (e.g., connection status) in Redis for quick recovery on reconnect.
+
+
+Implement Navigation Actions:
+Mute: Toggle audio on/off (1 click), update WebRTC stream.
+Camera: Toggle video on/off (1 click), update WebRTC stream.
+Share Screen: Start/stop screen sharing (1 click), add to WebRTC stream.
+Chat: Open the chat panel for real-time messaging (1 click, swipe to close on mobile).
+Whiteboard: Open a shared canvas for drawing (1 click, swipe to close on mobile).
+Gift: Open a modal to send an INR tip via Razorpay (1–2 clicks).
+End: Terminate the session, save recording (if enabled), and open a feedback modal (1 click).
+
+
+Add Enhanced Interactions:
+Web: On hover, scale control icons (e.g., Mic icon pulses), apply purple glow, show tooltips (e.g., “Mute your audio”). On click, trigger an orange ripple effect and toggle icon state (e.g., Mic On → Off).
+Mobile: On tap, apply purple highlight, animate icons (e.g., Screen icon spins). Enable swipe-to-open/close for chat and whiteboard panels, add haptic feedback.
+Real-Time: Display a badge on Chat (e.g., “3 New” for unread messages) and Gift (e.g., “₹100 Sent”), updated via WebSocket.
+
+
+Handle Session Functionality:
+Start the timer when both mentor and learner join via WebRTC, pause if one disconnects.
+Save chat messages and whiteboard data to SQLite3 for session history.
+Allow marking topics as completed in the checklist, updating the Sessions table in real-time.
+Process gift payments via Razorpay, splitting 90% to the mentor and 20% to the app, saving to the Payments table.
+On session end, save a recording (if enabled) to storage, update Sessions.status to ‘completed’, and prompt for feedback.
+
+
+Optimize WebRTC Performance:
+Use adaptive bitrate to adjust video quality based on network conditions.
+Implement reconnection logic to restore WebRTC connections within 10 seconds of a drop.
+Cache ICE candidates in Redis to speed up connection setup.
+Monitor WebRTC stats (latency, packet loss) and display warnings if quality degrades.
+
+
+
+Error Handling
+
+WebRTC Connection Failure: Display a “Connecting...” spinner, attempt reconnection 3 times, then show a “Rejoin?” pop-up.
+Network Drop: Show a “Reconnecting...” alert, retry WebRTC connection (3 attempts), offer to rejoin the session.
+Payment Failure: Display “Gift payment failed, retry?” with 3 retry attempts.
+Server Failure: Switch to a fallback server, use cached session metadata from Redis, show a “Retrying...” alert.
+Concurrency Issues: Use Redis queues for WebRTC signaling, show “Action in progress” for simultaneous actions.
+
+Real-Time Data
+
+Query SQLite3 for session details and topics.
+Use django-channels for WebRTC signaling, chat messages, whiteboard sync, and topics checklist updates.
+Cache session metadata in Redis for <50ms response times.
+
+
+5. Profile/Settings Page (/profile/)
+Purpose
+Allows users to edit their profile (mentor: bio, skills, intro video; learner: interests, goals) and settings (notifications, payment methods).
+Navigation Structure
+
+Web:
+Sticky header with tabbed navigation.
+Tabs (horizontal, 20px spacing): Profile (User icon), Settings (Gear icon), Logout (Exit icon).
+Styling: Glassmorphism, orange underline for active tab.
+
+
+Mobile:
+Sticky header with hamburger menu for Profile, Settings, Logout.
+Styling: Full-screen slide-in menu, purple tap highlights, haptic feedback.
+
+
+
+Implementation Steps
+
+Set Up View:
+Create a Django view to load user profile data from the Users table in SQLite3.
+Subscribe to a WebSocket channel for real-time profile update notifications.
+Cache profile data in Redis with a 1-hour TTL.
+
+
+Design Template:
+Build a header with tabs (web) or a hamburger menu (mobile).
+Profile Section: Provide a form for mentors to edit bio, skills, domains, and intro video, and for learners to edit name, interests, career goals, and profile photo.
+Settings Section: Include a form to configure notifications (email, push), timezone, and bank/UPI details for withdrawals (mentors/admin).
+Apply glassmorphism to forms, lazy-load images/videos, and ensure responsive design.
+
+
+Implement Navigation Actions:
+Profile: Load the profile edit form (1 click), save changes (1 click).
+Settings: Load the settings form (1 click), save changes (1 click).
+Logout: Clear the session and redirect to / (1 click).
+
+
+Add Enhanced Interactions:
+Web: On hover, scale tabs (e.g., Gear icon spins for Settings), apply purple glow, show tooltips (e.g., “Manage notifications”). On click, trigger an orange ripple effect.
+Mobile: On tap, apply purple highlight, animate icons (e.g., User icon bobs for Profile). Enable swipe-to-close menu, add haptic feedback.
+Real-Time: Reflect profile updates (e.g., new bio) in session cards across the platform via WebSocket.
+
+
+Handle Form Submission:
+Validate form inputs, auto-correct typos (e.g., “Pyhton” → “Python”), and suggest values (e.g., “Cod” → “Coding”).
+Save changes to the Users table in SQLite3.
+Broadcast updates via WebSocket to ensure consistency (e.g., updated mentor skills in session cards).
+
+
+
+Error Handling
+
+Form Errors: Display a “Missing field” or “Invalid input” pop-up, highlight invalid fields.
+Server Failure: Use cached profile data from Redis, show a “Retrying...” alert.
+
+Real-Time Data
+
+Query SQLite3 for user profile and settings.
+Use django-channels to push WebSocket updates for profile changes.
+Cache profile data in Redis for <50ms response times.
+
+
+6. Admin Panel (/admin/)
+Purpose
+Restricted to admins, enabling management of users, sessions, payments (tracking 90% mentor and 20% app shares), withdrawals of app profit, and analytics with real-time insights.
+Navigation Structure
+
+Web:
+Sticky sidebar (left, 200px wide).
+Items (vertical, 24px spacing): Users (Users icon), Sessions (Book icon), Payments (Rupee icon), Analytics (Chart icon), Withdrawals (Bank icon), Logout (Exit icon).
+Header: Admin’s name, notification bell with badge (e.g., “3” for reported issues).
+Styling: Glassmorphism, orange left border for active item.
+
+
+Mobile:
+Bottom navigation bar with Users, Sessions, Payments, Analytics, and More (hamburger menu for Withdrawals, Logout).
+Header: Admin’s name, notification bell.
+Styling: Glassmorphism, purple tap highlights, haptic feedback.
+
+
+
+Implementation Steps
+
+Set Up View:
+Create a Django view restricted to users with role=‘admin’, requiring 2FA via django-otp.
+Query SQLite3 for lists of users, sessions, payments, and analytics metrics (e.g., total revenue).
+Subscribe to a WebSocket channel for real-time updates on payments and reported issues.
+Cache analytics data in Redis with a 1-hour TTL.
+
+
+Design Template:
+Build a sticky sidebar with navigation items and a header displaying the admin’s name and notifications.
+Users Section: Display a table with columns for user name, email, role, status (active/blocked), and actions (edit, block, delete).
+Sessions Section: Show a table with columns for session title, mentor, status, and actions (remove, block, approve for mentors).
+Payments Section: Display a table with columns for session, learner, mentor, amount (INR), mentor share (90%), app share (20%), and refund option.
+Analytics Section: Render charts for revenue (e.g., ₹20,000 app profit), user growth, and mentor performance (online/offline status).
+Withdrawals Section: Include a form to withdraw app profit to bank/UPI.
+Apply glassmorphism to tables and charts, lazy-load images, and ensure responsive design.
+
+
+Implement Navigation Actions:
+Users: Load the user management table, allow edit/block/delete actions (1 click each).
+Sessions: Display the session table, allow remove/block/approve actions (1 click each).
+Payments: Show the payment history table, allow refunds via Razorpay (1 click).
+Analytics: Render charts with interactive hover details (1 click).
+Withdrawals: Open the withdrawal form, submit to Razorpay (1–2 clicks).
+Logout: Clear the session and redirect to / (1 click).
+
+
+Add Enhanced Interactions:
+Web: On hover, scale sidebar items (e.g., Rupee icon shines for Payments), apply purple glow, show tooltips (e.g., “Track revenue”). On click, trigger an orange ripple effect.
+Mobile: On tap, apply purple highlight, animate icons (e.g., Chart icon spins for Analytics). Enable swipe-to-close for the More menu, add haptic feedback.
+Real-Time: Display a badge on Payments (e.g., “₹200 New” for recent app profit) and Notifications (e.g., “3 Issues”), updated via WebSocket.
+
+
+Handle Admin Actions:
+Allow blocking/deleting users, updating the Users table and notifying affected users via email (Celery task).
+Enable removing or approving sessions, updating the Sessions table.
+Process refunds via Razorpay, updating the Payments table and notifying users.
+Generate monthly revenue reports (total, mentor share, app profit) as downloadable PDFs using Celery.
+Submit app profit withdrawals to Razorpay, save to the Withdrawals table.
+
+
+Integrate Analytics:
+Query SQLite3 for real-time metrics (e.g., sum of app_share from Payments).
+Render interactive charts (e.g., line chart for revenue over time).
+Update charts via WebSocket for new payments or user registrations.
+
+
+
+Error Handling
+
+Action Failure: Display a “Block failed, retry?” or “Refund failed” pop-up, allow 3 retries.
+Server Failure: Use cached analytics data from Redis, show a “Retrying...” alert.
+Concurrency Issues: Use Redis queues to handle simultaneous admin actions (e.g., multiple refunds), show “Action in progress” alert.
+
+Real-Time Data
+
+Query SQLite3 for user, session, payment, and analytics data.
+Use django-channels to push WebSocket updates for new payments, user registrations, and reported issues.
+Cache analytics data in Redis for <50ms response times.
+
+
+Advanced Features Implementation
+
+WebRTC Live Video:
+Implement WebRTC using django-channels for signaling, enabling peer-to-peer connections between mentor and learner.
+Configure STUN/TURN servers for reliable connectivity, supporting NAT traversal.
+Stream both video feeds simultaneously with adaptive bitrate (720p default, fallback to 480p).
+Handle reconnection, bandwidth monitoring, and error recovery for seamless video.
+Cache WebRTC metadata in Redis for fast connection setup.
+
+
+Razorpay Payments:
+Integrate Razorpay SDK for INR payments (cards, UPI, wallets) for session bookings and gifts.
+On payment (e.g., ₹1000 session), split: ₹900 to mentor (90%), ₹200 to app (20%), using Django signals.
+Save to Payments table, process via Celery for async handling.
+Handle failures: Retry 3 times, suggest alternate methods, log to Payments table.
+
+
+Role-Based Access:
+Implement middleware to check user role, redirect to /dashboard/[role]/ post-login or registration.
+Prevent homepage access without logout, ensuring strict role separation.
+
+
+Real-Time Updates:
+Use django-channels to push WebSocket updates for sessions, bookings, earnings, and analytics.
+Cache WebSocket data in Redis for <50ms latency, supporting 1000+ concurrent users.
+
+
+Concurrency:
+Use SQLite3 row-level locks for booking and payment transactions to prevent conflicts.
+Queue simultaneous actions (e.g., bookings, WebRTC signaling) in Redis for scalability.
+
+
+Security:
+Enforce HTTPS (Replit default) and CSRF protection for all forms.
+Enable 2FA for admin login using django-otp.
+Log all actions (e.g., user blocked, session removed) in a SQLite3 audit table.
+Use Razorpay encryption for payment data.
+
+
+ML Recommendations:
+Implement a simple Python-based recommendation system (e.g., cosine similarity on JSON fields) to match learner interests (Users.interests) to sessions.
+Cache recommendations in Redis for fast access.
+
+
+Gamification:
+Award badges (e.g., “Python Pro” for 10 sessions) stored in Users table (JSON field).
+Update badge status via WebSocket for real-time display on dashboards.
+
+
+
+
+Error Handling Strategy
+
+Database Errors: Use cached data from Redis, show a “Loading...” spinner for 5 seconds, then display a “Retry?” pop-up.
+WebRTC Errors: Attempt reconnection 3 times, show “Reconnecting...” alert, offer “Rejoin?” option.
+Payment Failures: Retry 3 times, suggest alternate methods, log to Payments table, show “Retry payment?” pop-up.
+Network Drops: Retry WebSocket/WebRTC connections (3 attempts), show “Reconnecting...” alert.
+Concurrency Conflicts: Use Redis queues to serialize actions, show “Action in progress” alert.
+Server Failures: Switch to a fallback server, use cached data, show “Retrying...” alert.
+User Errors: Highlight invalid form fields, show pop-ups (e.g., “Invalid email”), limit retries to 3–5.
+
+
+Scalability Considerations
+
+Optimize SQLite3 with indexes on key fields (e.g., Sessions.status, Bookings.session_id) for fast queries.
+Use Redis for caching (sessions, analytics, WebRTC metadata) and queuing (payments, bookings).
+Configure django-channels to handle 1000+ concurrent WebSocket connections for WebRTC and updates.
+Implement lazy loading for cards, images, and WebRTC scripts to ensure <300ms page loads.
+Use Celery for async tasks (e.g., payment processing, emails) to reduce server load.
+Monitor WebRTC performance (latency, packet loss) and adjust quality dynamically.
+
+
+Why This Plan is Effective
+
+WebRTC Focus: Prioritizes real-time, simultaneous mentor-learner video with advanced WebRTC, ensuring low-latency, high-quality streaming.
+Comprehensive: Covers all pages with detailed navigation, functionality, and error handling.
+Advanced Python/Django: Leverages django-channels, redis, razorpay, and WebRTC for a scalable, real-time app.
+SQLite3-Only: Optimized schema with indexes and JSON fields for efficient data storage.
+Enhanced Interactions: Hover pulses, tap ripples, and real-time badges create a premium user experience.
+Robust: Handles WebRTC, payment, network, and concurrency issues seamlessly.
+Honest: Uses real-time SQLite3 data, ensuring no fake numbers.
+Replit-Optimized: Tailored for Replit’s environment, with clear requirements and setup steps.
+
+
+PeerLearn Master Plan
+Overview
+PeerLearn is a one-to-one live video learning platform built with Django, SQLite3, Razorpay for INR payments, Django Channels for WebSocket real-time updates, and Redis for caching and concurrency. It connects mentors and learners through live sessions, ensuring a premium, honest, and impactful experience with no fake data. The platform features:
+
+Pages: Landing Page, Mentor Dashboard, Learner Dashboard, Live Session Room, Profile/Settings, Admin Panel.
+Navigation: Specific items (e.g., Sessions, Mentors), enhanced interactions (hover pulses, tap ripples).
+Payments: Razorpay INR, 90% to mentors, 20% app profit, automatic splitting.
+Real-Time: WebSocket updates for sessions, bookings, earnings, and analytics.
+Role-Based Access: Strict restrictions, immediate dashboard redirects post-login/registration.
+Error Handling: Robust for payments, network, server, and concurrency issues.
+Scalability: Handles 1000+ simultaneous users with Redis queues and database locks.
+
+Design System
+
+Colors:
+Primary: #FF5734 (Orange) – CTAs, active items.
+Accent: #BE94F5 (Purple) – Hover/tap highlights.
+Background: #F7F7F5 (Light Gray) – Clean, honest.
+
+
+Typography:
+Nav Links: Poppins Medium (16px web, 18px mobile).
+Content: Inter Regular (14–16px).
+Tooltips: Inter Regular (12px).
+
+
+Icons: Heroicons (e.g., play for Sessions, star for Mentors).
+Size: 24px (web), 20px (mobile).
+
+
+Glassmorphism: Nav and cards with backdrop-filter: blur(8px);.
+Transitions:
+Hover (Web): Scale up (scale(1.1)), purple glow, 0.2s ease.
+Click/Tap: Orange ripple effect, content fades (0.3s, no refresh).
+Active: Orange underline/border, pulsing icon (2s interval).
+Mobile Menu: Slide-in from right (0.4s), items fade in (0.1s stagger).
+
+
+Web:
+Sticky sidebar (dashboards, admin) or header (landing, session, profile).
+Horizontal (header) or vertical (sidebar) nav, 20px spacing.
+
+
+Mobile:
+Bottom nav (dashboards, admin) or hamburger menu (landing, session, profile).
+Full-screen slide-in menu, swipe to close.
+
+
+Performance:
+Lazy-loaded assets, <50ms nav response, Redis caching.
+WebSocket for real-time, <300ms page loads (Cloudflare CDN).
+
+
+Accessibility:
+ARIA labels (e.g., aria-label="Explore sessions").
+Keyboard nav: Tab to focus, Enter to activate.
+Contrast: #333 on #F7F7F5 (>4.5:1 ratio).
+Screen readers: Announces actions (e.g., “Opening login modal”).
+
+
+
+SQLite3 Database Schema
+
+Users:
+id: Primary key.
+email: Unique, varchar(255).
+name: Varchar(100).
+role: Enum(‘learner’, ‘mentor’, ‘admin’).
+password: Hashed (Django auth).
+interests (learners): JSON (e.g., [“Coding”, “Math”]).
+career_goals (learners): Varchar(100).
+domains, skills (mentors): JSON (e.g., [“Python”, “AI”]).
+intro_video (mentors): Varchar(255, optional, file path).
+
+
+Sessions:
+id: Primary key.
+title: Varchar(255).
+mentor_id: Foreign key (Users).
+description: Text.
+topics: JSON (e.g., [“Loops”, “Functions”]).
+price: Decimal (INR, e.g., 1000.00).
+date_time: Datetime.
+status: Enum(‘active’, ‘completed’, ‘cancelled’).
+
+
+Bookings:
+id: Primary key.
+session_id: Foreign key (Sessions).
+learner_id: Foreign key (Users).
+status: Enum(‘pending’, ‘confirmed’, ‘rejected’).
+
+
+Payments:
+id: Primary key.
+booking_id: Foreign key (Bookings).
+amount: Decimal (INR, e.g., 1000.00).
+mentor_share: Decimal (90%, e.g., 900.00).
+app_share: Decimal (20%, e.g., 200.00).
+status: Enum(‘success’, ‘failed’, ‘pending’).
+razorpay_id: Varchar(100).
+
+
+Withdrawals:
+id: Primary key.
+user_id: Foreign key (Users, mentors or admin).
+amount: Decimal (INR).
+bank_upi: Varchar(255).
+status: Enum(‘pending’, ‘completed’).
+
+
+
+Django Advanced Features
+
+Authentication: Django auth with JWT tokens, 2FA for admin.
+Middleware: Role-based access (restrict_to_role checks user.role).
+Channels: WebSocket for real-time (bookings, earnings, sessions).
+Celery: Async tasks (e.g., payment processing, email notifications).
+Signals: Auto-split payments (post_save on Payments).
+Admin: Custom Django admin with revenue charts, user management.
+Caching: Redis for sessions, nav state, analytics (<50ms).
+Concurrency: Row-level database locks, Redis queues for payments.
+Security: HTTPS, CSRF tokens, Razorpay encryption, audit logs.
+
+
+1. Landing Page (/)
+Purpose
+Attracts users, showcases real-time top live sessions and best mentor sessions in horizontally scrollable cards, and initiates role-based registration with Razorpay INR payments.
+Navigation Structure
+
+Web:
+Location: Sticky header, full-width.
+Items (right-aligned, 20px spacing):
+Sessions (Play icon): Scrolls to live sessions or opens modal.
+Mentors (Star icon): Scrolls to top mentor sessions or opens modal.
+Login (User icon): Opens login modal.
+Register (Plus icon): Opens registration modal.
+
+
+Left: Logo (clickable, refreshes /).
+Styling: Glassmorphism, orange active underline.
+
+
+Mobile:
+Location: Top-right hamburger icon (3 lines).
+Slide-In Menu: Sessions, Mentors, Login, Register, Close (X icon).
+Header: Logo, hamburger.
+Styling: Full-screen menu, purple tap highlights.
+
+
+
+Steps and Functionality
+
+Load Page:
+Fetches live sessions (Sessions.status=active) and top mentors (sorted by ratings) from SQLite3.
+WebSocket subscribes to session updates.
+
+
+Sessions (1 Click):
+Scrolls to “Top Live Sessions” or opens modal (title, mentor, time, INR price, e.g., ₹500).
+Cards: Horizontal scroll, 4–6 visible, real-time updates.
+
+
+Mentors (1 Click):
+Scrolls to “Best Mentor Sessions” or opens modal (mentor, rating, session, INR price, e.g., ₹1000).
+Cards: Horizontal, sorted by ratings/bookings.
+
+
+Login (1–2 Clicks):
+Modal: Email, password, “Sign In” (1 click).
+Redirects to /dashboard/[role]/.
+
+
+Register (1–4 Clicks):
+Modal: Select Learner/Mentor (1 click).
+Form (3 steps): Basic (email, password, name), role-specific (interests/goals or domains/skills), OTP.
+Auto-correct: “gmial” → “gmail”, “Pyth” → “Python”.
+Redirects to /dashboard/[role]/.
+
+
+Logo (1 Click): Refreshes /.
+
+Enhanced Interactions
+
+Web:
+Hover: Play icon pulses (Sessions), star twinkles (Mentors), tooltips fade in.
+Click: Orange ripple, content fades (0.3s).
+Active: Orange underline, pulsing icon.
+
+
+Mobile:
+Tap: Purple highlight, icon animates (e.g., Plus spins for Register).
+Swipe: Menu slides out, haptic feedback.
+
+
+Real-Time:
+Sessions badge: “3 Live” (WebSocket).
+Mentors badge: “5 Top Mentors”.
+
+
+
+Error Handling
+
+Nav Failure: “Action failed, retry?” (3 retries).
+Login: “Invalid credentials” (3 retries), “Forgot password?” OTP.
+Registration: “Email taken” or “Invalid OTP” pop-ups.
+Session Load: Cached data, “Loading...” (5s), “Retry?” pop-up.
+Server: Fallback server, “Retrying...” alert.
+
+SQLite3 Integration
+
+Query: SELECT * FROM Sessions WHERE status='active' LIMIT 10 for live sessions.
+Update: WebSocket pushes new sessions to Sessions table.
+Cache: Redis stores session list (TTL 60s).
+
+
+2. Mentor Dashboard (/dashboard/mentor/)
+Purpose
+Restricted to mentors for creating sessions, managing bookings, tracking earnings (90% of INR payments), and analyzing performance.
+Navigation Structure
+
+Web:
+Location: Sticky sidebar (left, 200px).
+Items (vertical, 24px spacing):
+Home (House): Overview.
+Create Session (Plus): Create new session.
+Bookings (Book): Manage requests.
+Earnings (Rupee): Track INR earnings.
+Withdrawals (Bank): Withdraw via Razorpay.
+Analytics (Chart): Performance metrics.
+Profile (User): Edit profile.
+Logout (Exit): Returns to /.
+
+
+Header: Name, profile picture, notification bell.
+Styling: Glassmorphism, orange active border.
+
+
+Mobile:
+Location: Bottom nav (Home, Create, Bookings, Earnings, More).
+More Menu: Withdrawals, Analytics, Profile, Logout.
+Header: Name, notifications.
+Styling: Glassmorphism, purple tap highlights.
+
+
+
+Steps and Functionality
+
+Load Dashboard:
+Queries SQLite3 for upcoming sessions, bookings, earnings (SELECT * FROM Bookings WHERE mentor_id=user.id).
+WebSocket subscribes to booking/earnings updates.
+
+
+Home (1 Click):
+Shows upcoming sessions (cards), booking requests (list), earnings snapshot (₹).
+Cards: Title, learner, topics, “Join” (hover for pop-up).
+
+
+Create Session (1–2 Clicks):
+Form: Title, description, date/time, price (INR), topics, thumbnail.
+Auto-correct: “Pyhton” → “Python”.
+Suggestions: “Python” → “Master Python”.
+Submit: Saves to Sessions, WebSocket notifies learners.
+
+
+Bookings (1 Click):
+Table: Learner, session, status, “Accept”/“Reject” (1 click each).
+Updates Bookings.status in SQLite3.
+
+
+Earnings (1 Click):
+Table: Session, learner, amount (₹, e.g., ₹900), gifts.
+Real-time: WebSocket updates post-payment.
+
+
+Withdrawals (1–2 Clicks):
+Form: Amount, bank/UPI, “Withdraw” (Razorpay).
+Saves to Withdrawals, processes in 1–3 days.
+
+
+Analytics (1 Click):
+Charts: Earnings, bookings, followers (SQLite3 queries).
+Real-time: WebSocket updates metrics.
+
+
+Profile (1 Click):
+Edit bio, skills, intro video, saves to Users.
+
+
+Logout (1 Click): Clears session, redirects to /.
+
+Enhanced Interactions
+
+Web:
+Hover: Plus icon spins (Create), rupee shines (Earnings), tooltips.
+Click: Orange ripple, content fades in.
+Active: Orange border-left, pulsing icon.
+Notifications: Bell shakes, badge (e.g., “2”).
+
+
+Mobile:
+Tap: Book icon flips (Bookings), purple highlight.
+Swipe: Menu slides out, haptic feedback.
+
+
+Real-Time:
+Bookings badge: “2 Pending”.
+Earnings badge: “₹900 New”.
+
+
+
+Error Handling
+
+Form Errors: “Missing topics” pop-up, glowing fields.
+Booking Conflict: “Session booked” alert.
+Withdrawal Failure: “Retry payment?” (3 tries).
+Server: Cached data, “Retrying...” alert.
+Concurrency: Redis queue for simultaneous “Accept” clicks.
+
+SQLite3 Integration
+
+Query: SELECT * FROM Sessions WHERE mentor_id=user.id AND date_time>NOW().
+Update: INSERT INTO Bookings on accept, WebSocket notifies.
+Cache: Redis stores earnings snapshot (TTL 30s).
+
+
+3. Learner Dashboard (/dashboard/learner/)
+Purpose
+Restricted to learners for browsing, booking, and joining sessions, tracking INR payments, and monitoring progress.
+Navigation Structure
+
+Web:
+Location: Sticky sidebar (left).
+Items:
+Home (House): Overview.
+Booked Sessions (Book): Past/upcoming sessions.
+Payments (Rupee): Track payments/gifts.
+Progress (Chart): Learning stats.
+Profile (User): Edit profile.
+Logout (Exit): Returns to /.
+
+
+Header: Name, notifications.
+Styling: Glassmorphism, orange active.
+
+
+Mobile:
+Location: Bottom nav (Home, Booked, Payments, Progress, More).
+More Menu: Profile, Logout.
+Styling: Same as Mentor Dashboard.
+
+
+
+Steps and Functionality
+
+Load Dashboard:
+Queries SQLite3 for recommended sessions (Sessions with ML filtering), bookings, payments.
+WebSocket subscribes to booking updates.
+
+
+Home (1 Click):
+Recommended sessions (cards, INR price, “Book”).
+Booked sessions (cards, “Join”).
+ML: Matches interests (Users.interests).
+
+
+Booked Sessions (1 Click):
+List: Past/upcoming, recordings, topics, “Join” (1 click).
+Queries Bookings where learner_id=user.id.
+
+
+Payments (1 Click):
+Table: Session, mentor, amount (₹, e.g., ₹1000), gifts.
+“Gift” (1–2 clicks, Razorpay).
+
+
+Progress (1 Click):
+Stats: Hours, badges.
+Charts: Topic mastery (e.g., “80% Python”).
+
+
+Profile (1 Click):
+Edit name, interests, career goals, saves to Users.
+
+
+Logout (1 Click): Redirects to /.
+
+Enhanced Interactions
+
+Web:
+Hover: Book icon flips (Booked), chart spins (Progress).
+Click: Orange ripple, content fades.
+Active: Orange border, pulsing icon.
+
+
+Mobile:
+Tap: Rupee icon shines (Payments), purple highlight.
+Swipe: Menu slides out, haptic feedback.
+
+
+Real-Time:
+Booked badge: “1 Upcoming”.
+Payments badge: “₹1000 Paid”.
+
+
+
+Error Handling
+
+Booking Failure: “Session unavailable” pop-up.
+Payment Error: “Retry?” (3 tries), Razorpay fallback.
+Server: Cached recommendations, “Retrying...” alert.
+
+SQLite3 Integration
+
+Query: SELECT * FROM Bookings WHERE learner_id=user.id.
+Update: INSERT INTO Payments on booking, WebSocket notifies.
+Cache: Redis stores recommended sessions (TTL 60s).
+
+
+4. Live Session Room (/session/<room_id>/)
+Purpose
+Facilitates real-time video sessions with tools (chat, whiteboard, topics checklist).
+Navigation Structure
+
+Web:
+Location: Bottom bar (fixed, 60px), top bar (title, timer).
+Bottom Bar Items (icons):
+Mute (Mic): Toggle audio.
+Camera (Video): Toggle video.
+Share Screen (Screen): Start/stop sharing.
+Chat (Chat): Open chat.
+Whiteboard (Board): Open whiteboard.
+Gift (Gift): Send INR tip.
+End (Exit): End session.
+
+
+Top Bar: Topics checklist toggle.
+Styling: Glassmorphism, orange active.
+
+
+Mobile:
+Location: Bottom bar, top bar.
+Bottom Bar Items: Same, swipe for more.
+Hamburger Menu: Topics checklist.
+Styling: Haptic feedback on tap.
+
+
+
+Steps and Functionality
+
+Join Session (1 Click):
+Queries Bookings for session access.
+WebSocket connects to video stream (WebRTC).
+
+
+Mute/Camera/Share (1 Click):
+Toggles feature, updates Sessions metadata.
+
+
+Chat (1 Click):
+Opens panel, saves messages to SQLite3.
+
+
+Whiteboard (1 Click):
+Opens shared canvas, real-time sync.
+
+
+Gift (1–2 Clicks):
+Modal: Amount (INR), pay via Razorpay.
+Updates Payments, 90% to mentor, 20% app.
+
+
+End (1 Click):
+Saves recording, opens feedback modal.
+Updates Sessions.status to ‘completed’.
+
+
+
+Enhanced Interactions
+
+Web:
+Hover: Mic icon pulses, tooltip (“Mute audio”).
+Click: Orange ripple, icon toggles.
+Active: Chat icon glows for new messages.
+
+
+Mobile:
+Tap: Screen icon spins, purple highlight.
+Swipe: Chat panel slides in/out.
+
+
+Real-Time:
+Chat badge: “3 New”.
+Gift badge: “₹100 Sent”.
+
+
+
+Error Handling
+
+Network Drop: “Reconnecting...” (3 retries), “Rejoin?” pop-up.
+Payment Failure: “Gift failed, retry?” (3 tries).
+Server: Fallback server, “Switching...” alert.
+
+SQLite3 Integration
+
+Query: SELECT * FROM Sessions WHERE id=room_id.
+Update: UPDATE Sessions SET status='completed' on end.
+Cache: Redis stores session metadata (TTL 1hr).
+
+
+5. Profile/Settings Page (/profile/)
+Purpose
+Allows users to edit profile (mentor: bio, skills; learner: interests) and settings (notifications, payment methods).
+Navigation Structure
+
+Web:
+Location: Sticky header, tabbed nav.
+Tabs:
+Profile (User): Edit details.
+Settings (Gear): Notifications, payment methods.
+Logout (Exit): Returns to /.
+
+
+Styling: Glassmorphism, orange active.
+
+
+Mobile:
+Location: Sticky header, hamburger menu.
+Menu: Profile, Settings, Logout.
+Styling: Swipe to close, haptic feedback.
+
+
+
+Steps and Functionality
+
+Load Page:
+Queries Users for profile data.
+WebSocket syncs changes.
+
+
+Profile (1 Click):
+Form: Mentor (bio, skills, video), Learner (name, interests, goals).
+Auto-correct: “Pyhton” → “Python”.
+Saves to Users.
+
+
+Settings (1 Click):
+Form: Notifications, timezone, bank/UPI.
+Saves to Users.
+
+
+Logout (1 Click): Redirects to /.
+
+Enhanced Interactions
+
+Web:
+Hover: Gear icon spins, tooltip (“Manage settings”).
+Click: Orange ripple, tab fades in.
+
+
+Mobile:
+Tap: User icon bobs, purple highlight.
+Swipe: Menu slides out.
+
+
+Real-Time: Profile updates reflect in session cards.
+
+Error Handling
+
+Form Errors: “Missing field” pop-up.
+Server: Cached profile, “Retrying...” alert.
+
+SQLite3 Integration
+
+Query: SELECT * FROM Users WHERE id=user.id.
+Update: UPDATE Users SET bio=value on save.
+Cache: Redis stores profile data (TTL 1hr).
+
+
+6. Admin Panel (/admin/)
+Purpose
+Manages users, sessions, payments (90% mentor, 20% app), and withdraws app profit via Razorpay.
+Navigation Structure
+
+Web:
+Location: Sticky sidebar (left).
+Items:
+Users (Users): Manage learners/mentors.
+Sessions (Book): View/remove sessions.
+Payments (Rupee): Track revenue, refunds.
+Analytics (Chart): Revenue, performance.
+Withdrawals (Bank): Withdraw app profit.
+Logout (Exit): Returns to /.
+
+
+Header: Admin name, notifications.
+Styling: Glassmorphism, orange active.
+
+
+Mobile:
+Location: Bottom nav (Users, Sessions, Payments, Analytics, More).
+More Menu: Withdrawals, Logout.
+Styling: Haptic feedback.
+
+
+
+Steps and Functionality
+
+Load Panel:
+Queries SQLite3 for users, sessions, payments, analytics.
+WebSocket subscribes to revenue updates.
+
+
+Users (1 Click):
+Table: Edit/delete/block users, total learners count.
+Updates Users table.
+
+
+Sessions (1 Click):
+Table: Remove/block sessions, approve mentors.
+Updates Sessions.
+
+
+Payments (1 Click):
+Table: Session, amount (₹), mentor/app share, refund.
+Queries Payments, supports Razorpay refunds.
+
+
+Analytics (1 Click):
+Charts: Revenue (e.g., ₹20,000 app profit), user growth.
+Monthly reports: Auto-generated.
+
+
+Withdrawals (1–2 Clicks):
+Form: Amount (₹), bank/UPI, “Withdraw” (Razorpay).
+Saves to Withdrawals.
+
+
+Logout (1 Click): Redirects to /.
+
+Enhanced Interactions
+
+Web:
+Hover: Rupee icon shines, tooltip (“Track revenue”).
+Click: Orange ripple, table fades in.
+
+
+Mobile:
+Tap: Chart icon spins, purple highlight.
+Swipe: Menu slides out.
+
+
+Real-Time:
+Payments badge: “₹200 New”.
+Analytics updates live.
+
+
+
+Error Handling
+
+Action Failure: “Block failed, retry?” pop-up.
+Server: Cached data, “Switching servers...” alert.
+Concurrency: Redis queue for admin actions.
+
+SQLite3 Integration
+
+Query: SELECT SUM(app_share) FROM Payments WHERE status='success'.
+Update: UPDATE Users SET is_active=0 on block.
+Cache: Redis stores analytics (TTL 1hr).
+
+
+Advanced Features
+
+Razorpay Payments:
+Split: ₹1000 session → ₹900 mentor, ₹200 app.
+Concurrency: Redis queue, row-level locks.
+Failures: 3 retries, “Try another method?”.
+
+
+Role-Based Access:
+Middleware: Redirects unauthorized users.
+Post-login/register: /dashboard/[role]/, no homepage without logout.
+
+
+Real-Time:
+WebSocket: Updates bookings, earnings, sessions.
+Django Channels: Handles 1000+ concurrent users.
+
+
+Security:
+2FA for admin, HTTPS, Razorpay encryption.
+Audit logs: Tracks all actions.
+
+
+ML Recommendations:
+Matches learner interests (Users.interests) to sessions.
+Queries SQLite3, cached in Redis.
+
+
+Gamification:
+Badges: “Python Pro” (10 sessions).
+Stored in Users (JSON field).
+
+
+
+
+Why This Plan is Better
+
+Comprehensive: Covers all pages with detailed nav, steps, and functionality.
+Enhanced Interactions: Pulses, ripples, real-time badges for premium feel.
+Real-Time: WebSocket and SQLite3 ensure honest, live data.
+Robust: Error handling for payments, network, and concurrency.
+Scalable: Django, Redis, and Channels support 50M+ users.
+User-Friendly: 1–2 clicks, accessibility, and role-based restrictions.
+PeerLearn Comprehensive Plan
+Overview
+PeerLearn connects mentors and learners through live video sessions, prioritizing simplicity, real-time functionality, and a premium experience. This plan enhances the mentor and learner dashboards, live session room, and profile/settings page with advanced features like topic lists, detailed session previews, and robust error handling. All actions require minimal clicks (1–2), and the platform avoids page refreshes/blinking with smooth transitions.
+
+Key Pages
+Mentor Dashboard (/dashboard/mentor/)
+Learner Dashboard (/dashboard/learner/)
+Live Session Room (/session/<room_id>/)
+Profile/Settings (/profile/)
+Design System
+Colors:
+Primary: #FF5734 (Orange) – CTAs.
+Accent: #BE94F5 (Purple) – Highlights.
+Background: #F7F7F5 (Light Gray).
+Typography:
+Headlines: Poppins Bold (24–32px).
+Body: Inter Regular (14–16px).
+Icons: Heroicons (e.g., house, plus, chat) for navigation.
+Glassmorphism: Cards with backdrop-filter: blur(12px);.
+Transitions:
+Flash Inside: Content fades in on click (0.3s, no page refresh).
+Slide: Pop-ups/modals slide in smoothly.
+Hover: Cards lift (translateY(-4px)).
+Web: Sidebar nav, grid layouts, hover effects.
+Mobile: Bottom nav, swipeable cards, large tap targets.
+Performance: Lazy loading, no blinking, WebSocket for real-time updates.
+1. Mentor Dashboard (/dashboard/mentor/)
+Layout
+Web:
+Header: Mentor’s name, profile picture, logout icon.
+Sidebar (Left): Icons (Home, Create Session, Earnings, Withdrawals, Analytics, Profile).
+Main Content: Cards/tables with smooth transitions.
+Mobile:
+Bottom Navigation: Icons (Home, Create, Earnings, Withdraw, Analytics).
+Main Content: Swipeable cards, full-screen forms.
+Content Arrangement
+Home:
+Upcoming Sessions: Cards (title, date/time, learner, topics covered, “Join” icon).
+Hover/Click: Pop-up shows session details (description, topics, duration, price).
+Booking Requests: List (learner, session, topics, “Accept”/“Reject” icons).
+Earnings Snapshot: Total earned, pending withdrawals, “Withdraw” icon.
+Notifications: Pop-ups with sound (e.g., “New booking!”).
+Create Session:
+Form: Title, description, date/time, price, topics covered (multi-select or text input), thumbnail upload.
+SEO Motivation: Suggests keywords (e.g., “Math” → “Master Algebra in 1 Hour”).
+Auto-Correct: Fixes spelling (e.g., “Aljebra” → “Algebra”).
+Help Pop-ups: Field tips (e.g., “List specific topics like ‘Quadratic Equations’”).
+Motivational Messages: “Awesome topics! Learners will love this!”.
+Earnings:
+Table: Session, learner, amount (including gifts), date, status.
+Gifting Earnings: Tracks tips from learners.
+Withdrawals:
+Form: Amount, bank/UPI (saved), “Withdraw” icon.
+Analytics:
+Charts: Earnings, bookings, followers, session views.
+Progress: Sessions taught, ratings, learner engagement.
+Profile:
+Edit bio, thumbnail, availability, highlight topics (e.g., “Expert in Calculus”).
+Show followers, ratings, feedback.
+Actions and Clicks (1–2 Max)
+Create Session: Tap “Create” (1 click), fill form, tap “Submit” (1 click).
+Accept/Reject Request: Tap “Accept”/“Reject” (1 click).
+Join Session: Tap “Join” (1 click).
+Withdraw: Tap “Withdraw”, enter amount, tap “Confirm” (2 clicks).
+View Details: Hover/click session card for pop-up (0–1 click).
+Real-Time Updates
+Requests: New bookings appear with sound.
+Earnings: Updates after sessions/gifts.
+Followers: Live count of learners following.
+Notifications: Pop-ups for reminders, bookings.
+Advanced Features
+Topics Covered: Add during session creation (e.g., “Linear Equations, Polynomials”).
+Session Details Pop-up: Shows description, topics, mentor rating on hover/click.
+Follow System: Learners follow mentors for session updates.
+Ratings/Feedback: 1–5 stars, comments post-session.
+Chat: Real-time messaging with learners.
+Welcome Message: “Welcome, [Name]! Teach with impact!” with tour.
+Video Check: Pre-session quality test (e.g., “Clear video, ready to teach!”).
+2. Learner Dashboard (/dashboard/learner/)
+Layout
+Web:
+Header: Learner’s name, profile picture, logout icon.
+Sidebar (Left): Icons (Home, Booked Sessions, Payments, Progress, Profile).
+Main Content: Cards with fade transitions.
+Mobile:
+Bottom Navigation: Icons (Home, Booked, Payments, Progress).
+Main Content: Swipeable cards, full-screen modals.
+Content Arrangement
+Home:
+Recommended Sessions: Cards (title, mentor, time, price, topics, “Book” icon).
+Hover/Click: Pop-up shows description, topics, mentor rating, duration.
+ML-driven: Matches interests, history, trending mentors.
+Booked Sessions: Cards (details, status, topics, “Join” icon).
+Notifications: Pop-ups with sound (e.g., “Session in 10 mins!”).
+Booked Sessions:
+List: Past/upcoming sessions, recordings, topics covered.
+Payments:
+Table: Session, mentor, amount, date, status.
+Gifting: Post-session tip option.
+Progress:
+Stats: Hours learned, sessions completed, badges.
+Charts: Learning trends, topic mastery (e.g., “80% Algebra”).
+Profile:
+Edit name, interests, photo.
+Show followed mentors, feedback given.
+Actions and Clicks (1–2 Max)
+Book Session: Tap “Book” (1 click), confirm/pay (1 click).
+Join Session: Tap “Join” (1 click).
+Gift Mentor: Tap “Gift”, enter amount, confirm (2 clicks).
+Follow Mentor: Tap “Follow” (1 click).
+View Details: Hover/click session card for pop-up (0–1 click).
+Real-Time Updates
+Booking Status: Updates live (e.g., “Confirmed”).
+Session Start: “Join” icon pulses when mentor joins.
+Progress: Badges/hours update instantly.
+Recommendations: Auto-refresh with new sessions.
+Advanced Features
+Topics Covered: Displayed in session cards/pop-ups.
+Follow System: Follow mentors for updates.
+Ratings/Feedback: Rate mentors, leave comments.
+Chat: Message mentors pre/post-session.
+Welcome Message: “Hi [Name]! Learn something new!” with tour.
+ML Recommendations: Suggests sessions by interests, history, and trending topics.
+3. Live Session Room (/session/<room_id>/)
+Layout
+Web:
+Top Bar: Session title, timer, “End” icon.
+Video Area: Mentor video (large), learner video (small, pinnable).
+Sidebar: Chat, whiteboard, screen-share preview, topics checklist.
+Bottom Bar: Icons (mute, camera, share, chat, record, gift).
+Mobile:
+Top: Title, timer.
+Video: Mentor video full-screen, learner video overlay.
+Bottom Bar: Icons (mute, camera, share, chat, gift).
+Chat/Whiteboard/Topics: Swipe-up panel.
+Actions and Clicks
+Join: Tap “Join” (1 click).
+Controls: Tap mute, camera, share, whiteboard, gift (1 click each).
+Chat: Tap “Chat”, type, send (2 clicks).
+End: Tap “End” (1 click).
+Real-Time Features
+Timer Setup: Starts when both join, pauses if one leaves.
+Video: Adaptive bitrate for smooth streaming.
+Chat: Instant messaging.
+Gifting: Tap “Gift”, enter amount, send (2 clicks).
+Advanced Features
+Topics Checklist: Sidebar/panel shows topics (e.g., “Polynomials [Done]”).
+Error Handling:
+Network drop: “Reconnecting...” (3 retries), then “Rejoin?” pop-up.
+Buffer issues: Auto-adjusts quality, “Buffering...” alert.
+Server error: Switches to backup server, “Trying alternate connection...”.
+Rejoin Request: “Rejoin” button if dropped; mentor accepts (1 click).
+Recording: Auto-saves, downloadable.
+4. Profile/Settings Page (/profile/)
+Layout
+Web: Tabbed form (Profile, Settings).
+Mobile: Scrollable form, sticky “Save” button.
+Content
+Edit name, bio, thumbnail, preferred topics (mentors/learners).
+Settings: Notifications, timezone, payment methods (bank/UPI).
+Actions
+Edit: Tap field, update, tap “Save” (2 clicks).
+Enhanced Flows and Steps
+Session Creation Flow
+Mentor: Taps “Create” (1 click).
+Form:
+Title: Auto-suggests (e.g., “Math” → “Master Algebra”).
+Description: Help pop-up (“Include key benefits”).
+Date/Time: Calendar picker.
+Price: Suggests range ($5–$50).
+Topics Covered: Multi-select (e.g., “Quadratic Equations, Polynomials”).
+Thumbnail: Drag-and-drop upload.
+Submit: Tap “Submit” (1 click), pop-up: “Session live! Promote it!”.
+Error: Missing field → “Please add topics” pop-up.
+Booking Flow
+Learner: Taps “Book” (1 click).
+Pop-up: Shows title, mentor, price, topics, “Confirm” button.
+Pays via bank/UPI (1 click).
+Mentor: Sees request live, taps “Accept”/“Reject” (1 click).
+Learner: Gets “Confirmed” pop-up with sound.
+Error: Payment fails → “Retry” (3 tries), then “Try another method?”.
+Live Session Flow
+Both: Get reminder 10 mins before (sound + pop-up).
+Join: Tap “Join” (1 click each).
+Session: Timer starts, topics checklist updates, features active.
+Issues: Network drop → Auto-reconnect → “Rejoin?” if fails.
+End: Timer ends or “End” tapped → Feedback modal, recording saved.
+Gifting Flow
+Learner: Taps “Gift” in live room (1 click).
+Modal: Enter amount, pay (1 click).
+Mentor: Earnings update live, “Thank you!” pop-up.
+Withdrawal Flow
+Mentor: Taps “Withdraw” (1 click).
+Form: Amount, saved bank/UPI, tap “Confirm” (1 click).
+Pop-up: “Processed in 24 hrs.”
+Additional Advanced Features
+Follow System: Learners follow mentors; mentors see follower count.
+Ratings/Feedback: 1–5 stars, comments, displayed on profiles.
+ML Recommendations:
+Auto-suggests sessions based on learner interests, history, topics.
+Prioritizes trending mentors and live sessions.
+Analytics:
+Mentor: Earnings, bookings, followers, topic popularity.
+Learner: Hours, badges, topic mastery.
+Gamification: Badges (e.g., “Algebra Pro”), streaks.
+Chat System: Real-time messaging on dashboards and live room.
+Welcome Messages: Personalized tours for new users.
+Topics Checklist: Tracks progress in live room (e.g., “Polynomials [Covered]”).
+SEO and Reach: Keyword suggestions, topic-based visibility boost.
+Multi-Session Packages: Discounted bundles for learners.
+Community Forum: Discussion boards for learners/mentors.
+Error Handling
+Network Drop: Auto-reconnect (3 tries), “Reconnecting...” pop-up.
+Server Error: Fallback server, “Switching servers...” alert.
+Payment Error: Retry 3 times, “Try another method?” pop-up.
+Booking Conflict: “Slot taken, try another” pop-up.
+Video Lag: Adjusts bitrate, “Optimizing...” alert.
+No-Show: Auto-cancels after 10 mins, refunds learner, notifies mentor.
+Form Errors: Missing fields highlighted, “Complete all fields” pop-up.
+Admin Panel
+Access: Secret URL (/admin/), 2FA login.
+Controls: Manage users, sessions, payments, refunds, analytics.
+Security: Encrypted, audit logs.
+Why This Plan is Better
+Meaningful Features: Topics covered, session details pop-ups, gifting.
+Simple: 1–2 clicks for all actions.
+Real-Time: No refreshes, instant updates.
+Engaging: Follow, ratings, gamification, ML recommendations.
+Error-Free: Comprehensive handling for all issues.
+Valuable: SEO, analytics, and community features boost reach and retention.
+This plan makes PeerLearn intuitive, feature-rich, and seamless, with a focus on user experience and advanced functionality. All pages and features work together flawlessly, ensuring mentors and learners have a valuable, error-free experience. Let me know if you need further refinements!
+
+PeerLearn Landing Page Navigation Plan
+Overview
+The Landing Page (/) serves as the entry point for PeerLearn, attracting users with real-time top live sessions and best mentor sessions in horizontally scrollable cards, sourced from the SQLite3 database. The navigation (nav) is a key component, providing clear access to critical actions through specific items like Sessions, Mentors, Login, and Register, with enhanced interactions to make the experience premium and engaging. The nav is responsive, adapting to web (sticky header with hover effects) and mobile (collapsible hamburger menu with tap animations), and ensures users are guided toward browsing sessions, discovering mentors, or signing up with minimal clicks. After registration or login, users are redirected to their role-specific dashboard (learner or mentor), with no homepage access unless logged out.
+
+Design System (Navigation-Specific)
+Colors:
+Nav Background: #F7F7F5 (Light Gray) – Clean, professional.
+Active Item: #FF5734 (Orange) – Bold, highlights selection.
+Hover/Tap Accent: #BE94F5 (Purple) – Subtle, premium glow.
+Typography:
+Nav Links: Poppins Medium (16px web, 18px mobile) – Bold, clear.
+Tooltips: Inter Regular (12px) – Minimal, helpful.
+Icons: Heroicons, tailored to nav items:
+Sessions: Play icon (live sessions).
+Mentors: Star icon (top mentors).
+Login: User icon.
+Register: Plus icon.
+Size: 24px (web), 20px (mobile) – Tappable, sharp.
+Glassmorphism: Nav bar with backdrop-filter: blur(8px); – Modern, premium.
+Transitions and Interactions:
+Hover (Web): Links/icons scale up (scale(1.1)), glow with #BE94F5 border, 0.2s ease.
+Click/Tap: Ripple effect (expanding circle from click point), content fades in (0.3s, no refresh).
+Active State: Orange underline (border-bottom: 2px solid #FF5734), subtle pulse (scale(1.05) every 2s).
+Mobile Menu: Slide-in from right (0.4s ease), items fade in sequentially (0.1s stagger).
+Web:
+Sticky header, fixed at top, subtle shadow on scroll (box-shadow: 0 2px 4px rgba(0,0,0,0.1);).
+Horizontal nav items, right-aligned, 20px spacing.
+Mobile:
+Hamburger menu (top-right, 3-line icon, 24px).
+Full-screen slide-in menu, swipe to close, tap outside to dismiss.
+Performance:
+Lazy-loaded icons, <50ms nav response time.
+WebSocket for real-time session updates in “Sessions” item.
+Redis caching for nav state, no blinking/refreshes (AJAX-driven).
+Navigation Structure
+Web Navigation
+Location: Sticky header, full-width, fixed at top.
+Structure:
+Left: Logo (clickable, refreshes /).
+Size: 120px wide, SVG for clarity.
+Interaction: On hover, logo rotates slightly (rotate(5deg)), on click, ripple effect.
+Center: Empty (clean design, emphasizes content below).
+Right: Nav items (horizontal, 20px spacing).
+Sessions (Play icon + text):
+Action: Scrolls to “Top Live Sessions” section or opens modal with live/upcoming sessions.
+Hover: Purple glow, tooltip (“Browse live and upcoming sessions”), icon pulses.
+Click: Ripple effect, smooth scroll (0.5s ease).
+Mentors (Star icon + text):
+Action: Scrolls to “Best Mentor Sessions” section or opens modal with top-rated mentors.
+Hover: Purple glow, tooltip (“Discover top mentors”), icon twinkles (scale animation).
+Click: Ripple effect, smooth scroll.
+Login (User icon + text):
+Action: Opens login modal (email, password, OTP option).
+Hover: Orange glow, tooltip (“Sign in to your dashboard”), icon bobs up/down.
+Click: Modal slides in, ripple effect.
+Register (Plus icon + text):
+Action: Opens role-based registration modal (Learner/Mentor).
+Hover: Orange glow, tooltip (“Join as a learner or mentor”), icon spins slightly.
+Click: Modal slides in, ripple effect.
+Styling:
+Font: Poppins Medium, 16px, #333 (dark gray).
+Active Item: Orange underline, bold text, pulsing icon.
+Background: Glassmorphism, semi-transparent (opacity: 0.95).
+Shadow: Subtle on scroll for depth.
+Mobile Navigation
+Location: Top-right hamburger icon (3 lines, 24px).
+Structure:
+Hamburger Menu: Tap to open full-screen slide-in menu (from right).
+Logo: Top-left, 100px wide.
+Menu Items: Vertical, centered, 24px spacing.
+Sessions (Play icon + text):
+Action: Closes menu, scrolls to “Top Live Sessions” or opens session modal.
+Tap: Purple highlight, icon pulses briefly.
+Mentors (Star icon + text):
+Action: Closes menu, scrolls to “Best Mentor Sessions” or opens mentor modal.
+Tap: Purple highlight, icon twinkles.
+Login (User icon + text):
+Action: Opens login modal.
+Tap: Orange highlight, icon bobs.
+Register (Plus icon + text):
+Action: Opens registration modal.
+Tap: Orange highlight, icon spins.
+Close: X icon (top-right, 24px).
+Tap: Menu slides out, ripple effect.
+Styling:
+Background: #F7F7F5 with 90% opacity.
+Items: Poppins Medium, 18px, #333.
+Animation: Items fade in sequentially (0.1s stagger), menu slides out on close.
+Collapsed State:
+Hamburger icon in header, top-right.
+Logo left-aligned, sticky header.
+Minimal shadow for depth.
+Enhanced Interactions
+Web Interactions
+Hover Effects:
+Sessions: Play icon pulses (0.5s scale animation), tooltip fades in, text glows purple.
+Mentors: Star icon twinkles (scale up/down twice), tooltip shows, text glows purple.
+Login: User icon bobs up/down (0.3s), tooltip appears, text glows orange.
+Register: Plus icon spins 45° and back, tooltip shows, text glows orange.
+Logo: Rotates 5° on hover, subtle orange glow.
+Click Animations:
+Ripple effect: Orange circle expands from click point (0.4s).
+Content transition: New content (e.g., modal or section) fades in (0.3s).
+Active item: Orange underline slides in, icon pulses continuously (2s interval).
+Real-Time Feedback:
+“Sessions” item badge: Shows live session count (e.g., “3 Live”).
+“Mentors” item badge: Updates with top mentor count (e.g., “5 Top Mentors”).
+Badges refresh via WebSocket, no refresh needed.
+Mobile Interactions
+Tap Effects:
+Sessions: Play icon pulses, purple highlight spreads, menu closes, scrolls to cards.
+Mentors: Star icon twinkles, purple highlight, menu closes, scrolls to cards.
+Login: User icon bobs, orange highlight, modal slides in.
+Register: Plus icon spins, orange highlight, modal slides in.
+Close Menu: X icon rotates 90°, menu slides out.
+Long-Press: Triggers tooltip (2s hold, e.g., “Browse live sessions”).
+Swipe Gestures:
+Swipe left/right on menu to navigate items.
+Swipe right to close menu.
+Real-Time Feedback:
+Same badges as web (e.g., “3 Live” on Sessions).
+Haptic feedback (subtle vibration) on tap (if device supports).
+Accessibility
+ARIA Labels:
+Sessions: aria-label="Explore live and upcoming sessions".
+Mentors: aria-label="Discover top-rated mentors".
+Login: aria-label="Sign in to your dashboard".
+Register: aria-label="Join as a learner or mentor".
+Keyboard Nav:
+Tab to focus items, Enter to activate.
+Menu toggle: Spacebar opens/closes mobile menu.
+Contrast: #333 text on #F7F7F5 (WCAG-compliant, >4.5:1 ratio).
+Screen Readers: Announces nav item actions (e.g., “Opening login modal”).
+Navigation Actions and Flows
+1. Sessions (1 Click)
+Action:
+Scrolls to “Top Live Sessions” section (web/mobile).
+Alternate: Opens modal with session list (title, mentor, time, price in INR, e.g., ₹500).
+Interaction:
+Web: Play icon pulses, ripple effect, smooth scroll (0.5s).
+Mobile: Menu closes, purple highlight, scrolls to cards.
+Real-Time:
+Cards update via WebSocket (e.g., new session at 4 PM appears).
+Badge shows live session count (e.g., “3 Live”).
+Error Handling:
+Database failure: “Loading sessions...” with cached data.
+Pop-up: “Unable to load, retry?” after 5s.
+2. Mentors (1 Click)
+Action:
+Scrolls to “Best Mentor Sessions” section.
+Alternate: Opens modal with top mentors (name, rating, session title, price in INR, e.g., ₹1000).
+Interaction:
+Web: Star icon twinkles, ripple effect, smooth scroll.
+Mobile: Menu closes, purple highlight, scrolls to cards.
+Real-Time:
+Ratings/bookings update live (SQLite3).
+Badge shows top mentor count (e.g., “5 Top Mentors”).
+Error Handling:
+Same as Sessions, with mentor-specific cached data.
+3. Login (1–2 Clicks)
+Action:
+Opens modal (email, password, OTP option).
+Submits credentials, redirects to /dashboard/[role]/ (learner or mentor).
+Interaction:
+Web: User icon bobs, modal slides in, ripple effect.
+Mobile: Orange highlight, modal appears.
+Real-Time:
+Nav updates post-login: “Login” → “Dashboard” icon.
+Error Handling:
+“Invalid credentials” pop-up (3 retries).
+“Forgot password?” link for OTP reset.
+4. Register (1–4 Clicks)
+Action:
+Opens modal, select role (Learner/Mentor).
+Multi-step form (basic info, role-specific, OTP).
+Redirects to /dashboard/[role]/.
+Interaction:
+Web: Plus icon spins, modal slides in, ripple effect.
+Mobile: Orange highlight, modal appears.
+Form Details:
+Basic: Email (auto-corrects “gmial” → “gmail”), password, name.
+Learner: Interests (suggests “Coding” for “Cod”), career goals (suggests “AI Engineer”).
+Mentor: Domains (e.g., Machine Learning), skills (auto-completes “Pyth” → “Python”), intro video (optional).
+Help pop-ups: “List skills like ‘Python’ for better matches”.
+Real-Time:
+Email validation via AJAX.
+Nav updates post-registration to “Dashboard”.
+Error Handling:
+“Email taken” or “Invalid OTP” pop-ups.
+Missing field: “Complete all fields” alert.
+5. Logo (1 Click)
+Action: Refreshes / (no effect if already on page).
+Interaction: Rotates 5°, orange ripple effect.
+Error Handling: “Page unavailable” pop-up if server fails.
+Integration with Landing Page Content
+Top Live Sessions:
+Cards: Title, mentor, topics, time, price (INR, e.g., ₹500), “Join Now”.
+Source: SQLite3 (Sessions table, status=active).
+Scroll: Horizontal, 4–6 cards, arrows (web), swipe (mobile).
+Interaction: Cards lift on hover, glow on tap, pop-up with details (description, topics, rating).
+Best Mentor Sessions:
+Cards: Mentor, title, rating (★★★★★), topics, price (INR, e.g., ₹1000), “Book”.
+Source: SQLite3, sorted by ratings/bookings.
+Scroll: Horizontal, same as above.
+Interaction: Same as sessions, pop-up includes mentor bio, intro video.
+Hero Section:
+Tagline: “Learn or Teach with Real Impact!”.
+Role Cards: “Join as Learner”/“Mentor” trigger registration modal.
+Interaction: Cards pulse (scale(1.05)), orange glow on hover/tap.
+Nav Synergy:
+“Sessions” links to live session cards/modal.
+“Mentors” links to mentor session cards/modal.
+“Login”/“Register” modals align with role-based flow, redirecting to dashboards.
+Error Handling and Robustness
+Navigation Errors:
+Unresponsive Item: “Action failed, retry?” pop-up (3 retries).
+Server Failure: “Trying again...” with fallback server, cached nav state.
+Modal Errors:
+Login: “Invalid credentials” or “Account locked” (after 5 failed attempts).
+Registration: “Email in use” or “Form incomplete” pop-ups.
+Session/Mentor Load:
+Database timeout: Cached data loads, “Loading...” spinner (5s max).
+Pop-up: “Unable to fetch sessions, retry?”.
+Concurrency:
+Multiple nav clicks: Debounced (500ms) to prevent overload.
+Redis queue handles simultaneous modal requests.
+Why This Navigation Plan is Better
+Specific Items: Includes “Sessions” and “Mentors” as requested, directly linking to core content.
+Enhanced Interactions: Hover pulses, tap ripples, twinkling icons, and real-time badges make the nav engaging and premium.
+Real-Time: WebSocket-driven session/mentor updates ensure honest, live data.
+User-Friendly: 1–2 clicks, smooth transitions, no refreshes, and intuitive tooltips.
+Responsive: Web sticky header and mobile slide-in menu cater to all devices.
+Accessible: ARIA labels, keyboard nav, and high contrast ensure inclusivity.
+Robust: Comprehensive error handling and concurrency support for a scalable app.

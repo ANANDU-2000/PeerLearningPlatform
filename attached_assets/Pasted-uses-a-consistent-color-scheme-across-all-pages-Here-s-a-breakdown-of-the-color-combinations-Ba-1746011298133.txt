@@ -1,0 +1,79 @@
+uses a consistent color scheme across all pages. Here's a breakdown of the color combinations:
+
+Background Colors
+Main background: Light gray (bg-background, #f8f9fa)
+Cards/Content areas: White (bg-white, #ffffff)
+Text Colors
+Primary text: Dark gray (text-gray-800, #1f2937)
+Secondary text: Medium gray (text-gray-600, #4b5563)
+Small/helper text: Light gray (text-gray-500, #6b7280)
+Button Colors
+Primary Buttons (for Learners):
+
+Background: Orange (bg-primary, #FF5734)
+Text: White (text-white)
+Hover: Darker orange (hover:bg-primary-dark)
+Ripple effect on click: Light orange
+Accent Buttons (for Mentors):
+
+Background: Purple (bg-accent, #7C3AED)
+Text: White (text-white)
+Hover: Darker purple (hover:bg-accent-dark)
+Ripple effect on click: Light purple
+Outline Buttons:
+
+Border: Gray (border-gray-300)
+Text: Same as content color
+Hover: Light gray background (hover:bg-gray-50)
+Form Elements
+Input fields: White background with gray border (border-gray-300)
+Input focus: Border changes to primary or accent color based on role
+Autocomplete highlight: Orange/purple text with bold font
+Interactive Elements
+Selection cards: Light background with colored border when selected
+Hover effects: Subtle background color change (hover:bg-gray-100)
+Role selection:
+Learner card: Orange accent when selected
+Mentor card: Purple accent when selected
+Other UI Elements
+Progress indicators:
+Active step: Primary/accent color
+Completed step: Green background with checkmark
+Inactive step: Gray background
+Icons: Match the button or text color they accompany
+Links: Accent color (text-accent) with hover effect (hover:text-primary)
+The design uses a consistent border-radius (rounded-md, rounded-lg) for cards and buttons, and includes subtle shadow effects for elevation (shadow-md, shadow-sm).
+Hero Section
+Background
+Left side: White background (bg-white)
+Right side: Gradient background:
+Primary gradient with orange-to-purple: bg-gradient-to-r from-primary to-accent
+This creates a gradient from orange (#FF5734) to purple (#7C3AED)
+Text
+Heading text (large):
+Font size: text-4xl on mobile, text-5xl on larger screens
+Font weight: font-bold
+Color: Dark gray (text-gray-800) on white background, white (text-white) on colored background
+Subtitle text:
+Font size: text-lg
+Font weight: font-normal
+Color: Medium gray (text-gray-600) on white background, light gray or white with opacity on colored background
+Button in Hero Section
+Primary button:
+Background: Orange (bg-primary)
+Text color: White (text-white)
+Padding: py-3 px-6
+Font size: text-base
+Font weight: font-medium
+Border radius: rounded-md
+Hover effect: Slightly darker orange (hover:bg-primary-dark)
+Transition: transition-colors duration-200
+Shadow: shadow-md
+Secondary/Get Started button:
+On the colored background: White background (bg-white)
+Text color: Primary color (text-primary)
+Other properties similar to primary button
+Image or Illustration
+Right side often has an illustration or image
+Sizing: Responsive with max-width settings
+Positioning: Centered in the container with mx-auto

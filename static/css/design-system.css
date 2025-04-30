@@ -24,7 +24,7 @@
   --color-danger: #e63946;
   --color-danger-light: #fde8ea;
   
-  /* Grayscale */
+  /* Grayscale - Consistent with provided color scheme */
   --color-gray-50: #f9fafb;
   --color-gray-100: #f3f4f6;
   --color-gray-200: #e5e7eb;
@@ -348,11 +348,23 @@ footer a, footer a:hover {
   background-color: var(--color-primary);
   color: white;
   border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: all 0.2s;
 }
 
 .btn-primary:hover {
   background-color: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-primary::after {
@@ -364,11 +376,23 @@ footer a, footer a:hover {
   background-color: var(--color-accent-dark);
   color: white;
   border-color: var(--color-accent-dark);
+  box-shadow: var(--shadow-md);
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.25;
+  transition: all 0.2s;
 }
 
 .btn-accent:hover {
   background-color: #6d33ce; /* Darker purple */
   border-color: #6d33ce;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-accent:active {
+  transform: translateY(0);
 }
 
 .btn-accent::after {
@@ -1061,11 +1085,15 @@ footer a, footer a:hover {
   flex-direction: column-reverse;
   gap: 2rem;
   overflow: hidden;
-  background: linear-gradient(to right, rgba(255,255,255,0.95), rgba(255,255,255,0.95)), 
-              url('/static/images/patterns/grid-pattern.svg');
+  background: linear-gradient(to right, 
+              #FFFFFF 0%, 
+              #FFFFFF 55%, 
+              #FF5734 55%, 
+              #7C3AED 100%);
   background-size: cover;
   background-position: center;
   min-height: 550px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .hero-content {
@@ -1158,8 +1186,11 @@ footer a, footer a:hover {
 
 /* Dark mode support */
 .dark-mode .hero-section {
-  background: linear-gradient(to right, rgba(18,18,18,0.95), rgba(18,18,18,0.95)), 
-              url('/static/images/patterns/grid-pattern.svg');
+  background: linear-gradient(to right, 
+              #121212 0%, 
+              #121212 55%, 
+              rgba(255,87,52,0.8) 55%, 
+              rgba(124,58,237,0.8) 100%);
   background-size: cover;
 }
 
@@ -1260,21 +1291,45 @@ footer a, footer a:hover {
   
   .hero-section {
     min-height: auto;
+    background: linear-gradient(to bottom, 
+                #FFFFFF 0%, 
+                #FFFFFF 65%, 
+                #FF5734 65%, 
+                #7C3AED 100%);
+    padding: 2rem 0 3rem;
   }
   
   .hero-content {
     padding: var(--spacing-lg);
+    width: 100%;
+    text-align: center;
+  }
+  
+  .hero-heading {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+  
+  .hero-subtitle {
+    font-size: 1rem;
+    margin: 0 auto 1.5rem;
   }
   
   .hero-visual {
     min-height: 200px;
+    margin-top: 1rem;
   }
   
   .hero-cta {
     flex-direction: column;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 300px;
   }
   
   .hero-cta .btn {
     width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
   }
 }

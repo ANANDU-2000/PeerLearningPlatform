@@ -637,22 +637,33 @@ class PeerLearnRTC {
      * Setup WebSocket for signaling with automatic reconnection
      */
     async setupWebSocket() {
+        // Get protocol based on connection security
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        // WebSocket URL path to match Django Channels' routing
-        const wsUrl = `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`;
         
-        console.log("Connecting to WebSocket:", wsUrl);
-        return new Promise((resolve, reject) => {
+        // Try different WebSocket URL paths to ensure connection
+        // First try the session-specific route, and if that fails, try the video route
+        const wsUrls = [
+            `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`,
+            `${protocol}//${window.location.host}/ws/video/${this.sessionId}/`
+        ];
+        
+        let currentUrlIndex = 0;
+        const tryConnect = (urlIndex) => {
+            const wsUrl = wsUrls[urlIndex];
+            console.log(`Attempting to connect to WebSocket (attempt ${urlIndex + 1}/${wsUrls.length}):`, wsUrl);
+            
             try {
                 this.socket = new WebSocket(wsUrl);
                 
                 this.socket.onopen = () => {
-                    console.log("WebSocket connection established");
+                    console.log(`WebSocket connection established to ${wsUrl}`);
                     this.wsReconnectAttempts = 0;
                     
                     // Send join message to establish presence
                     this.sendSignalingMessage({
                         type: 'join',
+                        user_id: this.userId,
+                        user_name: this.userName,
                         client_info: {
                             browser: navigator.userAgent,
                             time: new Date().toISOString(),
@@ -694,13 +705,35 @@ class PeerLearnRTC {
                 this.socket.onerror = (error) => {
                     console.error("WebSocket error:", error);
                     if (this.socket.readyState === WebSocket.CONNECTING) {
-                        reject(new Error("Failed to connect to signaling server"));
+                        // Try the next WebSocket URL if available
+                        if (urlIndex < wsUrls.length - 1) {
+                            console.log("Connection failed, trying next WebSocket URL...");
+                            setTimeout(() => {
+                                tryConnect(urlIndex + 1);
+                            }, 1000);
+                        } else {
+                            reject(new Error("Failed to connect to signaling server after trying all URLs"));
+                        }
                     }
                 };
             } catch (e) {
                 console.error("Error setting up WebSocket:", e);
-                reject(e);
+                
+                // Try the next WebSocket URL if available
+                if (urlIndex < wsUrls.length - 1) {
+                    console.log("Connection failed, trying next WebSocket URL...");
+                    setTimeout(() => {
+                        tryConnect(urlIndex + 1);
+                    }, 1000);
+                } else {
+                    reject(e);
+                }
             }
+        };
+        
+        // Start the connection sequence with the first URL
+        return new Promise((resolve, reject) => {
+            tryConnect(0);
         });
     }
     

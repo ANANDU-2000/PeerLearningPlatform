@@ -160,9 +160,65 @@
                             </div>
                             
                             <!-- Checkout Button -->
-                            <button id="checkout-button" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition">
+                            <button id="checkout-button" type="button" onclick="triggerCheckout()" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition">
                                 {% trans "Proceed to Payment" %}
                             </button>
+                            
+                            <script>
+                                // Ensure this code runs after page load
+                                function triggerCheckout() {
+                                    console.log("Checkout button clicked directly");
+                                    
+                                    // Check if window.razorpayOptions exists and what it contains
+                                    if (window.razorpayOptions) {
+                                        console.log("Razorpay options found:", window.razorpayOptions);
+                                        
+                                        // For paid sessions
+                                        if (window.razorpayOptions.order_id) {
+                                            console.log("Starting Razorpay checkout with order ID:", window.razorpayOptions.order_id);
+                                            var rzp = new Razorpay(window.razorpayOptions);
+                                            rzp.open();
+                                        } 
+                                        // For free sessions
+                                        else if (window.razorpayOptions.total === 0 || window.razorpayOptions.total === '0' || 
+                                                 window.razorpayOptions.total === 0.0 || parseFloat(window.razorpayOptions.total) === 0) {
+                                            console.log("Initiating free checkout");
+                                            processFreeCheckout();
+                                        } else {
+                                            console.error("Razorpay options invalid:", window.razorpayOptions);
+                                            alert("Payment system error. Please try again later.");
+                                        }
+                                    } else {
+                                        console.error("Razorpay options not found");
+                                        alert("Payment system error. Please refresh and try again.");
+                                    }
+                                }
+                                
+                                function processFreeCheckout() {
+                                    fetch('/payments/payment-callback/', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRFToken': '{{ csrf_token }}'
+                                        },
+                                        body: JSON.stringify({
+                                            free_checkout: true
+                                        })
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.status === 'success') {
+                                            window.location.href = '/sessions/my-booked-sessions/';
+                                        } else {
+                                            alert('Error: ' + (data.message || 'Unknown error occurred'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error during free checkout:', error);
+                                        alert('An error occurred during checkout. Please try again.');
+                                    });
+                                }
+                            </script>
                             
                             <!-- Payment Security Note -->
                             <div class="mt-4 flex items-center justify-center text-gray-500 text-sm">

@@ -944,7 +944,7 @@ class SessionUIController {
     /**
      * Toggle screen sharing
      */
-    toggleScreenSharing: function() {
+    toggleScreenSharing() {
         var self = this;
         
         if (this.isScreenSharing) {
@@ -1027,7 +1027,7 @@ class SessionUIController {
     /**
      * Stop screen sharing
      */
-    stopScreenSharing: function() {
+    stopScreenSharing() {
         if (!this.isScreenSharing || !this.screenStream) return;
         
         // Stop all tracks

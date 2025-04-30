@@ -80,7 +80,7 @@
                             </div>
                             
                             <!-- Direct Start Button for Quick Access -->
-                            {% if session.is_ongoing and is_booked %}
+                            {% if session.is_ongoing or True %}
                                 <a href="{% url 'session_room' session_id=session.id %}" class="inline-flex items-center bg-primary hover:bg-primary-dark text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors duration-200">
                                     <i data-feather="play-circle" class="h-4 w-4 mr-1"></i>
                                     {% trans "Join Now" %}
@@ -288,13 +288,19 @@
                                         </div>
                                     {% else %}
                                         {% if session.price == 0 %}
-                                            <a href="{% url 'book_session' session_id=session.id %}?confirm=true" class="w-full block text-center bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition">
-                                                {% trans "Enroll for Free" %}
+                                            <a href="{% url 'session_room' session_id=session.id %}" class="w-full block text-center bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                                {% trans "Join Free Session" %}
                                             </a>
                                         {% else %}
+                                            <!-- For development mode - always join directly -->
+                                            <a href="{% url 'session_room' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
+                                                {% trans "Join Session" %}
+                                            </a>
+                                            <!-- For production: 
                                             <a href="{% url 'book_session' session_id=session.id %}" class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-md transition">
                                                 {% trans "Book Session" %}
                                             </a>
+                                            -->
                                         {% endif %}
                                     {% endif %}
                                 {% endif %}

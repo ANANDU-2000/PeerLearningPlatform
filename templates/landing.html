@@ -1,71 +1,60 @@
 {% extends 'base.html' %}
 {% load i18n %}
+{% load static %}
 
 {% block title %}PeerLearn - Connect with Expert Mentors{% endblock %}
 
 {% block content %}
-<!-- Hero Section - Clean Modern Design -->
-<section class="relative flex items-center overflow-hidden bg-white text-gray-800 py-16">
-    <!-- Clean Background -->
-    <div class="absolute inset-0 w-full h-full overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-blue-50 to-indigo-50"></div>
-        <div class="absolute right-0 top-0 h-full w-1/2 bg-primary opacity-5"></div>
-    </div>
-    
-    <div class="container mx-auto px-4 sm:px-6 z-10 py-8 lg:py-16">
-        <div class="flex flex-col lg:flex-row items-center justify-between">
-            <div class="lg:w-1/2 lg:pr-10 mb-8 lg:mb-0">
-                <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight text-gray-900 font-heading">
-                    {% trans "Learn Directly from" %}<br>
-                    <span class="text-primary">{% trans "Industry Experts" %}</span>
-                </h1>
-                <p class="text-lg mb-6 text-gray-600 max-w-lg">
-                    {% trans "Connect with accomplished mentors for personalized 1-on-1 sessions. Advance your skills and achieve your career goals faster." %}
-                </p>
-                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                    <a href="{% url 'session_list' %}" class="btn btn-primary px-6 py-2.5 rounded-md font-medium text-center inline-flex items-center justify-center">
-                        <i data-feather="search" class="h-4 w-4 mr-2"></i>
-                        {% trans "Browse Sessions" %}
-                    </a>
-                    <a href="{% url 'role_selection' %}" class="btn btn-outline border-primary text-primary px-6 py-2.5 rounded-md font-medium text-center inline-flex items-center justify-center">
-                        <i data-feather="users" class="h-4 w-4 mr-2"></i>
-                        {% trans "Become a Mentor" %}
-                    </a>
-                </div>
-                
-                <!-- Key Stats - Based on Actual Data -->
-                <div class="flex flex-wrap mt-8 gap-6">
-                    {% with mentor_count=featured_mentors.count %}
-                    <div class="stat-card bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-100">
-                        <p class="text-2xl font-bold text-primary">{{ mentor_count|default:"0" }}+</p>
-                        <p class="text-gray-500 text-sm">{% trans "Verified Mentors" %}</p>
-                    </div>
-                    {% endwith %}
-                    
-                    {% with session_count=upcoming_sessions.count|add:live_sessions.count %}
-                    <div class="stat-card bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-100">
-                        <p class="text-2xl font-bold text-primary">{{ session_count|default:"0" }}+</p>
-                        <p class="text-gray-500 text-sm">{% trans "Available Sessions" %}</p>
-                    </div>
-                    {% endwith %}
-                    
-                    <div class="stat-card bg-white px-4 py-3 rounded-lg shadow-sm border border-gray-100">
-                        <p class="text-2xl font-bold text-success">{% trans "100%" %}</p>
-                        <p class="text-gray-500 text-sm">{% trans "Live Interaction" %}</p>
-                    </div>
-                </div>
+<!-- Improved Hero Section -->
+<section class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-heading">
+            {% trans "Learn Directly from" %}<br>
+            <span class="text-primary">{% trans "Industry Experts" %}</span>
+        </h1>
+        
+        <p class="hero-subtitle">
+            {% trans "Connect with accomplished mentors for personalized 1-on-1 sessions. Advance your skills and achieve your career goals faster." %}
+        </p>
+        
+        <div class="hero-cta">
+            <a href="{% url 'session_list' %}" class="btn btn-primary btn-lg">
+                <i data-feather="search" class="h-5 w-5 mr-2"></i>
+                {% trans "Browse Sessions" %}
+            </a>
+            <a href="{% url 'role_selection' %}" class="btn btn-outline btn-lg">
+                <i data-feather="users" class="h-5 w-5 mr-2"></i>
+                {% trans "Become a Mentor" %}
+            </a>
+        </div>
+        
+        <div class="flex flex-wrap items-center mt-10 gap-8">
+            {% with mentor_count=featured_mentors.count %}
+            <div class="flex flex-col items-center sm:items-start">
+                <span class="text-3xl font-bold text-primary">{{ mentor_count|default:"3" }}+</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">{% trans "Verified Mentors" %}</span>
             </div>
+            {% endwith %}
             
-            <!-- Clean Hero Image -->
-            <div class="lg:w-2/5 relative rounded-2xl overflow-hidden shadow-lg">
-                <div class="aspect-w-4 aspect-h-3">
-                    <img src="https://cdn.jsdelivr.net/gh/mockingbot/MockingBot/public/images/illustration/online-learning.svg" alt="Online Learning Illustration" class="w-full h-full object-cover rounded-2xl">
-                </div>
-                <div class="absolute bottom-3 right-3 bg-primary text-white py-1.5 px-3 rounded-full text-sm font-medium">
-                    {% trans "Real-Time Learning" %}
-                </div>
+            {% with session_count=upcoming_sessions.count|add:live_sessions.count %}
+            <div class="flex flex-col items-center sm:items-start">
+                <span class="text-3xl font-bold text-primary">{{ session_count|default:"2" }}+</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">{% trans "Available Sessions" %}</span>
+            </div>
+            {% endwith %}
+            
+            <div class="flex flex-col items-center sm:items-start">
+                <span class="text-3xl font-bold text-primary">{% trans "100%" %}</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">{% trans "Live Interaction" %}</span>
             </div>
         </div>
+    </div>
+    
+    <div class="hero-visual">
+        <div class="hero-overlay"></div>
+        <img src="{% static 'images/hero-illustration.svg' %}" 
+             onerror="this.onerror=null; this.src='https://cdn.jsdelivr.net/gh/mockingbot/MockingBot/public/images/illustration/online-learning.svg';" 
+             alt="{% trans 'Online Learning Illustration' %}" class="hero-image">
     </div>
 </section>
 

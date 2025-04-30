@@ -1,120 +1,149 @@
+{% load i18n %}
 {% load static %}
-{% load custom_filters %}
 
-<div class="session-card glassmorphism flex flex-col lg:flex-row rounded-lg overflow-hidden shadow-md transition-all hover:shadow-lg hover:transform hover:translate-y-[-2px] mb-4">
-    <!-- Session thumbnail -->
-    <div class="session-thumbnail relative lg:w-1/4">
-        <div class="bg-gradient-to-r from-primary to-accent-dark aspect-video lg:h-full overflow-hidden">
+<div class="session-card-horizontal bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all">
+    <div class="flex flex-col md:flex-row">
+        <!-- Thumbnail Section -->
+        <div class="relative w-full md:w-1/4 md:min-w-[180px]">
             {% if session.thumbnail %}
-                <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-full object-cover">
+                <img src="{{ session.thumbnail.url }}" alt="{{ session.title }}" class="w-full h-40 md:h-full object-cover">
             {% else %}
-                <div class="w-full h-full flex items-center justify-center">
-                    <i data-feather="video" class="text-white h-10 w-10"></i>
+                <div class="w-full h-40 md:h-full bg-primary-light dark:bg-gray-700 flex items-center justify-center">
+                    <i data-feather="book-open" class="h-10 w-10 text-primary dark:text-primary-light"></i>
+                </div>
+            {% endif %}
+            
+            <!-- Price Badge -->
+            {% if session.price == 0 %}
+                <div class="absolute top-3 right-3 bg-success-light text-success dark:bg-success dark:bg-opacity-20 dark:text-green-300 text-xs font-bold px-2 py-1 rounded-full">
+                    {% trans "Free" %}
+                </div>
+            {% else %}
+                <div class="absolute top-3 right-3 bg-primary-light text-primary dark:bg-primary dark:bg-opacity-20 dark:text-primary-light text-xs font-bold px-2 py-1 rounded-full">
+                    ₹{{ session.price }}
+                </div>
+            {% endif %}
+            
+            <!-- Domain/Category Badge (if available) -->
+            {% if session.category or session.tags %}
+                <div class="absolute bottom-3 left-3 bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-90 text-xs font-medium px-2 py-1 rounded-md">
+                    {% if session.category %}
+                        {{ session.category }}
+                    {% else %}
+                        {{ session.tags.split|first|title }}
+                    {% endif %}
                 </div>
             {% endif %}
         </div>
         
-        <!-- Live badge or status badge -->
-        {% if session.is_live %}
-            <div class="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-md text-xs font-medium flex items-center">
-                <span class="animate-pulse rounded-full bg-white h-2 w-2 mr-1"></span>
-                LIVE
-            </div>
-        {% else %}
-            <div class="absolute top-2 left-2 bg-gray-700 bg-opacity-70 text-white px-2 py-1 rounded-md text-xs font-medium">
-                {{ session.status|upper }}
-            </div>
-        {% endif %}
-        
-        <!-- Domain badge -->
-        <div class="absolute bottom-2 left-2 bg-accent text-white px-2 py-1 rounded-md text-xs font-medium">
-            {{ session.domain }}
-        </div>
-    </div>
-    
-    <!-- Session details -->
-    <div class="session-details p-4 flex-1 flex flex-col justify-between">
-        <div>
-            <!-- Title and mentor info -->
+        <!-- Content Section -->
+        <div class="p-4 flex flex-col flex-grow">
             <div class="flex justify-between items-start mb-2">
-                <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100">{{ session.title }}</h3>
-                <span class="text-sm text-gray-500 dark:text-gray-400 ml-2">{{ session.duration }} min</span>
+                <h3 class="text-lg font-bold text-gray-900 dark:text-gray-100 line-clamp-2">{{ session.title }}</h3>
+                
+                <!-- Countdown Timer for upcoming sessions -->
+                {% if session.start_time > now %}
+                    <div class="text-xs flex items-center bg-blue-50 dark:bg-blue-900 dark:bg-opacity-30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded-md">
+                        <i data-feather="clock" class="h-3 w-3 mr-1"></i>
+                        <span class="countdown" data-time="{{ session.start_time|date:'c' }}">
+                            {% with time_diff=session.start_time|timeuntil %}
+                                {% if "day" in time_diff %}
+                                    {{ time_diff }}
+                                {% elif "hour" in time_diff %}
+                                    {{ time_diff }}
+                                {% elif "minute" in time_diff %}
+                                    {{ time_diff }}
+                                {% else %}
+                                    {% trans "Soon" %}
+                                {% endif %}
+                            {% endwith %}
+                        </span>
+                    </div>
+                {% endif %}
             </div>
             
-            <!-- Mentor info -->
-            <div class="flex items-center mb-3">
-                <div class="flex-shrink-0 mr-2">
-                    {% if session.mentor.profile_picture %}
-                        <img src="{{ session.mentor.profile_picture.url }}" alt="{{ session.mentor.user.first_name }}" class="w-8 h-8 rounded-full object-cover">
-                    {% else %}
-                        <div class="w-8 h-8 rounded-full bg-accent-dark flex items-center justify-center text-white">
-                            {{ session.mentor.user.first_name|first|upper }}
-                        </div>
-                    {% endif %}
-                </div>
+            <!-- Mentor Info -->
+            <div class="flex items-center mb-2">
+                {% if session.mentor.user.profile_picture %}
+                    <img src="{{ session.mentor.user.profile_picture.url }}" 
+                         alt="{{ session.mentor.user.get_full_name }}" 
+                         class="h-8 w-8 rounded-full object-cover mr-2">
+                {% else %}
+                    <div class="h-8 w-8 rounded-full bg-accent-dark text-white flex items-center justify-center font-bold mr-2">
+                        {{ session.mentor.user.first_name|first|upper }}
+                    </div>
+                {% endif %}
                 <div>
-                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ session.mentor.user.get_full_name }}</p>
-                    <div class="flex items-center">
-                        <div class="flex text-yellow-400">
-                            {% if session.mentor.avg_rating %}
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= session.mentor.avg_rating|floatformat:0|add:"0" %}
-                                        <i data-feather="star" class="h-3 w-3 fill-current"></i>
-                                    {% else %}
-                                        <i data-feather="star" class="h-3 w-3"></i>
-                                    {% endif %}
-                                {% endfor %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400 ml-1">({{ session.mentor.rating_count }})</span>
-                            {% else %}
-                                <span class="text-xs text-gray-500 dark:text-gray-400">New mentor</span>
-                            {% endif %}
+                    <p class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ session.mentor.user.get_full_name }}</p>
+                    <div class="flex items-center text-xs text-gray-600 dark:text-gray-400">
+                        <div class="flex items-center mr-2">
+                            <i data-feather="star" class="h-3 w-3 text-yellow-400 fill-current mr-1"></i>
+                            <span>{{ session.mentor.average_rating|default:"5.0" }}</span>
                         </div>
+                        <span>{{ session.mentor.expertise|truncatechars:25 }}</span>
                     </div>
                 </div>
             </div>
             
-            <!-- Session description -->
-            <p class="text-gray-700 dark:text-gray-300 text-sm mb-3 line-clamp-2">{{ session.description|truncatechars:120 }}</p>
+            <!-- Session Brief Description (if available) -->
+            {% if session.description %}
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                    {{ session.description|truncatechars:120 }}
+                </p>
+            {% endif %}
             
-            <!-- Topics covered -->
-            <div class="mb-3">
-                <h4 class="text-xs uppercase text-gray-500 dark:text-gray-400 mb-1">Topics covered:</h4>
-                <div class="flex flex-wrap gap-1">
-                    {% for topic in session.topics.all|slice:":3" %}
-                        <span class="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-xs px-2 py-1 rounded">{{ topic.name }}</span>
-                    {% empty %}
-                        <span class="text-gray-500 dark:text-gray-400 text-xs">Topics not specified</span>
-                    {% endfor %}
-                    {% if session.topics.all|length > 3 %}
-                        <span class="text-gray-500 dark:text-gray-400 text-xs">+{{ session.topics.all|length|add:"-3" }} more</span>
-                    {% endif %}
+            <!-- Session Details -->
+            <div class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400 mb-3">
+                <div class="flex items-center">
+                    <i data-feather="calendar" class="h-3 w-3 mr-1"></i>
+                    <span>{{ session.start_time|date:"M d, Y" }}</span>
+                </div>
+                <div class="flex items-center">
+                    <i data-feather="clock" class="h-3 w-3 mr-1"></i>
+                    <span>{{ session.start_time|date:"g:i A" }}</span>
+                </div>
+                <div class="flex items-center">
+                    <i data-feather="users" class="h-3 w-3 mr-1"></i>
+                    <span>{{ session.current_participants }}/{{ session.max_participants }}</span>
+                </div>
+                <div class="flex items-center">
+                    <i data-feather="clock" class="h-3 w-3 mr-1"></i>
+                    <span>{{ session.duration_minutes }} {% trans "mins" %}</span>
                 </div>
             </div>
-        </div>
-        
-        <!-- Session footer: Time, price, and button -->
-        <div class="flex flex-col sm:flex-row justify-between items-center mt-2">
-            <div class="flex items-center mb-2 sm:mb-0">
-                <i data-feather="calendar" class="h-4 w-4 text-gray-500 dark:text-gray-400 mr-1"></i>
-                <span class="text-sm text-gray-700 dark:text-gray-300">{{ session.start_time|date:"M d, Y • g:i A" }}</span>
-            </div>
             
-            <div class="flex items-center">
-                <span class="text-lg font-semibold {% if session.price == 0 %}text-primary{% else %}text-gray-800 dark:text-gray-200{% endif %} mr-4">
-                    {% if session.price == 0 %}
-                        Free
-                    {% else %}
-                        ₹{{ session.price }}
-                    {% endif %}
-                </span>
+            <!-- Topics/Tags -->
+            {% if session.topics_list %}
+                <div class="mb-4 flex flex-wrap gap-1">
+                    {% for topic in session.topics_list %}
+                        <span class="inline-block bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 text-xs px-2 py-1 rounded">
+                            {{ topic }}
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-between items-center mt-auto">
+                <div class="flex space-x-1">
+                    <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full">
+                        <i data-feather="heart" class="h-4 w-4"></i>
+                    </button>
+                    <button class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 p-1 rounded-full">
+                        <i data-feather="share-2" class="h-4 w-4"></i>
+                    </button>
+                </div>
                 
-                {% if session.is_live %}
-                    <a href="{% url 'session_room' session.id %}" class="btn btn-primary btn-sm">Join Now</a>
-                {% elif session.is_upcoming %}
-                    <a href="{% url 'session_details' session.id %}" class="btn btn-primary-outline btn-sm">Book Now</a>
-                {% else %}
-                    <a href="{% url 'session_details' session.id %}" class="btn btn-primary-outline btn-sm">View Details</a>
-                {% endif %}
+                <div class="flex space-x-2">
+                    <a href="{% url 'session_detail' session_id=session.id %}" 
+                       class="text-primary hover:text-primary-dark dark:text-primary-light dark:hover:text-white text-sm font-medium">
+                        {% trans "View Details" %}
+                    </a>
+                    <a href="{% url 'book_session' session_id=session.id %}" 
+                       class="bg-primary hover:bg-primary-dark text-white text-sm font-medium px-3 py-1 rounded-md transition-colors">
+                        {% trans "Book Now" %}
+                    </a>
+                </div>
             </div>
         </div>
     </div>

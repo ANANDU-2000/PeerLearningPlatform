@@ -30,10 +30,10 @@ async def simulate_user(session_id, user_id, user_name, is_mentor=False):
     print(f"\n[{user_name}] Connecting to {ws_url}")
     
     try:
-        # Connect to WebSocket
-        async with websockets.connect(ws_url, extra_headers={
-            'Cookie': f'session_id={session_id}; user_id={user_id}'
-        }) as websocket:
+        # Connect to WebSocket - using the header parameter instead of extra_headers
+        # which is not supported in older websocket versions
+        headers = {'Cookie': f'session_id={session_id}; user_id={user_id}'}
+        async with websockets.connect(ws_url, additional_headers=headers) as websocket:
             print(f"[{user_name}] Connected to WebSocket server")
             
             # Simulate sending join message

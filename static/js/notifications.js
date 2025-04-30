@@ -4,14 +4,11 @@
  */
 
 // Define EDUCATIONAL_DOMAINS if it doesn't exist
-if (typeof EDUCATIONAL_DOMAINS === 'undefined') {
-    // List of common education domains for smart suggestions
-    const EDUCATIONAL_DOMAINS = [
-        'edu', 'ac.uk', 'edu.au', 'ac.in', 'edu.sg', 'ac.jp',
-        'edu.cn', 'ac.za', 'edu.mx', 'edu.br', 'edu.ar',
-        'ac.nz', 'edu.hk', 'edu.tw', 'ac.kr', 'school'
-    ];
-}
+window.EDUCATIONAL_DOMAINS = window.EDUCATIONAL_DOMAINS || [
+    'edu', 'ac.uk', 'edu.au', 'ac.in', 'edu.sg', 'ac.jp',
+    'edu.cn', 'ac.za', 'edu.mx', 'edu.br', 'edu.ar',
+    'ac.nz', 'edu.hk', 'edu.tw', 'ac.kr', 'school'
+];
 
 // Wait for document to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {

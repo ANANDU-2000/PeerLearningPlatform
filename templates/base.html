@@ -758,13 +758,13 @@
 
     <!-- Load notification script -->
     <script src="{% static 'js/notifications.js' %}"></script>
+    <!-- No need to initialize, notifications.js handles this internally -->
     <script>
-        // Initialize notifications system
-        document.addEventListener('DOMContentLoaded', function() {
-            if (typeof initializeNotifications === 'function') {
-                initializeNotifications();
-            }
-        });
+        // Notifications are automatically initialized when loaded
+        // Maintain compatibility with any code using initializeNotifications
+        function initializeNotifications() {
+            console.log('Notifications already initialized');
+        }
     </script>
 </body>
 </html>

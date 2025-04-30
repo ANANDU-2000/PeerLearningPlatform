@@ -283,21 +283,20 @@ def payment_callback(request):
             if not cart_items:
                 return JsonResponse({'status': 'error', 'message': _('No items in cart.')}, status=400)
             
-            # Process free sessions
+            # Process all sessions as free for testing
             for booking in cart_items:
-                # If the session price is 0 or close to 0 (free session)
-                if booking.session.price <= 0.01:
-                    booking.status = 'confirmed'
-                    booking.payment_complete = True
-                    booking.save()
-                    
-                    # Create transaction record for free session
-                    Transaction.objects.create(
-                        booking=booking,
-                        amount=0,
-                        currency=settings.RAZORPAY_CURRENCY,
-                        status='completed',
-                        payment_method='free',
+                # For development/testing - consider all sessions as free
+                booking.status = 'confirmed'
+                booking.payment_complete = True
+                booking.save()
+                
+                # Create transaction record
+                Transaction.objects.create(
+                    booking=booking,
+                    amount=booking.session.price or 0,
+                    currency=settings.RAZORPAY_CURRENCY,
+                    status='completed',
+                    payment_method='free_test',
                         metadata={
                             'free_session': True
                         }

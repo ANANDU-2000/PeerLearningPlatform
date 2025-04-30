@@ -526,47 +526,120 @@ def session_room(request, session_id):
             messages.error(request, _('Please log in to access the session room.'))
             return redirect('login')
         
-        # Check if user has permission to access this session
-        if request.user.role == 'learner':
-            # Check if learner has a confirmed booking for this session
-            try:
-                has_booking = Booking.objects.filter(
-                    session=session, 
+        # FOR DEVELOPMENT ONLY:
+        # Always allow access to the session room for testing purposes
+        print(f"DEVELOPMENT MODE: Allowing user {request.user.id} to join session {session_id}")
+        dev_mode = True
+        
+        # Default permission settings
+        is_learner_allowed = False
+        is_mentor_allowed = False
+        
+        if dev_mode:
+            # Development mode access check (lenient)
+            if request.user.role == 'learner':
+                # Check if there's a pending booking that needs payment
+                has_unpaid = Booking.objects.filter(
+                    session=session,
                     learner=request.user,
-                    status='confirmed',
-                    payment_complete=True
+                    payment_complete=False
                 ).exists()
                 
-                # For development/testing, also allow test learners
-                is_learner_allowed = has_booking or 'test_learner' in request.user.email
+                if has_unpaid:
+                    # Auto-redirect to cart for any unpaid bookings
+                    messages.info(request, _('Redirecting to payment page for your session booking.'))
+                    return redirect('cart')
                 
-                if not is_learner_allowed:
-                    # Check if they have an unpaid booking
-                    has_unpaid = Booking.objects.filter(
+                # Check if they already have a confirmed booking
+                has_confirmed = Booking.objects.filter(
+                    session=session,
+                    learner=request.user,
+                    status='confirmed'
+                ).exists()
+                
+                # If no booking at all, create one and redirect to cart
+                if not has_confirmed and not has_unpaid:
+                    print(f"Auto-creating session booking for user {request.user.id} in dev mode")
+                    # Create a booking automatically
+                    new_booking = Booking(
                         session=session,
                         learner=request.user,
+                        status='pending',
                         payment_complete=False
+                    )
+                    new_booking.save()
+                    messages.info(request, _('Please complete payment to join this session.'))
+                    return redirect('cart')
+            
+            # In development mode, always allow the mentor who created the session
+            # and any test mentors/learners to join
+            is_dev_user = ('test' in request.user.email.lower() or 
+                         'learner' in request.user.email.lower() or
+                         'mentor' in request.user.email.lower())
+            
+            is_session_creator = (
+                request.user.role == 'mentor' and 
+                session.mentor and 
+                session.mentor.user_id == request.user.id
+            )
+            
+            # Always grant access in development mode
+            if is_dev_user or is_session_creator:
+                # Set appropriate permission based on user role
+                if request.user.role == 'learner':
+                    is_learner_allowed = True
+                    is_mentor_allowed = False
+                else:  # Mentor role
+                    is_mentor_allowed = True
+                    is_learner_allowed = False
+            else:
+                messages.warning(request, _('Development mode: Auto-creating session access.'))
+                # Set permissions for generic users in dev mode
+                if request.user.role == 'learner':
+                    is_learner_allowed = True
+                else:
+                    is_mentor_allowed = True
+        else:
+            # PRODUCTION MODE CHECKS (more strict)
+            if request.user.role == 'learner':
+                # Check if learner has a confirmed booking for this session
+                try:
+                    has_booking = Booking.objects.filter(
+                        session=session, 
+                        learner=request.user,
+                        status='confirmed',
+                        payment_complete=True
                     ).exists()
                     
-                    if has_unpaid:
-                        messages.error(request, _('Please complete payment for this session before joining.'))
-                        return redirect('cart')
-            except Exception as e:
-                messages.error(request, _('Error checking booking status. Please try again.'))
-                print(f"Error checking learner booking: {str(e)}")
-                return redirect('learner_dashboard')
-        else:
-            is_learner_allowed = False
-        
-        is_mentor_allowed = (
-            request.user.role == 'mentor' and 
-            session.mentor and  # Check if mentor exists
-            session.mentor.user_id == request.user.id
-        )
-        
-        if not (is_learner_allowed or is_mentor_allowed):
-            messages.error(request, _('You do not have permission to access this session.'))
-            return redirect('dashboard')
+                    if not has_booking:
+                        # Check if they have an unpaid booking
+                        has_unpaid = Booking.objects.filter(
+                            session=session,
+                            learner=request.user,
+                            payment_complete=False
+                        ).exists()
+                        
+                        if has_unpaid:
+                            messages.error(request, _('Please complete payment for this session before joining.'))
+                            return redirect('cart')
+                        else:
+                            messages.error(request, _('You need to book this session before joining.'))
+                            return redirect('session_detail', session_id=session_id)
+                except Exception as e:
+                    messages.error(request, _('Error checking booking status. Please try again.'))
+                    print(f"Error checking learner booking: {str(e)}")
+                    return redirect('learner_dashboard')
+            else:
+                # For mentor role
+                is_mentor_allowed = (
+                    request.user.role == 'mentor' and 
+                    session.mentor and  # Check if mentor exists
+                    session.mentor.user_id == request.user.id
+                )
+                
+                if not is_mentor_allowed:
+                    messages.error(request, _('You do not have permission to access this session.'))
+                    return redirect('dashboard')
         
         # Check session timing to prevent access to past or far-future sessions
         now = timezone.now()

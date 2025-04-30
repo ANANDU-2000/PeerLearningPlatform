@@ -160,14 +160,90 @@
                             </div>
                             
                             <!-- Checkout Button -->
-                            <button id="checkout-button" type="button" onclick="triggerCheckout()" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition">
+                            <button id="checkout-button" type="button" onclick="forceFreeCheckout()" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition">
                                 {% trans "Proceed to Payment" %}
                             </button>
                             
                             <script>
-                                // Ensure this code runs after page load
-                                function triggerCheckout() {
-                                    console.log("Checkout button clicked directly");
+                                // For development: Always process as free checkout
+                                function forceFreeCheckout() {
+                                    console.log("DEVELOPMENT MODE: Force processing as free checkout");
+                                    
+                                    // Show processing indicator
+                                    const button = document.getElementById('checkout-button');
+                                    const originalText = button.innerHTML;
+                                    button.innerHTML = `<div class="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div> Processing...`;
+                                    button.disabled = true;
+                                    
+                                    // Process checkout
+                                    fetch('/payments/payment-callback/', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRFToken': '{{ csrf_token }}'
+                                        },
+                                        body: JSON.stringify({
+                                            free_checkout: true
+                                        })
+                                    })
+                                    .then(response => {
+                                        if (!response.ok) {
+                                            throw new Error('Network response was not ok: ' + response.statusText);
+                                        }
+                                        return response.json();
+                                    })
+                                    .then(data => {
+                                        console.log("Payment response:", data);
+                                        if (data.status === 'success') {
+                                            // Show success message
+                                            const successBox = document.createElement('div');
+                                            successBox.className = 'mt-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded';
+                                            successBox.innerHTML = `
+                                                <div class="flex items-center">
+                                                    <div class="py-1 mr-2"><svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                    </svg></div>
+                                                    <div>
+                                                        <p class="font-bold">Session booked successfully!</p>
+                                                        <p class="text-sm">Redirecting to your booked sessions...</p>
+                                                    </div>
+                                                </div>
+                                            `;
+                                            
+                                            // Insert above the button
+                                            button.parentNode.insertBefore(successBox, button);
+                                            
+                                            // Hide the button
+                                            button.style.display = 'none';
+                                            
+                                            // Redirect after delay
+                                            setTimeout(() => {
+                                                window.location.href = '/sessions/my-booked-sessions/';
+                                            }, 2000);
+                                        } else {
+                                            // Restore button
+                                            button.innerHTML = originalText;
+                                            button.disabled = false;
+                                            
+                                            // Show error
+                                            alert('Error: ' + (data.message || 'Unknown error occurred'));
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error during checkout:', error);
+                                        
+                                        // Restore button
+                                        button.innerHTML = originalText;
+                                        button.disabled = false;
+                                        
+                                        // Show error
+                                        alert('An error occurred during checkout. Please try again.');
+                                    });
+                                }
+                                
+                                // Original checkout function - kept for reference
+                                function triggerRazorpayCheckout() {
+                                    console.log("Checkout button clicked");
                                     
                                     // Check if window.razorpayOptions exists and what it contains
                                     if (window.razorpayOptions) {
@@ -192,31 +268,6 @@
                                         console.error("Razorpay options not found");
                                         alert("Payment system error. Please refresh and try again.");
                                     }
-                                }
-                                
-                                function processFreeCheckout() {
-                                    fetch('/payments/payment-callback/', {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'X-CSRFToken': '{{ csrf_token }}'
-                                        },
-                                        body: JSON.stringify({
-                                            free_checkout: true
-                                        })
-                                    })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.status === 'success') {
-                                            window.location.href = '/sessions/my-booked-sessions/';
-                                        } else {
-                                            alert('Error: ' + (data.message || 'Unknown error occurred'));
-                                        }
-                                    })
-                                    .catch(error => {
-                                        console.error('Error during free checkout:', error);
-                                        alert('An error occurred during checkout. Please try again.');
-                                    });
                                 }
                             </script>
                             

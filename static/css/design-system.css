@@ -199,6 +199,12 @@ a:hover {
   text-decoration: underline;
 }
 
+/* No underline utility class */
+.no-underline, .no-underline:hover, 
+footer a, footer a:hover {
+  text-decoration: none !important;
+}
+
 /* ========== UTILITY CLASSES ========== */
 /* Text colors */
 .text-primary {

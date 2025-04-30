@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800px" height="600px" viewBox="0 0 800 600" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>Hero Illustration</title>
+    <defs>
+        <linearGradient x1="0%" y1="0%" x2="100%" y2="100%" id="gradient1">
+            <stop stop-color="#FF5734" offset="0%"></stop>
+            <stop stop-color="#7C3AED" offset="100%"></stop>
+        </linearGradient>
+        <linearGradient x1="100%" y1="0%" x2="0%" y2="100%" id="gradient2">
+            <stop stop-color="#FF5734" offset="0%"></stop>
+            <stop stop-color="#7C3AED" offset="100%"></stop>
+        </linearGradient>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="4" dy="4" stdDeviation="8" flood-opacity="0.2"/>
+        </filter>
+    </defs>
+    
+    <!-- Background Elements -->
+    <g opacity="0.6">
+        <circle cx="120" cy="100" r="50" fill="#FF5734" opacity="0.3"></circle>
+        <circle cx="600" cy="200" r="80" fill="#7C3AED" opacity="0.3"></circle>
+        <circle cx="300" cy="500" r="60" fill="#FF5734" opacity="0.2"></circle>
+        <circle cx="650" cy="450" r="30" fill="#7C3AED" opacity="0.2"></circle>
+    </g>
+    
+    <!-- Main Content -->
+    <g transform="translate(150, 100)" filter="url(#shadow)">
+        <!-- Video Frame -->
+        <rect x="0" y="0" width="500" height="320" rx="12" fill="white"></rect>
+        
+        <!-- Video Header -->
+        <rect x="0" y="0" width="500" height="50" rx="12" ry="0" fill="#f0f0f0"></rect>
+        <circle cx="25" cy="25" r="10" fill="#FF5734"></circle>
+        <circle cx="55" cy="25" r="10" fill="#FFD700"></circle>
+        <circle cx="85" cy="25" r="10" fill="#00C853"></circle>
+        
+        <!-- Video Content -->
+        <rect x="20" y="70" width="460" height="230" rx="8" fill="#f8f9fa"></rect>
+        
+        <!-- Mentor -->
+        <circle cx="150" cy="150" r="60" fill="url(#gradient1)"></circle>
+        <circle cx="150" cy="120" r="20" fill="white"></circle>
+        <rect x="130" y="145" width="40" height="50" rx="20" fill="white"></rect>
+        
+        <!-- Learner -->
+        <circle cx="350" cy="150" r="60" fill="url(#gradient2)"></circle>
+        <circle cx="350" cy="120" r="20" fill="white"></circle>
+        <rect x="330" y="145" width="40" height="50" rx="20" fill="white"></rect>
+        
+        <!-- Connection Line -->
+        <line x1="210" y1="150" x2="290" y2="150" stroke="#7C3AED" stroke-width="4" stroke-dasharray="10,5"></line>
+    </g>
+    
+    <!-- Icons -->
+    <g transform="translate(650, 150)">
+        <circle cx="0" cy="0" r="30" fill="#FF5734"></circle>
+        <path d="M-10,-10 L10,10 M-10,10 L10,-10" stroke="white" stroke-width="4" stroke-linecap="round"></path>
+    </g>
+    
+    <g transform="translate(700, 220)">
+        <circle cx="0" cy="0" r="30" fill="#7C3AED"></circle>
+        <path d="M-10,0 L0,10 L10,-5" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+    </g>
+    
+    <g transform="translate(650, 290)">
+        <circle cx="0" cy="0" r="30" fill="#FF5734"></circle>
+        <circle cx="0" cy="-12" r="4" fill="white"></circle>
+        <path d="M-10,0 C-10,10 10,10 10,0 L0,10 Z" fill="white"></path>
+    </g>
+    
+    <!-- Decorative elements -->
+    <g>
+        <path d="M50,400 Q125,350 200,400 T350,400 T500,400 T650,400" stroke="#FF5734" stroke-width="3" fill="none" opacity="0.3"></path>
+        <path d="M50,420 Q125,370 200,420 T350,420 T500,420 T650,420" stroke="#7C3AED" stroke-width="3" fill="none" opacity="0.3"></path>
+    </g>
+</svg>

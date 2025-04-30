@@ -685,6 +685,157 @@
     <source src="{% static 'sounds/session-start.mp3' %}" type="audio/mpeg">
 </audio>
 
+<!-- Enhanced Pre-session Countdown Timer -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get elements
+    const readyBtn = document.getElementById('ready-btn');
+    const checkDevicesBtn = document.getElementById('check-devices-btn');
+    const preSessionOverlay = document.getElementById('pre-session-overlay');
+    const countdownTimer = document.getElementById('countdown-timer');
+    const sessionTimer = document.getElementById('session-timer');
+    const localVideo = document.getElementById('local-video');
+    
+    // Get session times from the data attributes
+    const sessionEndTime = new Date(sessionTimer.dataset.endTime);
+    
+    // Calculate start time as 15 minutes before end time minus session duration
+    // This is just for testing the countdown in development
+    const sessionStartTime = new Date(sessionEndTime);
+    sessionStartTime.setMinutes(sessionStartTime.getMinutes() - 30); // 30 minute test session
+    
+    // State variables
+    let isPreSessionReady = false;
+    let mediaStream = null;
+    
+    // Update countdown timer
+    function updateCountdown() {
+        const now = new Date();
+        
+        // If session hasn't started yet, show time until start
+        if (now < sessionStartTime) {
+            const diff = sessionStartTime - now;
+            
+            // Calculate hours, minutes, seconds
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            // Update countdown display
+            countdownTimer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            countdownTimer.style.color = '#3b82f6'; // Blue color for waiting
+            
+            // Update message based on time left
+            if (diff < 5 * 60 * 1000) { // Less than 5 minutes
+                document.getElementById('countdown-message').innerHTML = 
+                    `<span class="text-red-600 font-bold">{% trans "Your session starts in less than 5 minutes!" %}</span><br>
+                     {% trans "Click 'I'm Ready' to join the session now." %}`;
+                
+                // Add pulsing animation to button
+                readyBtn.classList.add('animate-pulse');
+            }
+            
+            return false; // Session not started
+        } 
+        // Session in progress
+        else if (now < sessionEndTime) {
+            const diff = sessionEndTime - now;
+            
+            // Calculate hours, minutes, seconds
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+            
+            // Update countdown display to show time remaining
+            countdownTimer.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Change color based on time left
+            if (diff < 5 * 60 * 1000) {
+                countdownTimer.style.color = '#ef4444'; // Red for <5 minutes left
+                countdownTimer.classList.add('animate-pulse');
+            } else if (diff < 10 * 60 * 1000) {
+                countdownTimer.style.color = '#f59e0b'; // Amber for <10 minutes left
+            } else {
+                countdownTimer.style.color = '#10b981'; // Green for plenty of time
+            }
+            
+            // If user is ready, they should have joined already
+            if (isPreSessionReady) {
+                return true; // Session started and user ready
+            } else {
+                // Display "join now" message for started session
+                document.getElementById('countdown-message').innerHTML = 
+                    `<span class="bg-green-100 text-green-800 font-bold px-3 py-1 rounded">{% trans "SESSION IN PROGRESS" %}</span><br>
+                     {% trans "Join now to avoid missing content!" %}`;
+                return true; // Session started but waiting for user
+            }
+        } 
+        // Session ended
+        else {
+            // Session already ended
+            countdownTimer.textContent = `00:00:00`;
+            countdownTimer.style.color = '#ef4444'; // Red for time's up
+            document.getElementById('countdown-message').innerHTML = 
+                `<span class="text-red-600 font-bold">{% trans "The scheduled session time has ended." %}</span><br>
+                 {% trans "You can still join but the mentor may have left." %}`;
+            return true; // Session already over
+        }
+    }
+    
+    // Initialize media devices
+    async function initializeMedia() {
+        try {
+            // Request audio and video
+            mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            
+            // Connect to video preview
+            if (localVideo) {
+                localVideo.srcObject = mediaStream;
+                localVideo.play().catch(e => console.warn("Couldn't auto-play preview:", e));
+            }
+            
+            return true;
+        } catch (error) {
+            console.error("Error accessing camera/microphone:", error);
+            alert("{% trans 'Please allow access to your camera and microphone to join the session.' %}");
+            return false;
+        }
+    }
+    
+    // Handle ready button click
+    readyBtn.addEventListener('click', async function() {
+        isPreSessionReady = true;
+        
+        // Initialize media if not already done
+        if (!mediaStream) {
+            const success = await initializeMedia();
+            if (!success) return;
+        }
+        
+        // Hide overlay with animation
+        preSessionOverlay.classList.add('fade-out');
+        setTimeout(() => {
+            preSessionOverlay.style.display = 'none';
+        }, 300);
+    });
+    
+    // Handle check devices button
+    checkDevicesBtn.addEventListener('click', function() {
+        initializeMedia();
+    });
+    
+    // Start countdown timer
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+    
+    // Try to initialize media on page load
+    initializeMedia();
+});
+</script>
+
 <script type="text/javascript">
     // Notification System class
     class NotificationSystem {

@@ -54,7 +54,7 @@
     .session-card {
         background: rgba(255, 255, 255, 0.92);
         backdrop-filter: blur(12px);
-        border-radius: 20px;
+        border-radius: 16px;
         transition: all 0.3s ease;
         position: relative;
         overflow: hidden;
@@ -63,12 +63,16 @@
         scroll-snap-align: start;
         min-width: 280px;
         margin-right: 16px;
+        height: 420px; /* Fixed height for more consistent vertical cards */
+        display: flex;
+        flex-direction: column;
     }
     
     @media (max-width: 640px) {
         .session-card {
             min-width: 260px;
             width: 85%;
+            height: 380px; /* Slightly smaller on mobile */
         }
     }
     
@@ -78,13 +82,25 @@
     }
     
     .session-thumbnail {
-        height: 140px;
+        height: 160px; /* Increased height for better thumbnails */
         overflow: hidden;
         transition: all 0.3s ease;
-        background: linear-gradient(45deg, #F5F9FF, #FEF8F3);
+        background: linear-gradient(120deg, #4158d0, #c850c0 30%, #ffcc70); /* More vibrant gradient */
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+    }
+    
+    .session-thumbnail::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+        z-index: 1;
     }
     
     .session-details {
@@ -296,7 +312,7 @@
                                         </div>
                                     {% endif %}
                                     <div>
-                                        <p class="font-medium text-sm text-gray-800">{{ session.mentor.user.get_full_name }}</p>
+                                        <p class="text-sm text-gray-800 font-bold">{{ session.mentor.user.get_full_name }}</p>
                                         <p class="text-xs text-gray-600">{{ session.mentor.expertise|truncatechars:18 }}</p>
                                     </div>
                                 </div>
@@ -384,7 +400,7 @@
                                         </div>
                                     {% endif %}
                                     <div>
-                                        <p class="font-medium text-sm text-gray-800">{{ session.mentor.user.get_full_name }}</p>
+                                        <p class="text-sm text-gray-800 font-bold">{{ session.mentor.user.get_full_name }}</p>
                                         <p class="text-xs text-gray-600">{{ session.mentor.expertise }}</p>
                                     </div>
                                 </div>

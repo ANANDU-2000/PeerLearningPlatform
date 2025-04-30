@@ -185,7 +185,7 @@ function initDropdowns() {
                     console.error('Error in dropdown click handler:', err);
                 }
             });
-        });
+        }
         
         // Close dropdowns when clicking outside
         document.addEventListener('click', function(e) {

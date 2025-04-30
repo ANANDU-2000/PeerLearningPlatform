@@ -88,15 +88,15 @@
         
         <!-- Session Creation Wizard -->
         <div class="bg-white shadow-md rounded-xl overflow-hidden">
-            <!-- Progress Indicators -->
+            <!-- Progress Indicators (Simplified) -->
             <div class="px-6 pt-6 pb-4">
-                <div class="flex items-center justify-between w-full">
+                <div class="flex items-center justify-between w-full max-w-3xl mx-auto">
                     <!-- Step 1 -->
                     <div class="flex flex-col items-center">
-                        <div id="step-indicator-1" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full text-white bg-primary mb-1 text-sm font-medium">
+                        <div id="step-indicator-1" class="step-indicator flex items-center justify-center h-10 w-10 rounded-full text-white bg-primary mb-2 text-sm font-medium shadow-md">
                             1
                         </div>
-                        <span class="text-xs font-medium">{% trans "Basics" %}</span>
+                        <span class="text-xs font-medium">{% trans "Details" %}</span>
                     </div>
                     
                     <!-- Connector 1 -->
@@ -104,7 +104,7 @@
                     
                     <!-- Step 2 -->
                     <div class="flex flex-col items-center">
-                        <div id="step-indicator-2" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                        <div id="step-indicator-2" class="step-indicator flex items-center justify-center h-10 w-10 rounded-full bg-gray-300 mb-2 text-sm font-medium">
                             2
                         </div>
                         <span class="text-xs font-medium">{% trans "Schedule" %}</span>
@@ -115,10 +115,10 @@
                     
                     <!-- Step 3 -->
                     <div class="flex flex-col items-center">
-                        <div id="step-indicator-3" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                        <div id="step-indicator-3" class="step-indicator flex items-center justify-center h-10 w-10 rounded-full bg-gray-300 mb-2 text-sm font-medium">
                             3
                         </div>
-                        <span class="text-xs font-medium">{% trans "Participants" %}</span>
+                        <span class="text-xs font-medium">{% trans "Pricing" %}</span>
                     </div>
                     
                     <!-- Connector 3 -->
@@ -126,19 +126,8 @@
                     
                     <!-- Step 4 -->
                     <div class="flex flex-col items-center">
-                        <div id="step-indicator-4" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
+                        <div id="step-indicator-4" class="step-indicator flex items-center justify-center h-10 w-10 rounded-full bg-gray-300 mb-2 text-sm font-medium">
                             4
-                        </div>
-                        <span class="text-xs font-medium">{% trans "Pricing" %}</span>
-                    </div>
-                    
-                    <!-- Connector 4 -->
-                    <div class="step-connector w-full h-1 bg-gray-200 mx-2" id="step-connector-4"></div>
-                    
-                    <!-- Step 5 -->
-                    <div class="flex flex-col items-center">
-                        <div id="step-indicator-5" class="step-indicator flex items-center justify-center h-8 w-8 rounded-full bg-gray-300 mb-1 text-sm font-medium">
-                            5
                         </div>
                         <span class="text-xs font-medium">{% trans "Media" %}</span>
                     </div>
@@ -279,17 +268,17 @@
                             {% trans "Previous" %}
                         </button>
                         <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
-                            {% trans "Next: Participants" %}
+                            {% trans "Next: Pricing" %}
                             <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
                         </button>
                     </div>
                 </div>
                 
-                <!-- Step 3: Session Format -->
+                <!-- Step 3: Pricing -->
                 <div class="wizard-step" id="step-3">
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Format" %}</h3>
-                        <p class="text-sm text-gray-600">{% trans "Your session details and format" %}</p>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Pricing & Format" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Set your session format and pricing details" %}</p>
                     </div>
                     
                     <!-- One-on-One Session Information -->
@@ -326,26 +315,6 @@
                         <p class="mt-1 text-xs text-gray-500">
                             {% trans "Tags help learners find your session. Separate with commas (e.g., Python, Web Development)" %}
                         </p>
-                    </div>
-                    
-                    <!-- Step Navigation -->
-                    <div class="mt-8 flex justify-between">
-                        <button type="button" class="prev-step py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 flex items-center">
-                            <i data-feather="arrow-left" class="h-4 w-4 mr-2"></i>
-                            {% trans "Previous" %}
-                        </button>
-                        <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
-                            {% trans "Next: Pricing" %}
-                            <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Step 4: Pricing -->
-                <div class="wizard-step" id="step-4">
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Pricing" %}</h3>
-                        <p class="text-sm text-gray-600">{% trans "Set the price for your live session" %}</p>
                     </div>
                     
                     <!-- Price Options -->
@@ -412,6 +381,26 @@
                         <p class="mt-1 text-sm text-red-600">{{ form.is_free.errors }}</p>
                     {% endif %}
                     
+                    <!-- Step Navigation -->
+                    <div class="mt-8 flex justify-between">
+                        <button type="button" class="prev-step py-2 px-4 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 flex items-center">
+                            <i data-feather="arrow-left" class="h-4 w-4 mr-2"></i>
+                            {% trans "Previous" %}
+                        </button>
+                        <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
+                            {% trans "Next: Media" %}
+                            <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Media -->
+                <div class="wizard-step" id="step-4">
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Media" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Add an image to make your session more appealing" %}</p>
+                    </div>
+                    
                     <!-- SEO Keywords -->
                     <div class="mb-5">
                         <label for="{{ form.seo_keywords.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
@@ -430,24 +419,27 @@
                             {% trans "Previous" %}
                         </button>
                         <button type="button" class="next-step button-primary py-2 px-4 rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-200 hover:shadow-md flex items-center">
-                            {% trans "Next: Media" %}
+                            {% trans "Next: Final Review" %}
                             <i data-feather="arrow-right" class="h-4 w-4 ml-2"></i>
                         </button>
                     </div>
                 </div>
                 
-                <!-- Step 5: Media & Final Details -->
+                <!-- Step 5: Final Review -->
                 <div class="wizard-step" id="step-5">
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Session Media" %}</h3>
-                        <p class="text-sm text-gray-600">{% trans "Add an image to make your session more appealing" %}</p>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-1">{% trans "Final Review" %}</h3>
+                        <p class="text-sm text-gray-600">{% trans "Review your session details and create your live session" %}</p>
                     </div>
                     
                     <!-- Thumbnail Selection -->
                     <div class="bg-gray-50 p-5 rounded-lg border border-gray-200 mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
-                            {% trans "Choose a Thumbnail" %}
-                        </label>
+                        <div class="flex justify-between items-center mb-3">
+                            <label class="block text-sm font-medium text-gray-700">
+                                {% trans "Choose a Thumbnail" %}
+                            </label>
+                            <p class="text-xs text-primary">{% trans "A great thumbnail can increase bookings by up to 30%" %}</p>
+                        </div>
                         
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
                             <!-- Preset thumbnails -->

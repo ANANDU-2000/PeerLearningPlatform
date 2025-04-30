@@ -1,0 +1,34 @@
+{% load static %}
+
+<div class="live-session-card overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow-md hover:shadow-xl transition-shadow duration-300 border-l-4 border-red-500">
+    <div class="p-4">
+        <!-- Live badge -->
+        <div class="flex justify-between items-center mb-2">
+            <div class="bg-red-500 text-white px-2 py-1 rounded text-xs font-medium flex items-center">
+                <span class="animate-pulse rounded-full bg-white h-2 w-2 mr-1"></span>
+                LIVE
+            </div>
+            <span class="text-xs text-gray-500">{{ session.current_participants|default:"0" }} watching</span>
+        </div>
+        
+        <!-- Session title -->
+        <h3 class="font-semibold text-gray-900 dark:text-gray-100 mb-2 line-clamp-1">{{ session.title }}</h3>
+        
+        <!-- Mentor info -->
+        <div class="flex items-center mb-3">
+            <div class="flex-shrink-0 mr-2">
+                {% if session.mentor.profile_picture %}
+                    <img src="{{ session.mentor.profile_picture.url }}" alt="{{ session.mentor.user.first_name }}" class="w-7 h-7 rounded-full object-cover">
+                {% else %}
+                    <div class="w-7 h-7 rounded-full bg-accent-dark flex items-center justify-center text-white text-xs">
+                        {{ session.mentor.user.first_name|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            <span class="text-sm font-medium text-gray-800 dark:text-gray-200">{{ session.mentor.user.get_full_name }}</span>
+        </div>
+        
+        <!-- Join button -->
+        <a href="{% url 'session_room' session.id %}" class="btn btn-primary w-full">Join Now</a>
+    </div>
+</div>

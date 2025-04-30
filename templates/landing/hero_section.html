@@ -1,0 +1,42 @@
+{% load static %}
+
+<section class="hero-section mb-12">
+    <div class="hero-content">
+        <h1 class="hero-heading">
+            Learn Directly from 
+            <span class="text-primary font-bold">Industry Experts</span>
+        </h1>
+        
+        <p class="hero-subtitle">
+            Connect with accomplished mentors for personalized 1-on-1 sessions. 
+            Advance your skills and achieve your career goals faster.
+        </p>
+        
+        <div class="hero-cta">
+            <a href="{% url 'sessions' %}" class="btn btn-primary btn-lg">Browse Sessions</a>
+            <a href="{% url 'register' %}" class="btn btn-outline btn-lg">Become a Mentor</a>
+        </div>
+        
+        <div class="flex flex-wrap items-center mt-8 gap-8">
+            <div class="flex flex-col items-center sm:items-start">
+                <span class="text-3xl font-bold text-primary">3+</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">Verified Mentors</span>
+            </div>
+            
+            <div class="flex flex-col items-center sm:items-start">
+                <span class="text-3xl font-bold text-primary">2+</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">Available Sessions</span>
+            </div>
+            
+            <div class="flex flex-col items-center sm:items-start">
+                <span class="text-3xl font-bold text-primary">100%</span>
+                <span class="text-sm text-gray-600 dark:text-gray-400">Live Interaction</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="hero-visual">
+        <div class="hero-overlay"></div>
+        <img src="{% static 'images/hero-illustration.svg' %}" alt="Online Learning Illustration" class="hero-image">
+    </div>
+</section>

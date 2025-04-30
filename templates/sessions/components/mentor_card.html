@@ -1,0 +1,60 @@
+{% load static %}
+
+<div class="mentor-card glassmorphism rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all hover:transform hover:translate-y-[-2px]">
+    <div class="p-5 flex flex-col items-center text-center">
+        <!-- Mentor avatar -->
+        <div class="mb-3">
+            {% if mentor.profile_picture %}
+                <img src="{{ mentor.profile_picture.url }}" alt="{{ mentor.user.first_name }}" class="w-20 h-20 rounded-full object-cover border-4 border-accent-light">
+            {% else %}
+                <div class="w-20 h-20 rounded-full bg-accent flex items-center justify-center text-white text-3xl border-4 border-accent-light">
+                    {{ mentor.user.first_name|first|upper }}
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Mentor name -->
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">{{ mentor.user.get_full_name }}</h3>
+        
+        <!-- Specialization -->
+        <p class="text-sm text-accent-dark font-medium mb-2">{{ mentor.specialization }}</p>
+        
+        <!-- Rating -->
+        <div class="flex items-center justify-center mb-3">
+            <div class="flex text-yellow-400">
+                {% if mentor.avg_rating %}
+                    {% for i in "12345" %}
+                        {% if forloop.counter <= mentor.avg_rating|floatformat:0|add:"0" %}
+                            <i data-feather="star" class="h-4 w-4 fill-current"></i>
+                        {% else %}
+                            <i data-feather="star" class="h-4 w-4"></i>
+                        {% endif %}
+                    {% endfor %}
+                    <span class="text-sm text-gray-500 dark:text-gray-400 ml-1">({{ mentor.rating_count }})</span>
+                {% else %}
+                    <span class="text-sm text-gray-500 dark:text-gray-400">New mentor</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Mentor skills/areas -->
+        <div class="flex flex-wrap justify-center gap-1 mb-4">
+            {% for skill in mentor.expertise.all|slice:":3" %}
+                <span class="bg-accent bg-opacity-10 text-accent-dark text-xs px-2 py-1 rounded">{{ skill.name }}</span>
+            {% empty %}
+                <span class="text-gray-500 text-xs">No skills listed</span>
+            {% endfor %}
+            {% if mentor.expertise.all|length > 3 %}
+                <span class="text-gray-500 text-xs">+{{ mentor.expertise.all|length|add:"-3" }} more</span>
+            {% endif %}
+        </div>
+        
+        <!-- Sessions count -->
+        <div class="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {{ mentor.sessions_count|default:"0" }} sessions conducted
+        </div>
+        
+        <!-- View profile button -->
+        <a href="{% url 'mentor_profile' mentor.id %}" class="btn btn-accent-outline w-full">View Profile</a>
+    </div>
+</div>

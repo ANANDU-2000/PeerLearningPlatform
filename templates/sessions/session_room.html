@@ -402,40 +402,75 @@
                             <div class="text">{% trans "Buffering..." %}</div>
                         </div>
                         
-                        <!-- Video Controls Overlay -->
-                        <div class="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 bg-black bg-opacity-30">
+                        <!-- Enhanced Video Controls Panel -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200 bg-black bg-opacity-40">
+                            <!-- Main Controls Row -->
+                            <div class="flex space-x-5 mb-3">
+                                <!-- Video Toggle with status indicator -->
+                                <div class="flex flex-col items-center">
+                                    <button id="video-toggle" class="bg-black bg-opacity-70 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-opacity-90 transition">
+                                        <i data-feather="video" class="h-6 w-6"></i>
+                                    </button>
+                                    <span id="video-status" class="text-white text-xs mt-1 opacity-80">On</span>
+                                </div>
+                                
+                                <!-- Audio Toggle with status indicator -->
+                                <div class="flex flex-col items-center">
+                                    <button id="audio-toggle" class="bg-black bg-opacity-70 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-opacity-90 transition">
+                                        <i data-feather="mic" class="h-6 w-6"></i>
+                                    </button>
+                                    <span id="audio-status" class="text-white text-xs mt-1 opacity-80">On</span>
+                                </div>
+                                
+                                <!-- Screen Share with status indicator -->
+                                <div class="flex flex-col items-center">
+                                    <button id="screen-share" class="bg-black bg-opacity-70 text-white w-12 h-12 rounded-full flex items-center justify-center hover:bg-opacity-90 transition">
+                                        <i data-feather="monitor" class="h-6 w-6"></i>
+                                    </button>
+                                    <span id="screen-status" class="text-white text-xs mt-1 opacity-80">Share</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Advanced Controls Row -->
                             <div class="flex space-x-3">
-                                <!-- Video Toggle -->
-                                <button id="video-toggle" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
-                                    <i data-feather="video" class="h-5 w-5"></i>
-                                </button>
-                                
-                                <!-- Audio Toggle -->
-                                <button id="audio-toggle" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
-                                    <i data-feather="mic" class="h-5 w-5"></i>
-                                </button>
-                                
-                                <!-- Screen Share -->
-                                <button id="screen-share" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
-                                    <i data-feather="monitor" class="h-5 w-5"></i>
-                                </button>
-                                
                                 <!-- Raise Hand (for learners only) -->
                                 {% if not is_mentor %}
-                                <button id="raise-hand" class="bg-black bg-opacity-60 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-80 transition">
-                                    <i data-feather="hand" class="h-5 w-5"></i>
-                                </button>
+                                <div class="flex flex-col items-center">
+                                    <button id="raise-hand" class="bg-black bg-opacity-70 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-90 transition">
+                                        <i data-feather="hand" class="h-5 w-5"></i>
+                                    </button>
+                                    <span class="text-white text-xs mt-1 opacity-80">Raise</span>
+                                </div>
                                 {% endif %}
+                                
+                                <!-- Leave/Rejoin Button -->
+                                <div class="flex flex-col items-center">
+                                    <button id="leave-rejoin" class="bg-red-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-700 transition">
+                                        <i data-feather="refresh-cw" class="h-5 w-5"></i>
+                                    </button>
+                                    <span class="text-white text-xs mt-1 opacity-80">Rejoin</span>
+                                </div>
+                                
+                                <!-- Settings Button -->
+                                <div class="flex flex-col items-center">
+                                    <button id="video-settings" class="bg-black bg-opacity-70 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-opacity-90 transition">
+                                        <i data-feather="settings" class="h-5 w-5"></i>
+                                    </button>
+                                    <span class="text-white text-xs mt-1 opacity-80">Settings</span>
+                                </div>
                             </div>
                         </div>
                         
-                        <!-- Mini Controls (always visible) -->
-                        <div class="controls">
-                            <button id="video-toggle-mini" class="control-btn">
+                        <!-- Enhanced Mini Controls (always visible) -->
+                        <div class="controls flex space-x-2">
+                            <button id="video-toggle-mini" class="control-btn bg-black bg-opacity-70 hover:bg-opacity-90 transition" title="Toggle Video">
                                 <i data-feather="video" class="h-5 w-5"></i>
                             </button>
-                            <button id="audio-toggle-mini" class="control-btn">
+                            <button id="audio-toggle-mini" class="control-btn bg-black bg-opacity-70 hover:bg-opacity-90 transition" title="Toggle Audio">
                                 <i data-feather="mic" class="h-5 w-5"></i>
+                            </button>
+                            <button id="leave-rejoin-mini" class="control-btn bg-red-600 hover:bg-red-700 transition" title="Leave/Rejoin">
+                                <i data-feather="refresh-cw" class="h-5 w-5"></i>
                             </button>
                         </div>
                     </div>

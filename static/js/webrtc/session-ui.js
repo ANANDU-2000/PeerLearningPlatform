@@ -19,6 +19,9 @@ class SessionUIController {
         this.audioToggleMini = document.getElementById('audio-toggle-mini');
         this.screenShareButton = document.getElementById('screen-share');
         this.raiseHandButton = document.getElementById('raise-hand');
+        this.leaveRejoinButton = document.getElementById('leave-rejoin');
+        this.leaveRejoinMiniButton = document.getElementById('leave-rejoin-mini');
+        this.videoSettingsButton = document.getElementById('video-settings');
         
         // Tab navigation
         this.videosTab = document.getElementById('videos-tab');
@@ -153,6 +156,28 @@ class SessionUIController {
         if (this.raiseHandButton) {
             this.raiseHandButton.addEventListener('click', () => {
                 this.toggleRaiseHand();
+            });
+        }
+        
+        // Leave and rejoin session (main button)
+        if (this.leaveRejoinButton) {
+            this.leaveRejoinButton.addEventListener('click', () => {
+                this.leaveAndRejoin();
+            });
+        }
+        
+        // Leave and rejoin session (mini button)
+        if (this.leaveRejoinMiniButton) {
+            this.leaveRejoinMiniButton.addEventListener('click', () => {
+                this.leaveAndRejoin();
+            });
+        }
+        
+        // Video settings button
+        if (this.videoSettingsButton) {
+            this.videoSettingsButton.addEventListener('click', () => {
+                // Show video/audio settings modal (future implementation)
+                alert('Video settings will be available in a future update.');
             });
         }
         
@@ -370,10 +395,65 @@ class SessionUIController {
         
         const enabled = this.rtc.toggleVideo();
         
-        // Update button UI
+        // Update button UI for main control
         this.videoToggle.innerHTML = enabled
-            ? '<i data-feather="video" class="h-5 w-5"></i>'
-            : '<i data-feather="video-off" class="h-5 w-5"></i>';
+            ? '<i data-feather="video" class="h-6 w-6"></i>'
+            : '<i data-feather="video-off" class="h-6 w-6"></i>';
+            
+        // Update button UI for mini control
+        if (this.videoToggleMini) {
+            this.videoToggleMini.innerHTML = enabled
+                ? '<i data-feather="video" class="h-5 w-5"></i>'
+                : '<i data-feather="video-off" class="h-5 w-5"></i>';
+        }
+        
+        // Update button color based on state
+        if (enabled) {
+            this.videoToggle.classList.remove('bg-red-600');
+            this.videoToggle.classList.add('bg-black', 'bg-opacity-70');
+            if (this.videoToggleMini) {
+                this.videoToggleMini.classList.remove('bg-red-600');
+                this.videoToggleMini.classList.add('bg-black', 'bg-opacity-70');
+            }
+        } else {
+            this.videoToggle.classList.add('bg-red-600');
+            this.videoToggle.classList.remove('bg-black', 'bg-opacity-70');
+            if (this.videoToggleMini) {
+                this.videoToggleMini.classList.add('bg-red-600');
+                this.videoToggleMini.classList.remove('bg-black', 'bg-opacity-70');
+            }
+        }
+        
+        // Update status text
+        const videoStatus = document.getElementById('video-status');
+        if (videoStatus) {
+            videoStatus.textContent = enabled ? 'On' : 'Off';
+            if (enabled) {
+                videoStatus.classList.remove('text-red-400');
+            } else {
+                videoStatus.classList.add('text-red-400');
+            }
+        }
+        
+        // Add visual indicator on video element
+        const localVideoContainer = document.querySelector('.video-container.local');
+        if (localVideoContainer) {
+            if (!enabled) {
+                // Add camera off indicator if not already present
+                if (!localVideoContainer.querySelector('.video-off-indicator')) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'video-off-indicator absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 z-10';
+                    indicator.innerHTML = '<i data-feather="video-off" class="h-12 w-12 text-white opacity-60"></i>';
+                    localVideoContainer.appendChild(indicator);
+                }
+            } else {
+                // Remove camera off indicator
+                const indicator = localVideoContainer.querySelector('.video-off-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        }
         
         // Re-initialize feather icons
         if (typeof feather !== 'undefined') {
@@ -389,14 +469,114 @@ class SessionUIController {
         
         const enabled = this.rtc.toggleAudio();
         
-        // Update button UI
+        // Update button UI for main control
         this.audioToggle.innerHTML = enabled
-            ? '<i data-feather="mic" class="h-5 w-5"></i>'
-            : '<i data-feather="mic-off" class="h-5 w-5"></i>';
+            ? '<i data-feather="mic" class="h-6 w-6"></i>'
+            : '<i data-feather="mic-off" class="h-6 w-6"></i>';
+            
+        // Update button UI for mini control
+        if (this.audioToggleMini) {
+            this.audioToggleMini.innerHTML = enabled
+                ? '<i data-feather="mic" class="h-5 w-5"></i>'
+                : '<i data-feather="mic-off" class="h-5 w-5"></i>';
+        }
+        
+        // Update button color based on state
+        if (enabled) {
+            this.audioToggle.classList.remove('bg-red-600');
+            this.audioToggle.classList.add('bg-black', 'bg-opacity-70');
+            if (this.audioToggleMini) {
+                this.audioToggleMini.classList.remove('bg-red-600');
+                this.audioToggleMini.classList.add('bg-black', 'bg-opacity-70');
+            }
+        } else {
+            this.audioToggle.classList.add('bg-red-600');
+            this.audioToggle.classList.remove('bg-black', 'bg-opacity-70');
+            if (this.audioToggleMini) {
+                this.audioToggleMini.classList.add('bg-red-600');
+                this.audioToggleMini.classList.remove('bg-black', 'bg-opacity-70');
+            }
+        }
+        
+        // Update status text
+        const audioStatus = document.getElementById('audio-status');
+        if (audioStatus) {
+            audioStatus.textContent = enabled ? 'On' : 'Off';
+            if (enabled) {
+                audioStatus.classList.remove('text-red-400');
+            } else {
+                audioStatus.classList.add('text-red-400');
+            }
+        }
+        
+        // Add visual indicator on video element
+        const localVideoContainer = document.querySelector('.video-container.local');
+        if (localVideoContainer) {
+            if (!enabled) {
+                // Add microphone muted indicator if not already present
+                if (!localVideoContainer.querySelector('.audio-off-indicator')) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'audio-off-indicator absolute bottom-2 left-2 bg-red-600 text-white p-1 rounded-full z-20';
+                    indicator.innerHTML = '<i data-feather="mic-off" class="h-4 w-4"></i>';
+                    localVideoContainer.appendChild(indicator);
+                }
+            } else {
+                // Remove microphone muted indicator
+                const indicator = localVideoContainer.querySelector('.audio-off-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        }
         
         // Re-initialize feather icons
         if (typeof feather !== 'undefined') {
             feather.replace();
+        }
+    }
+    
+    /**
+     * Leave and rejoin the session
+     */
+    leaveAndRejoin() {
+        // Create confirmation message
+        const confirmMsg = this.translations?.confirmRejoin || "Are you sure you want to leave and rejoin the session? This will reset your connection.";
+        
+        // Ask for confirmation
+        if (confirm(confirmMsg)) {
+            // Show loading overlay
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
+            loadingOverlay.innerHTML = `
+                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+                    <div class="spinner mb-4 mx-auto"></div>
+                    <p class="text-lg font-medium">${this.translations?.reconnecting || "Reconnecting..."}</p>
+                    <p class="text-sm text-gray-600 mt-2">${this.translations?.pleaseWait || "Please wait while we reconnect you to the session."}</p>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+            
+            // Disconnect and reconnect
+            if (this.rtc) {
+                this.rtc.disconnect();
+                
+                // Add delay to ensure connections are properly closed
+                setTimeout(() => {
+                    // Reinitialize connection
+                    this.rtc.connect();
+                    
+                    // Remove loading overlay after connection is reestablished
+                    setTimeout(() => {
+                        loadingOverlay.classList.add('fade-out');
+                        setTimeout(() => {
+                            loadingOverlay.remove();
+                        }, 300);
+                        
+                        // Show success message in chat
+                        this.addSystemMessage(this.translations?.reconnectSuccess || "Successfully reconnected to the session.");
+                    }, 2000);
+                }, 1000);
+            }
         }
     }
 

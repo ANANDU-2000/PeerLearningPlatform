@@ -76,6 +76,11 @@ def session_list(request):
         if hasattr(session, 'tags') and session.tags:
             session.topics_list = [tag.strip() for tag in session.tags.split(',')][:3]  # Limit to 3 tags
     
+    # Get mentor profiles for mentor section
+    mentor_profiles = MentorProfile.objects.filter(is_approved=True).annotate(
+        avg_rating=Avg('feedback__rating')
+    ).select_related('user').order_by('-avg_rating')[:4]
+    
     context = {
         'live_sessions': live_sessions,
         'upcoming_sessions': upcoming_sessions,
@@ -83,9 +88,10 @@ def session_list(request):
         'liked_sessions': liked_sessions,
         'recommended_sessions': recommended_sessions,
         'categories': categories,
+        'mentor_profiles': mentor_profiles,
     }
     
-    return render(request, 'sessions/session_list_updated.html', context)
+    return render(request, 'sessions/session_list_improved.html', context)
 
 
 @login_required

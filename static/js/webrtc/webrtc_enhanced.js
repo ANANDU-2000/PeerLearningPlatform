@@ -797,6 +797,7 @@ class PeerLearnRTC {
         
         // Start the connection sequence with the first URL
         tryConnect(0);
+    });
     }
     
     /**

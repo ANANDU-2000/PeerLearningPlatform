@@ -501,6 +501,18 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
             'timestamp': event['timestamp'],
         }))
     
+    async def user_disconnected(self, event):
+        """Forward temporary disconnection notification to WebSocket."""
+        # This is different from user_leave as it indicates a possible reconnection
+        await self.send(text_data=json.dumps({
+            'type': 'user_disconnected',
+            'user_id': event['user_id'],
+            'user_name': event['user_name'],
+            'timestamp': event['timestamp'],
+            'temporary': event.get('temporary', True),
+            'close_code': event.get('close_code')
+        }))
+    
     async def raise_hand(self, event):
         """Send raise hand notification to WebSocket."""
         await self.send(text_data=json.dumps({

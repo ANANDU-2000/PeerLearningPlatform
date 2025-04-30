@@ -72,23 +72,35 @@ function handlePaymentError(response) {
 
 // Document ready
 document.addEventListener('DOMContentLoaded', function() {
+    console.log("Payment.js loaded");
+    
     // Initialize checkout button
     var checkoutButton = document.getElementById('checkout-button');
     if (checkoutButton) {
+        console.log("Checkout button found");
+        
         checkoutButton.addEventListener('click', function() {
+            console.log("Checkout button clicked");
+            
+            // Get razorpay options from the window object
             var options = window.razorpayOptions || {};
+            console.log("Razorpay options:", options);
             
             if (options.order_id) {
+                console.log("Starting Razorpay checkout with order ID:", options.order_id);
                 var rzp = initializeRazorpay(options);
                 rzp.open();
-            } else if (options.total === 0) {
+            } else if (options.total === 0 || options.total === '0' || options.total === '0.00') {
+                console.log("Free checkout initiated");
                 // Handle free sessions
                 handleFreeCheckout();
             } else {
-                console.error("Razorpay options not properly initialized");
+                console.error("Razorpay options not properly initialized", options);
                 alert("Payment system error. Please try again later.");
             }
         });
+    } else {
+        console.error("Checkout button not found");
     }
     
     // Handle free checkout

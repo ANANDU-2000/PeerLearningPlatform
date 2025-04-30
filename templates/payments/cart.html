@@ -250,7 +250,54 @@
 <!-- Razorpay Settings -->
 <script>
     // Pass Razorpay options from the view to the payment.js
-    window.razorpayOptions = JSON.parse('{{ razorpay_options|escapejs }}');
+    try {
+        window.razorpayOptions = JSON.parse('{{ razorpay_options|escapejs }}');
+        console.log("Razorpay options loaded:", window.razorpayOptions);
+    } catch (e) {
+        console.error("Error parsing Razorpay options:", e);
+        // Provide fallback empty object
+        window.razorpayOptions = {
+            total: "{{ total }}"
+        };
+    }
+    
+    // Ensure the DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        // Make sure the checkout button works
+        var checkoutButton = document.getElementById('checkout-button');
+        if (checkoutButton && !checkoutButton.hasClickListener) {
+            checkoutButton.hasClickListener = true;
+            checkoutButton.addEventListener('click', function() {
+                console.log("Direct checkout button click");
+                // This is a fallback in case the payment.js listener doesn't work
+                if (window.razorpayOptions && window.razorpayOptions.total == 0) {
+                    // For free sessions, redirect to the callback URL with free_checkout=true
+                    console.log("Free checkout fallback");
+                    fetch('/payments/payment-callback/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            free_checkout: true
+                        }),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            window.location.href = '/sessions/my-booked-sessions/';
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred during checkout.');
+                    });
+                }
+            });
+        }
+    });
 </script>
 {% endblock %}
 

@@ -641,10 +641,11 @@ class PeerLearnRTC {
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         
         // Try different WebSocket URL paths to ensure connection
-        // First try the session-specific route, and if that fails, try the video route
+        // First try the session-specific route, and if that fails, try the video route or room route
         const wsUrls = [
             `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`,
-            `${protocol}//${window.location.host}/ws/video/${this.sessionId}/`
+            `${protocol}//${window.location.host}/ws/video/${this.sessionId}/`,
+            `${protocol}//${window.location.host}/ws/room/${this.sessionId}/`
         ];
         
         let currentUrlIndex = 0;

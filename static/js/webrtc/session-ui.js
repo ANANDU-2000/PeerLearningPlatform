@@ -624,23 +624,36 @@ class SessionUIController {
     /**
      * Show mobile notification
      */
-    showNotification(message) {
+    showNotification(message, type = 'info', duration = 5000) {
         // Create notification element
         const notification = document.createElement('div');
-        notification.className = 'fixed top-4 left-0 right-0 mx-auto w-64 bg-gray-800 text-white py-2 px-4 rounded-md shadow-lg z-50 text-center';
+        
+        // Style based on type
+        let bgColor = 'bg-gray-800';
+        if (type === 'success') {
+            bgColor = 'bg-green-600';
+        } else if (type === 'error') {
+            bgColor = 'bg-red-600';
+        } else if (type === 'warning') {
+            bgColor = 'bg-yellow-500';
+        }
+        
+        notification.className = `fixed top-4 left-0 right-0 mx-auto w-64 ${bgColor} text-white py-2 px-4 rounded-md shadow-lg z-50 text-center`;
         notification.style.maxWidth = '80%';
         notification.textContent = message;
         
         // Add to page
         document.body.appendChild(notification);
         
-        // Remove after 3 seconds
+        // Remove after specified duration
         setTimeout(() => {
             notification.classList.add('fade-out');
             setTimeout(() => {
-                document.body.removeChild(notification);
+                if (notification.parentNode) {
+                    document.body.removeChild(notification);
+                }
             }, 300);
-        }, 3000);
+        }, duration);
     }
 
     /**

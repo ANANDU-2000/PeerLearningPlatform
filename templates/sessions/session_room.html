@@ -998,6 +998,116 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+<!-- Main WebRTC Session Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
+    
+    // Initialize session UI controller
+    const sessionUI = new SessionUIController();
+    sessionUI.initEventListeners();
+    
+    // Initialize WebRTC connection with robust error handling
+    try {
+        console.log('Initializing WebRTC connection for session #{{ session.id }}');
+        
+        // Default STUN servers in case none are provided from backend
+        const defaultStunServers = [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302',
+            'stun:stun2.l.google.com:19302'
+        ];
+        
+        // Log configuration for debugging
+        console.log('WebRTC Configuration:');
+        console.log('- User ID: {{ user.id }}');
+        console.log('- User Name: {{ user.get_full_name }}');
+        console.log('- Session ID: {{ session.id }}');
+        console.log('- Role: {% if is_mentor %}Mentor{% else %}Learner{% endif %}');
+        
+        // WebRTC configuration
+        const config = {
+            // User and session details
+            userId: '{{ user.id }}',
+            userName: '{{ user.get_full_name }}',
+            sessionId: '{{ session.id }}',
+            isMentor: {% if is_mentor %}true{% else %}false{% endif %},
+            
+            // WebSocket signaling URL
+            signalingUrl: `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/session/{{ session.id }}/`,
+            
+            // Video elements
+            localVideo: document.getElementById('local-video'),
+            
+            // ICE servers configuration
+            iceServers: [
+                {urls: defaultStunServers}
+            ],
+            
+            // UI callbacks
+            onError: function(message) {
+                sessionUI.showErrorMessage(message);
+            },
+            
+            onConnectionStateChange: function(state) {
+                sessionUI.updateConnectionStatus(state);
+            },
+            
+            onRejoinSuccess: function() {
+                sessionUI.showSuccessMessage("{% trans 'Successfully reconnected to session!' %}");
+            },
+            
+            onRemoteStream: function(userId, userName, stream) {
+                sessionUI.addRemoteVideo(userId, userName, stream);
+            },
+            
+            onRemoteStreamRemoved: function(userId) {
+                sessionUI.removeRemoteVideo(userId);
+            },
+            
+            onMessage: function(message) {
+                if (message.type === 'chat') {
+                    sessionUI.addChatMessage(message.from_user_id, message.user_name, message.text);
+                } else if (message.type === 'raise_hand') {
+                    sessionUI.handleRaiseHand(message);
+                } else if (message.type === 'whiteboard_data') {
+                    sessionUI.handleWhiteboardData(message);
+                } else if (message.type === 'screen_share') {
+                    // Handle screen share notifications
+                    if (message.action === 'start') {
+                        sessionUI.showNotification(`${message.user_name} started sharing their screen`);
+                    } else if (message.action === 'stop') {
+                        sessionUI.showNotification(`${message.user_name} stopped sharing their screen`);
+                    }
+                }
+            }
+        };
+        
+        // Create and initialize the WebRTC connection
+        const peerConnection = new PeerLearnRTC(config);
+        
+        // Store reference in session UI for controls
+        sessionUI.rtc = peerConnection;
+        
+        // Initialize the connection
+        peerConnection.init().then(() => {
+            console.log('WebRTC connection initialized successfully');
+            sessionUI.showSuccessMessage("{% trans 'Connected to session room!' %}");
+        }).catch(err => {
+            console.error('Failed to initialize WebRTC connection:', err);
+            sessionUI.showErrorMessage("{% trans 'Failed to connect to session. Please try refreshing the page.' %}");
+        });
+        
+    } catch (error) {
+        console.error('Error setting up WebRTC:', error);
+        alert("{% trans 'There was a problem connecting to the session. Please refresh the page and try again.' %}");
+    }
+});
+</script>
+
 <script type="text/javascript">
     // Notification System class
     class NotificationSystem {

@@ -1,0 +1,231 @@
+PeerLearn Comprehensive Plan
+Overview
+PeerLearn connects mentors and learners through live video sessions, prioritizing simplicity, real-time functionality, and a premium experience. This plan enhances the mentor and learner dashboards, live session room, and profile/settings page with advanced features like topic lists, detailed session previews, and robust error handling. All actions require minimal clicks (1–2), and the platform avoids page refreshes/blinking with smooth transitions.
+
+Key Pages
+Mentor Dashboard (/dashboard/mentor/)
+Learner Dashboard (/dashboard/learner/)
+Live Session Room (/session/<room_id>/)
+Profile/Settings (/profile/)
+Design System
+Colors:
+Primary: #FF5734 (Orange) – CTAs.
+Accent: #BE94F5 (Purple) – Highlights.
+Background: #F7F7F5 (Light Gray).
+Typography:
+Headlines: Poppins Bold (24–32px).
+Body: Inter Regular (14–16px).
+Icons: Heroicons (e.g., house, plus, chat) for navigation.
+Glassmorphism: Cards with backdrop-filter: blur(12px);.
+Transitions:
+Flash Inside: Content fades in on click (0.3s, no page refresh).
+Slide: Pop-ups/modals slide in smoothly.
+Hover: Cards lift (translateY(-4px)).
+Web: Sidebar nav, grid layouts, hover effects.
+Mobile: Bottom nav, swipeable cards, large tap targets.
+Performance: Lazy loading, no blinking, WebSocket for real-time updates.
+1. Mentor Dashboard (/dashboard/mentor/)
+Layout
+Web:
+Header: Mentor’s name, profile picture, logout icon.
+Sidebar (Left): Icons (Home, Create Session, Earnings, Withdrawals, Analytics, Profile).
+Main Content: Cards/tables with smooth transitions.
+Mobile:
+Bottom Navigation: Icons (Home, Create, Earnings, Withdraw, Analytics).
+Main Content: Swipeable cards, full-screen forms.
+Content Arrangement
+Home:
+Upcoming Sessions: Cards (title, date/time, learner, topics covered, “Join” icon).
+Hover/Click: Pop-up shows session details (description, topics, duration, price).
+Booking Requests: List (learner, session, topics, “Accept”/“Reject” icons).
+Earnings Snapshot: Total earned, pending withdrawals, “Withdraw” icon.
+Notifications: Pop-ups with sound (e.g., “New booking!”).
+Create Session:
+Form: Title, description, date/time, price, topics covered (multi-select or text input), thumbnail upload.
+SEO Motivation: Suggests keywords (e.g., “Math” → “Master Algebra in 1 Hour”).
+Auto-Correct: Fixes spelling (e.g., “Aljebra” → “Algebra”).
+Help Pop-ups: Field tips (e.g., “List specific topics like ‘Quadratic Equations’”).
+Motivational Messages: “Awesome topics! Learners will love this!”.
+Earnings:
+Table: Session, learner, amount (including gifts), date, status.
+Gifting Earnings: Tracks tips from learners.
+Withdrawals:
+Form: Amount, bank/UPI (saved), “Withdraw” icon.
+Analytics:
+Charts: Earnings, bookings, followers, session views.
+Progress: Sessions taught, ratings, learner engagement.
+Profile:
+Edit bio, thumbnail, availability, highlight topics (e.g., “Expert in Calculus”).
+Show followers, ratings, feedback.
+Actions and Clicks (1–2 Max)
+Create Session: Tap “Create” (1 click), fill form, tap “Submit” (1 click).
+Accept/Reject Request: Tap “Accept”/“Reject” (1 click).
+Join Session: Tap “Join” (1 click).
+Withdraw: Tap “Withdraw”, enter amount, tap “Confirm” (2 clicks).
+View Details: Hover/click session card for pop-up (0–1 click).
+Real-Time Updates
+Requests: New bookings appear with sound.
+Earnings: Updates after sessions/gifts.
+Followers: Live count of learners following.
+Notifications: Pop-ups for reminders, bookings.
+Advanced Features
+Topics Covered: Add during session creation (e.g., “Linear Equations, Polynomials”).
+Session Details Pop-up: Shows description, topics, mentor rating on hover/click.
+Follow System: Learners follow mentors for session updates.
+Ratings/Feedback: 1–5 stars, comments post-session.
+Chat: Real-time messaging with learners.
+Welcome Message: “Welcome, [Name]! Teach with impact!” with tour.
+Video Check: Pre-session quality test (e.g., “Clear video, ready to teach!”).
+2. Learner Dashboard (/dashboard/learner/)
+Layout
+Web:
+Header: Learner’s name, profile picture, logout icon.
+Sidebar (Left): Icons (Home, Booked Sessions, Payments, Progress, Profile).
+Main Content: Cards with fade transitions.
+Mobile:
+Bottom Navigation: Icons (Home, Booked, Payments, Progress).
+Main Content: Swipeable cards, full-screen modals.
+Content Arrangement
+Home:
+Recommended Sessions: Cards (title, mentor, time, price, topics, “Book” icon).
+Hover/Click: Pop-up shows description, topics, mentor rating, duration.
+ML-driven: Matches interests, history, trending mentors.
+Booked Sessions: Cards (details, status, topics, “Join” icon).
+Notifications: Pop-ups with sound (e.g., “Session in 10 mins!”).
+Booked Sessions:
+List: Past/upcoming sessions, recordings, topics covered.
+Payments:
+Table: Session, mentor, amount, date, status.
+Gifting: Post-session tip option.
+Progress:
+Stats: Hours learned, sessions completed, badges.
+Charts: Learning trends, topic mastery (e.g., “80% Algebra”).
+Profile:
+Edit name, interests, photo.
+Show followed mentors, feedback given.
+Actions and Clicks (1–2 Max)
+Book Session: Tap “Book” (1 click), confirm/pay (1 click).
+Join Session: Tap “Join” (1 click).
+Gift Mentor: Tap “Gift”, enter amount, confirm (2 clicks).
+Follow Mentor: Tap “Follow” (1 click).
+View Details: Hover/click session card for pop-up (0–1 click).
+Real-Time Updates
+Booking Status: Updates live (e.g., “Confirmed”).
+Session Start: “Join” icon pulses when mentor joins.
+Progress: Badges/hours update instantly.
+Recommendations: Auto-refresh with new sessions.
+Advanced Features
+Topics Covered: Displayed in session cards/pop-ups.
+Follow System: Follow mentors for updates.
+Ratings/Feedback: Rate mentors, leave comments.
+Chat: Message mentors pre/post-session.
+Welcome Message: “Hi [Name]! Learn something new!” with tour.
+ML Recommendations: Suggests sessions by interests, history, and trending topics.
+3. Live Session Room (/session/<room_id>/)
+Layout
+Web:
+Top Bar: Session title, timer, “End” icon.
+Video Area: Mentor video (large), learner video (small, pinnable).
+Sidebar: Chat, whiteboard, screen-share preview, topics checklist.
+Bottom Bar: Icons (mute, camera, share, chat, record, gift).
+Mobile:
+Top: Title, timer.
+Video: Mentor video full-screen, learner video overlay.
+Bottom Bar: Icons (mute, camera, share, chat, gift).
+Chat/Whiteboard/Topics: Swipe-up panel.
+Actions and Clicks
+Join: Tap “Join” (1 click).
+Controls: Tap mute, camera, share, whiteboard, gift (1 click each).
+Chat: Tap “Chat”, type, send (2 clicks).
+End: Tap “End” (1 click).
+Real-Time Features
+Timer Setup: Starts when both join, pauses if one leaves.
+Video: Adaptive bitrate for smooth streaming.
+Chat: Instant messaging.
+Gifting: Tap “Gift”, enter amount, send (2 clicks).
+Advanced Features
+Topics Checklist: Sidebar/panel shows topics (e.g., “Polynomials [Done]”).
+Error Handling:
+Network drop: “Reconnecting...” (3 retries), then “Rejoin?” pop-up.
+Buffer issues: Auto-adjusts quality, “Buffering...” alert.
+Server error: Switches to backup server, “Trying alternate connection...”.
+Rejoin Request: “Rejoin” button if dropped; mentor accepts (1 click).
+Recording: Auto-saves, downloadable.
+4. Profile/Settings Page (/profile/)
+Layout
+Web: Tabbed form (Profile, Settings).
+Mobile: Scrollable form, sticky “Save” button.
+Content
+Edit name, bio, thumbnail, preferred topics (mentors/learners).
+Settings: Notifications, timezone, payment methods (bank/UPI).
+Actions
+Edit: Tap field, update, tap “Save” (2 clicks).
+Enhanced Flows and Steps
+Session Creation Flow
+Mentor: Taps “Create” (1 click).
+Form:
+Title: Auto-suggests (e.g., “Math” → “Master Algebra”).
+Description: Help pop-up (“Include key benefits”).
+Date/Time: Calendar picker.
+Price: Suggests range ($5–$50).
+Topics Covered: Multi-select (e.g., “Quadratic Equations, Polynomials”).
+Thumbnail: Drag-and-drop upload.
+Submit: Tap “Submit” (1 click), pop-up: “Session live! Promote it!”.
+Error: Missing field → “Please add topics” pop-up.
+Booking Flow
+Learner: Taps “Book” (1 click).
+Pop-up: Shows title, mentor, price, topics, “Confirm” button.
+Pays via bank/UPI (1 click).
+Mentor: Sees request live, taps “Accept”/“Reject” (1 click).
+Learner: Gets “Confirmed” pop-up with sound.
+Error: Payment fails → “Retry” (3 tries), then “Try another method?”.
+Live Session Flow
+Both: Get reminder 10 mins before (sound + pop-up).
+Join: Tap “Join” (1 click each).
+Session: Timer starts, topics checklist updates, features active.
+Issues: Network drop → Auto-reconnect → “Rejoin?” if fails.
+End: Timer ends or “End” tapped → Feedback modal, recording saved.
+Gifting Flow
+Learner: Taps “Gift” in live room (1 click).
+Modal: Enter amount, pay (1 click).
+Mentor: Earnings update live, “Thank you!” pop-up.
+Withdrawal Flow
+Mentor: Taps “Withdraw” (1 click).
+Form: Amount, saved bank/UPI, tap “Confirm” (1 click).
+Pop-up: “Processed in 24 hrs.”
+Additional Advanced Features
+Follow System: Learners follow mentors; mentors see follower count.
+Ratings/Feedback: 1–5 stars, comments, displayed on profiles.
+ML Recommendations:
+Auto-suggests sessions based on learner interests, history, topics.
+Prioritizes trending mentors and live sessions.
+Analytics:
+Mentor: Earnings, bookings, followers, topic popularity.
+Learner: Hours, badges, topic mastery.
+Gamification: Badges (e.g., “Algebra Pro”), streaks.
+Chat System: Real-time messaging on dashboards and live room.
+Welcome Messages: Personalized tours for new users.
+Topics Checklist: Tracks progress in live room (e.g., “Polynomials [Covered]”).
+SEO and Reach: Keyword suggestions, topic-based visibility boost.
+Multi-Session Packages: Discounted bundles for learners.
+Community Forum: Discussion boards for learners/mentors.
+Error Handling
+Network Drop: Auto-reconnect (3 tries), “Reconnecting...” pop-up.
+Server Error: Fallback server, “Switching servers...” alert.
+Payment Error: Retry 3 times, “Try another method?” pop-up.
+Booking Conflict: “Slot taken, try another” pop-up.
+Video Lag: Adjusts bitrate, “Optimizing...” alert.
+No-Show: Auto-cancels after 10 mins, refunds learner, notifies mentor.
+Form Errors: Missing fields highlighted, “Complete all fields” pop-up.
+Admin Panel
+Access: Secret URL (/admin/), 2FA login.
+Controls: Manage users, sessions, payments, refunds, analytics.
+Security: Encrypted, audit logs.
+Why This Plan is Better
+Meaningful Features: Topics covered, session details pop-ups, gifting.
+Simple: 1–2 clicks for all actions.
+Real-Time: No refreshes, instant updates.
+Engaging: Follow, ratings, gamification, ML recommendations.
+Error-Free: Comprehensive handling for all issues.
+Valuable: SEO, analytics, and community features boost reach and retention.
+This plan makes PeerLearn intuitive, feature-rich, and seamless, with a focus on user experience and advanced functionality. All pages and features work together flawlessly, ensuring mentors and learners have a valuable, error-free experience. Let me know if you need further refinements!

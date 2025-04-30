@@ -274,6 +274,16 @@ class PeerLearnRTC {
                 throw new Error("Your browser doesn't support camera and microphone access. Please use a modern browser like Chrome, Firefox, or Safari.");
             }
             
+            // Initialize WebSocket first for better synchronization
+            try {
+                await this.setupWebSocket();
+                console.log("WebSocket connection established successfully");
+            } catch (wsError) {
+                console.error("Failed to establish WebSocket connection:", wsError);
+                this.onError("Failed to connect to the session server. Please check your internet connection and try again.");
+                // Continue anyway to at least set up local media
+            }
+            
             try {
                 // Detect network speed and adjust video quality accordingly
                 let networkQuality = await this.detectNetworkQuality();
@@ -283,29 +293,70 @@ class PeerLearnRTC {
                 
                 console.log(`Using ${networkQuality} quality video settings for ${this.isMobile ? 'mobile' : 'desktop'}`);
                 
-                // On iOS, special handling is needed
-                if (this.isIOS) {
-                    // First try video and audio with lower constraints
-                    try {
-                        this.localStream = await navigator.mediaDevices.getUserMedia({
-                            audio: true,
+                // Try to get audio and video separately to handle permission issues better
+                let audioStream = null;
+                let videoStream = null;
+                
+                // Get audio stream first
+                try {
+                    audioStream = await navigator.mediaDevices.getUserMedia({
+                        audio: true,
+                        video: false
+                    });
+                    console.log("Audio stream obtained successfully");
+                } catch (audioErr) {
+                    console.warn("Could not get audio stream:", audioErr);
+                    this.onError("Could not access your microphone. Please check your browser permissions.");
+                }
+                
+                // Then get video stream
+                try {
+                    // On iOS, special handling is needed
+                    if (this.isIOS) {
+                        // First try video with lower constraints
+                        videoStream = await navigator.mediaDevices.getUserMedia({
+                            audio: false,
                             video: {
                                 width: { ideal: 320, max: 640 },
                                 height: { ideal: 240, max: 480 },
                                 frameRate: { ideal: 15, max: 24 }
                             }
                         });
-                    } catch (iosErr) {
-                        console.warn("iOS device camera access issue, trying audio-only:", iosErr);
-                        this.localStream = await navigator.mediaDevices.getUserMedia({
-                            audio: true,
-                            video: false
+                    } else {
+                        // For other devices, use the optimized constraints
+                        videoStream = await navigator.mediaDevices.getUserMedia({
+                            audio: false,
+                            video: mediaConstraints.video
                         });
-                        this.onError("Camera access failed. Using audio-only mode on this iOS device.");
+                    }
+                    console.log("Video stream obtained successfully");
+                } catch (videoErr) {
+                    console.warn("Could not get video stream:", videoErr);
+                    this.onError("Could not access your camera. Please check your browser permissions.");
+                }
+                
+                // Create a combined stream with both audio and video
+                if (audioStream || videoStream) {
+                    // Create an array of tracks from both streams
+                    const tracks = [];
+                    if (audioStream) {
+                        audioStream.getAudioTracks().forEach(track => tracks.push(track));
+                    }
+                    if (videoStream) {
+                        videoStream.getVideoTracks().forEach(track => tracks.push(track));
+                    }
+                    
+                    // Create a new MediaStream with all tracks
+                    this.localStream = new MediaStream(tracks);
+                    
+                    // Provide appropriate feedback to the user
+                    if (!audioStream && videoStream) {
+                        this.onError("Microphone access failed. You can be seen but not heard.");
+                    } else if (audioStream && !videoStream) {
+                        this.onError("Camera access failed. You can be heard but not seen.");
                     }
                 } else {
-                    // For other devices, use the optimized constraints
-                    this.localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+                    throw new Error("Could not access camera or microphone. Please check your browser permissions.");
                 }
                 
                 console.log("Successfully got camera and microphone access");

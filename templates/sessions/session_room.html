@@ -345,14 +345,49 @@
     @media (max-width: 768px) {
         .session-room {
             flex-direction: column;
+            overflow-y: auto;
+            height: 100%;
+        }
+        
+        #video-grid {
+            display: flex;
+            flex-direction: column;
+            height: auto !important;
+        }
+        
+        .video-container {
+            height: auto;
+            width: 100%;
+            position: relative;
         }
         
         .video-container.mentor {
             min-height: 240px;
+            height: 40vh;
+            order: 1;
         }
         
         .video-container.learner {
             min-height: 120px;
+            height: 25vh;
+            order: 2;
+        }
+        
+        .video-container.local {
+            min-height: 120px;
+            height: 20vh;
+            order: 3;
+        }
+        
+        .controls {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 24px;
+            padding: 8px 16px;
+            z-index: 30;
         }
     }
     

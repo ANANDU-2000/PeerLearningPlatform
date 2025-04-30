@@ -857,16 +857,29 @@ class PeerLearnRTC {
                         }, 1000);
                     }
                     
-                    // Also update active participants list
+                    // Update active participants list
                     this.activeParticipants[data.user_id] = {
                         name: data.user_name,
                         is_mentor: data.is_mentor,
                         joined_at: data.timestamp,
-                        rejoined: true
+                        rejoined: true,
+                        disconnected: false // Clear disconnected flag
                     };
+                    
+                    // Remove reconnecting overlay if exists
+                    if (this.remoteVideos[data.user_id] && this.remoteVideos[data.user_id].element) {
+                        const videoElement = this.remoteVideos[data.user_id].element;
+                        const overlay = videoElement.parentElement.querySelector('.reconnecting-overlay');
+                        if (overlay) {
+                            overlay.parentElement.removeChild(overlay);
+                        }
+                    }
                     break;
                 case 'user_leave':
                     this.handleUserLeave(data);
+                    break;
+                case 'user_disconnected':
+                    this.handleUserDisconnected(data);
                     break;
                 case 'offer':
                     this.handleOffer(data);
@@ -1033,6 +1046,60 @@ class PeerLearnRTC {
         
         // Notify application
         this.onUserLeft(data);
+    }
+    
+    /**
+     * Handle user temporary disconnection - they might reconnect
+     */
+    handleUserDisconnected(data) {
+        console.log("User temporarily disconnected:", data.user_name, "with code:", data.close_code);
+        
+        if (this.activeParticipants[data.user_id]) {
+            // Mark as disconnected but don't remove yet
+            this.activeParticipants[data.user_id].disconnected = true;
+            this.activeParticipants[data.user_id].disconnectedAt = new Date().getTime();
+            
+            // Add a visual indication to the user's video that they might reconnect
+            if (this.remoteVideos[data.user_id] && this.remoteVideos[data.user_id].element) {
+                const videoElement = this.remoteVideos[data.user_id].element;
+                
+                // Add reconnecting overlay if not already present
+                if (!videoElement.querySelector('.reconnecting-overlay')) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'reconnecting-overlay';
+                    overlay.innerHTML = '<span>Reconnecting...</span>';
+                    overlay.style.position = 'absolute';
+                    overlay.style.top = '0';
+                    overlay.style.left = '0';
+                    overlay.style.width = '100%';
+                    overlay.style.height = '100%';
+                    overlay.style.display = 'flex';
+                    overlay.style.alignItems = 'center';
+                    overlay.style.justifyContent = 'center';
+                    overlay.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                    overlay.style.color = 'white';
+                    overlay.style.zIndex = '10';
+                    
+                    const container = videoElement.parentElement;
+                    if (container) {
+                        container.style.position = 'relative';
+                        container.appendChild(overlay);
+                    }
+                }
+            }
+            
+            // Don't close the connection yet - wait for the user_leave event
+            // which will be triggered automatically if they don't reconnect
+            
+            // Notify the application about the temporary disconnection
+            if (typeof this.onConnectionStateChange === 'function') {
+                this.onConnectionStateChange({
+                    userId: data.user_id,
+                    state: 'reconnecting',
+                    userName: data.user_name
+                });
+            }
+        }
     }
 
     /**

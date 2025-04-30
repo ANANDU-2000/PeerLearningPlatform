@@ -35,6 +35,17 @@
         scrollbar-width: thin;
         scrollbar-color: #cbd5e0 #f8fafc;
         -webkit-overflow-scrolling: touch;
+        scroll-snap-type: x mandatory;
+    }
+    
+    /* Hide scrollbar for cleaner look */
+    .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
     
     .scroll-container::-webkit-scrollbar {
@@ -157,27 +168,33 @@
             </div>
         </div>
         
-        <!-- Topic/Domain Tags -->
+        <!-- Topic/Domain Tags - Horizontal Scroll -->
         <div class="mb-8">
             <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{% trans "Popular Topics:" %}</h3>
-            <div class="flex flex-wrap gap-2">
-                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition">
+            <div class="flex overflow-x-auto hide-scrollbar py-2 gap-3">
+                <button class="bg-primary text-white text-xs font-medium px-3 py-1.5 rounded-full transition flex-shrink-0">
+                    {% trans "All Topics" %}
+                </button>
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
                     {% trans "Programming" %}
                 </button>
-                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition">
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
                     {% trans "Data Science" %}
                 </button>
-                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition">
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
                     {% trans "UX Design" %}
                 </button>
-                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition">
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
                     {% trans "Web Development" %}
                 </button>
-                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition">
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
                     {% trans "Machine Learning" %}
                 </button>
-                <button class="bg-primary text-white text-xs font-medium px-3 py-1.5 rounded-full transition">
-                    {% trans "All Topics" %}
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
+                    {% trans "Mobile Development" %}
+                </button>
+                <button class="bg-white dark:bg-gray-800 hover:bg-primary-light dark:hover:bg-primary-dark hover:text-primary text-gray-800 dark:text-gray-300 text-xs font-medium px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 transition flex-shrink-0">
+                    {% trans "AI & Machine Learning" %}
                 </button>
             </div>
         </div>
@@ -196,7 +213,7 @@
             </div>
             
             {% if live_sessions %}
-                <div class="scroll-container">
+                <div class="scroll-container hide-scrollbar">
                     {% for session in live_sessions %}
                         {% include "sessions/components/live_session_card.html" with session=session %}
                     {% endfor %}
@@ -246,9 +263,11 @@
             </div>
             
             {% if mentor_profiles %}
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="scroll-container hide-scrollbar">
                     {% for mentor in mentor_profiles %}
-                        {% include "sessions/components/mentor_card.html" with mentor=mentor %}
+                        <div class="w-64 sm:w-60 flex-shrink-0">
+                            {% include "sessions/components/mentor_card.html" with mentor=mentor %}
+                        </div>
                     {% endfor %}
                 </div>
             {% else %}

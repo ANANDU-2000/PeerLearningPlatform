@@ -241,7 +241,8 @@ window.PageTransitionSystem = (() => {
     // Define public API
     return {
         init,
-        navigateTo
+        navigateTo,
+        initializeDropdowns
     };
 })();
 
@@ -252,57 +253,17 @@ document.addEventListener('DOMContentLoaded', () => {
         window.PageTransitionSystem.init();
     }
     
-    // Initialize dropdowns
-    initializeDropdowns();
+    // Initialize dropdowns using the internal function
+    if (window.PageTransitionSystem && 
+        window.PageTransitionSystem.initializeDropdowns) {
+        window.PageTransitionSystem.initializeDropdowns();
+    }
     
     // Add page transition styles
     addPageTransitionStyles();
 });
 
-// Initialize dropdown toggles
-function initializeDropdowns() {
-    const dropdownToggles = document.querySelectorAll('.dropdown');
-    
-    dropdownToggles.forEach(dropdown => {
-        const button = dropdown.querySelector('button');
-        const content = dropdown.querySelector('.dropdown-content');
-        const arrow = dropdown.querySelector('#user-menu-arrow');
-        
-        if (button && content) {
-            button.addEventListener('click', (e) => {
-                e.stopPropagation();
-                content.classList.toggle('hidden');
-                
-                // Add animation classes for smooth transition
-                if (content.classList.contains('hidden')) {
-                    content.classList.remove('opacity-100', 'scale-100');
-                    content.classList.add('opacity-0', 'scale-95');
-                    if (arrow) arrow.classList.remove('rotate-180');
-                } else {
-                    content.classList.remove('opacity-0', 'scale-95');
-                    content.classList.add('opacity-100', 'scale-100');
-                    if (arrow) arrow.classList.add('rotate-180');
-                }
-            });
-        }
-    });
-    
-    // Close dropdowns when clicking outside
-    document.addEventListener('click', (e) => {
-        const dropdowns = document.querySelectorAll('.dropdown-content');
-        const arrows = document.querySelectorAll('#user-menu-arrow');
-        
-        dropdowns.forEach((dropdown, index) => {
-            if (!dropdown.classList.contains('hidden') && !e.target.closest('.dropdown')) {
-                dropdown.classList.add('hidden', 'opacity-0', 'scale-95');
-                dropdown.classList.remove('opacity-100', 'scale-100');
-                
-                const arrow = arrows[index];
-                if (arrow) arrow.classList.remove('rotate-180');
-            }
-        });
-    });
-}
+// Use the PageTransitionSystem's initializeDropdowns instead of duplicating
 
 // Add page transition styles
 function addPageTransitionStyles() {

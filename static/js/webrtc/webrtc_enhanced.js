@@ -637,67 +637,79 @@ class PeerLearnRTC {
      * Setup WebSocket for signaling with automatic reconnection
      */
     async setupWebSocket() {
-        // Get protocol based on connection security
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        
-        // Try different WebSocket URL paths to ensure connection
-        // First try the session-specific route, and if that fails, try the video route or room route
-        const wsUrls = [
-            `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`,
-            `${protocol}//${window.location.host}/ws/video/${this.sessionId}/`,
-            `${protocol}//${window.location.host}/ws/room/${this.sessionId}/`
-        ];
-        
-        let currentUrlIndex = 0;
-        const tryConnect = (urlIndex) => {
-            const wsUrl = wsUrls[urlIndex];
-            console.log(`Attempting to connect to WebSocket (attempt ${urlIndex + 1}/${wsUrls.length}):`, wsUrl);
+        return new Promise((resolve, reject) => {
+            // Get protocol based on connection security
+            const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
             
-            try {
-                this.socket = new WebSocket(wsUrl);
+            // Try different WebSocket URL paths to ensure connection
+            // First try the session-specific route, and if that fails, try the video route or room route
+            const wsUrls = [
+                `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`,
+                `${protocol}//${window.location.host}/ws/video/${this.sessionId}/`,
+                `${protocol}//${window.location.host}/ws/room/${this.sessionId}/`
+            ];
+            
+            let currentUrlIndex = 0;
+            const tryConnect = (urlIndex) => {
+                if (urlIndex >= wsUrls.length) {
+                    console.error("Tried all WebSocket URLs without success");
+                    reject(new Error("Could not connect to any WebSocket endpoint"));
+                    return;
+                }
                 
-                this.socket.onopen = () => {
-                    console.log(`WebSocket connection established to ${wsUrl}`);
-                    this.wsReconnectAttempts = 0;
-                    
-                    // Send join message to establish presence
-                    this.sendSignalingMessage({
-                        type: 'join',
-                        user_id: this.userId,
-                        user_name: this.userName,
-                        client_info: {
-                            browser: navigator.userAgent,
-                            time: new Date().toISOString(),
-                            is_rejoining: false,
-                            device_type: this.isMobile ? 'mobile' : 'desktop'
-                        }
-                    });
-                    
-                    resolve();
-                };
+                const wsUrl = wsUrls[urlIndex];
+                console.log(`Attempting to connect to WebSocket (attempt ${urlIndex + 1}/${wsUrls.length}):`, wsUrl);
                 
-                this.socket.onmessage = (event) => {
-                    this.handleSignalingMessage(JSON.parse(event.data));
-                };
-                
-                this.socket.onclose = (event) => {
-                    console.warn(`WebSocket closed (code: ${event.code}, reason: ${event.reason || 'No reason provided'})`);
+                try {
+                    this.socket = new WebSocket(wsUrl);
                     
-                    if (!this.forceClosing) {
-                        this.sessionActive = false;
+                    this.socket.onopen = () => {
+                        console.log(`WebSocket connection established to ${wsUrl}`);
+                        this.wsReconnectAttempts = 0;
                         
-                        if (this.wsReconnectAttempts < this.wsMaxReconnectAttempts) {
-                            this.wsReconnectAttempts++;
+                        // Send join message to establish presence
+                        this.sendSignalingMessage({
+                            type: 'join',
+                            user_id: this.userId,
+                            user_name: this.userName,
+                            client_info: {
+                                browser: navigator.userAgent,
+                                time: new Date().toISOString(),
+                                is_rejoining: false,
+                                device_type: this.isMobile ? 'mobile' : 'desktop'
+                            }
+                        });
+                        
+                        resolve();
+                    };
+                    
+                    this.socket.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            this.handleSignalingMessage(data);
+                        } catch (e) {
+                            console.error("Error parsing WebSocket message:", e, event.data);
+                        }
+                    };
+                    
+                    this.socket.onclose = (event) => {
+                        console.warn(`WebSocket closed (code: ${event.code}, reason: ${event.reason || 'No reason provided'})`);
+                        
+                        if (!this.forceClosing) {
+                            this.sessionActive = false;
                             
-                            // Use exponential backoff
-                            const delay = Math.min(30000, 2000 * Math.pow(1.5, this.wsReconnectAttempts));
-                            
-                            console.log(`Attempting to reconnect in ${delay/1000} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
-                            
-                            this.reconnectTimeout = setTimeout(() => {
-                                this.reconnectWebSocket();
-                            }, delay);
-                        } else {
+                            if (this.wsReconnectAttempts < this.wsMaxReconnectAttempts) {
+                                this.wsReconnectAttempts++;
+                                
+                                // Use exponential backoff
+                                const delay = Math.min(30000, 2000 * Math.pow(1.5, this.wsReconnectAttempts));
+                                
+                                console.log(`Attempting to reconnect in ${delay/1000} seconds... (Attempt ${this.wsReconnectAttempts}/${this.wsMaxReconnectAttempts})`);
+                                
+                                this.reconnectTimeout = setTimeout(() => {
+                                    this.reconnectWebSocket();
+                                }, delay);
+                            } else {
                             this.onError("Unable to reconnect after multiple attempts. The session may have ended or there may be network issues. Please refresh the page to try again.");
                         }
                     }
@@ -733,9 +745,7 @@ class PeerLearnRTC {
         };
         
         // Start the connection sequence with the first URL
-        return new Promise((resolve, reject) => {
-            tryConnect(0);
-        });
+        tryConnect(0);
     }
     
     /**
@@ -773,62 +783,79 @@ class PeerLearnRTC {
      * Handle signaling messages from WebSocket
      */
     handleSignalingMessage(data) {
-        switch (data.type) {
-            case 'user_join':
-                this.handleUserJoin(data);
-                break;
-            case 'user_rejoin':
-                // Handle user rejoining separately - this indicates a user has reconnected
-                console.log("User rejoined:", data.user_name);
-                
-                // If we're the mentor and a learner is rejoining, we need to create a new connection to them
-                if (this.isMentor && data.user_id !== this.userId) {
-                    console.log("Mentor received rejoin notification from learner, initiating connection");
-                    setTimeout(() => {
-                        // Small delay to ensure both sides are ready
-                        this.createPeerConnection(data.user_id, data.user_name);
-                        this.createOffer(data.user_id);
-                    }, 1000);
-                }
-                
-                // Also update active participants list
-                this.activeParticipants[data.user_id] = {
-                    name: data.user_name,
-                    is_mentor: data.is_mentor,
-                    joined_at: data.timestamp,
-                    rejoined: true
-                };
-                break;
-            case 'user_leave':
-                this.handleUserLeave(data);
-                break;
-            case 'offer':
-                this.handleOffer(data);
-                break;
-            case 'answer':
-                this.handleAnswer(data);
-                break;
-            case 'candidate':
-                this.handleCandidate(data);
-                break;
-            case 'chat':
-                this.onChatMessage(data);
-                break;
-            case 'room_state':
-                this.handleRoomState(data);
-                break;
-            case 'connection_error':
-                this.handleConnectionError(data);
-                break;
-            case 'join_ack':
-                console.log("Join acknowledged by server");
-                break;
-            case 'error':
-                console.error("Error message from signaling server:", data.message);
-                this.onError(data.message);
-                break;
-            default:
-                console.log("Unknown message type:", data.type);
+        // Log all messages for debugging
+        console.log("Received WebSocket message:", data);
+        
+        try {
+            switch (data.type) {
+                case 'user_join':
+                    this.handleUserJoin(data);
+                    break;
+                case 'user_rejoin':
+                    // Handle user rejoining separately - this indicates a user has reconnected
+                    console.log("User rejoined:", data.user_name);
+                    
+                    // If we're the mentor and a learner is rejoining, we need to create a new connection to them
+                    if (this.isMentor && data.user_id !== this.userId) {
+                        console.log("Mentor received rejoin notification from learner, initiating connection");
+                        setTimeout(() => {
+                            // Small delay to ensure both sides are ready
+                            this.createPeerConnection(data.user_id, data.user_name);
+                            this.createOffer(data.user_id);
+                        }, 1000);
+                    }
+                    
+                    // Also update active participants list
+                    this.activeParticipants[data.user_id] = {
+                        name: data.user_name,
+                        is_mentor: data.is_mentor,
+                        joined_at: data.timestamp,
+                        rejoined: true
+                    };
+                    break;
+                case 'user_leave':
+                    this.handleUserLeave(data);
+                    break;
+                case 'offer':
+                    this.handleOffer(data);
+                    break;
+                case 'answer':
+                    this.handleAnswer(data);
+                    break;
+                case 'candidate':
+                    this.handleCandidate(data);
+                    break;
+                case 'chat':
+                    this.onChatMessage(data);
+                    break;
+                case 'room_state':
+                    this.handleRoomState(data);
+                    break;
+                case 'connection_error':
+                    this.handleConnectionError(data);
+                    break;
+                case 'join_ack':
+                    console.log("Join acknowledged by server");
+                    this.sessionActive = true;
+                    this.hasJoinedBefore = true;
+                    break;
+                case 'ping':
+                    // Send pong back
+                    this.sendSignalingMessage({
+                        type: 'pong',
+                        timestamp: new Date().toISOString()
+                    });
+                    break;
+                case 'error':
+                    console.error("Error message from signaling server:", data.message);
+                    this.onError(data.message);
+                    break;
+                default:
+                    console.log("Unknown message type:", data.type);
+            }
+        } catch (e) {
+            console.error("Error handling WebSocket message:", e);
+            this.onError("Error handling message from server. Please refresh the page to reconnect.");
         }
     }
     
@@ -1422,12 +1449,55 @@ class PeerLearnRTC {
      * Send a message through the signaling channel
      */
     sendSignalingMessage(message) {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify(message));
+        if (!this.socket) {
+            console.error("Cannot send message, WebSocket is not initialized:", message.type);
+            return false;
+        }
+        
+        if (this.socket.readyState === WebSocket.OPEN) {
+            try {
+                console.log("Sending message:", message.type);
+                this.socket.send(JSON.stringify(message));
+                return true;
+            } catch (e) {
+                console.error("Error sending message:", e);
+                return false;
+            }
         } else {
-            console.error("Cannot send message, WebSocket is not open");
-            // Attempt to reconnect
-            this.reconnectWebSocket();
+            console.warn(`Cannot send message, WebSocket state is ${this.socket.readyState} (${this.getReadyStateString(this.socket.readyState)})`);
+            
+            // Queue important messages for later sending
+            if (!this.messageQueue) {
+                this.messageQueue = [];
+            }
+            
+            // Don't queue real-time media negotiation messages as they'll be stale
+            const nonQueueableTypes = ['candidate', 'offer', 'answer'];
+            if (!nonQueueableTypes.includes(message.type)) {
+                this.messageQueue.push(message);
+                console.log(`Message queued (${message.type}). Queue size: ${this.messageQueue.length}`);
+            }
+            
+            // Attempt to reconnect if not connecting or closing
+            if (this.socket.readyState !== WebSocket.CONNECTING && 
+                this.socket.readyState !== WebSocket.CLOSING) {
+                this.reconnectWebSocket();
+            }
+            
+            return false;
+        }
+    }
+    
+    /**
+     * Get string representation of WebSocket ready state
+     */
+    getReadyStateString(state) {
+        switch (state) {
+            case WebSocket.CONNECTING: return 'CONNECTING';
+            case WebSocket.OPEN: return 'OPEN';
+            case WebSocket.CLOSING: return 'CLOSING';
+            case WebSocket.CLOSED: return 'CLOSED';
+            default: return 'UNKNOWN';
         }
     }
 

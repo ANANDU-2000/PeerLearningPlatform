@@ -557,19 +557,34 @@ def session_room(request, session_id):
                     status='confirmed'
                 ).exists()
                 
-                # If no booking at all, create one and redirect to cart
+                # For dev mode, auto-create a CONFIRMED booking with payment
                 if not has_confirmed and not has_unpaid:
-                    print(f"Auto-creating session booking for user {request.user.id} in dev mode")
-                    # Create a booking automatically
+                    print(f"DEVELOPMENT MODE: Auto-creating CONFIRMED booking for user {request.user.id}")
+                    # Create a pre-approved booking
                     new_booking = Booking(
                         session=session,
                         learner=request.user,
-                        status='pending',
-                        payment_complete=False
+                        status='confirmed',
+                        payment_complete=True
                     )
                     new_booking.save()
-                    messages.info(request, _('Please complete payment to join this session.'))
-                    return redirect('cart')
+                    
+                    # Create transaction record for tracking
+                    from payments.models import Transaction
+                    Transaction.objects.create(
+                        booking=new_booking,
+                        amount=session.price or 0,
+                        currency='INR',
+                        status='completed',
+                        payment_method='free_dev_mode',
+                        metadata={
+                            'dev_mode': True,
+                            'auto_created': True
+                        }
+                    )
+                    
+                    messages.success(request, _('DEV MODE: Auto-confirmed your booking for this session.'))
+                    # Continue to session room instead of redirecting
             
             # In development mode, always allow the mentor who created the session
             # and any test mentors/learners to join

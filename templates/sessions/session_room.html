@@ -325,14 +325,25 @@
 
 {% block content %}
 <!-- Pre-Session Countdown Overlay (hidden by default) -->
-<div id="pre-session-overlay" class="pre-session-overlay hidden">
+<div id="pre-session-overlay" class="pre-session-overlay">
     <div class="countdown-timer" id="countdown-timer">00:00:00</div>
     <div class="countdown-message" id="countdown-message">
-        {% trans "Your session will begin soon. Please make sure your camera and microphone are working." %}
+        {% trans "Welcome to your live session! Please make sure your camera and microphone are working properly." %}
     </div>
-    <button id="ready-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition">
-        {% trans "I'm Ready" %}
-    </button>
+    <div class="flex flex-col items-center space-y-4">
+        <div class="bg-blue-100 text-blue-800 p-4 rounded-lg max-w-md">
+            <div class="flex items-center">
+                <i data-feather="info" class="h-5 w-5 mr-2"></i>
+                <p class="text-sm">{% trans "This session room is in development mode. Join button is enabled for testing purposes." %}</p>
+            </div>
+        </div>
+        <button id="ready-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg text-lg transition animate-pulse">
+            {% trans "I'm Ready to Join!" %}
+        </button>
+        <button id="check-devices-btn" class="text-blue-600 underline text-sm mt-2">
+            {% trans "Check Camera and Microphone" %}
+        </button>
+    </div>
 </div>
 
 <div class="session-room bg-gray-100 flex flex-col md:flex-row">

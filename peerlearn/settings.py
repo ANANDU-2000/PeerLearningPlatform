@@ -87,12 +87,9 @@ DATABASES = {
 # Channels configuration
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-            "capacity": 1500,  # Maximum number of messages in channel layer
-            "expiry": 60,  # Expiry time in seconds
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        # Use in-memory channel layer for Replit environment
+        # This allows WebSockets to function without Redis dependency
     },
 }
 

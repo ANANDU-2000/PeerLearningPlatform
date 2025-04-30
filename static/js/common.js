@@ -181,10 +181,11 @@ function initDropdowns() {
                                 setTimeout(function() { focusableElements[0].focus(); }, 100);
                             }
                         }
-                } catch (err) {
-                    console.error('Error in dropdown click handler:', err);
-                }
-            });
+                    } catch (err) {
+                        console.error('Error in dropdown click handler:', err);
+                    }
+                });
+            }
         }
         
         // Close dropdowns when clicking outside

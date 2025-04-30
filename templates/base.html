@@ -456,57 +456,57 @@
     </div>
     
     <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-10">
+    <footer class="bg-black text-white py-10 dark:bg-gray-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div>
-                    <h3 class="text-lg font-bold mb-4">PeerLearn</h3>
+                    <h3 class="text-lg font-bold mb-4"><span class="text-primary">Peer</span><span class="text-accent">Learn</span></h3>
                     <p class="text-gray-300 text-sm mb-4">{% trans "Connect with expert mentors around the world for personalized learning experiences." %}</p>
                     <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white">
+                        <a href="#" class="text-primary hover:text-primary-light">
                             <i data-feather="facebook" class="h-5 w-5"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-white">
+                        <a href="#" class="text-primary hover:text-primary-light">
                             <i data-feather="twitter" class="h-5 w-5"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-white">
+                        <a href="#" class="text-primary hover:text-primary-light">
                             <i data-feather="instagram" class="h-5 w-5"></i>
                         </a>
-                        <a href="#" class="text-gray-400 hover:text-white">
+                        <a href="#" class="text-primary hover:text-primary-light">
                             <i data-feather="linkedin" class="h-5 w-5"></i>
                         </a>
                     </div>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold mb-4">{% trans "Quick Links" %}</h3>
+                    <h3 class="text-lg font-bold mb-4 text-primary">{% trans "Quick Links" %}</h3>
                     <ul class="space-y-2 text-sm text-gray-300">
-                        <li><a href="{% url 'landing_page' %}" class="hover:text-white">{% trans "Home" %}</a></li>
-                        <li><a href="{% url 'session_list' %}" class="hover:text-white">{% trans "Browse Sessions" %}</a></li>
-                        <li><a href="{% url 'role_selection' %}" class="hover:text-white">{% trans "Become a Mentor" %}</a></li>
-                        <li><a href="#" class="hover:text-white">{% trans "About Us" %}</a></li>
+                        <li><a href="{% url 'landing_page' %}" class="hover:text-primary">{% trans "Home" %}</a></li>
+                        <li><a href="{% url 'session_list' %}" class="hover:text-primary">{% trans "Browse Sessions" %}</a></li>
+                        <li><a href="{% url 'role_selection' %}" class="hover:text-primary">{% trans "Become a Mentor" %}</a></li>
+                        <li><a href="#" class="hover:text-primary">{% trans "About Us" %}</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold mb-4">{% trans "Support" %}</h3>
+                    <h3 class="text-lg font-bold mb-4 text-primary">{% trans "Support" %}</h3>
                     <ul class="space-y-2 text-sm text-gray-300">
-                        <li><a href="#" class="hover:text-white">{% trans "Help Center" %}</a></li>
-                        <li><a href="#" class="hover:text-white">{% trans "Contact Us" %}</a></li>
-                        <li><a href="#" class="hover:text-white">{% trans "Privacy Policy" %}</a></li>
-                        <li><a href="#" class="hover:text-white">{% trans "Terms of Service" %}</a></li>
+                        <li><a href="#" class="hover:text-primary">{% trans "Help Center" %}</a></li>
+                        <li><a href="#" class="hover:text-primary">{% trans "Contact Us" %}</a></li>
+                        <li><a href="#" class="hover:text-primary">{% trans "Privacy Policy" %}</a></li>
+                        <li><a href="#" class="hover:text-primary">{% trans "Terms of Service" %}</a></li>
                     </ul>
                 </div>
                 <div>
-                    <h3 class="text-lg font-bold mb-4">{% trans "Subscribe" %}</h3>
+                    <h3 class="text-lg font-bold mb-4 text-primary">{% trans "Subscribe" %}</h3>
                     <p class="text-gray-300 text-sm mb-4">{% trans "Get the latest updates about new mentors and sessions." %}</p>
                     <form class="flex">
-                        <input type="email" placeholder="{% trans 'Your email' %}" class="px-4 py-2 w-full rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-700 text-white">
-                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-r-md">
+                        <input type="email" placeholder="{% trans 'Your email' %}" class="px-4 py-2 w-full rounded-l-md focus:outline-none focus:ring-2 focus:ring-primary bg-gray-800 text-white">
+                        <button type="submit" class="bg-primary hover:bg-primary-dark px-4 py-2 rounded-r-md">
                             <i data-feather="send" class="h-4 w-4"></i>
                         </button>
                     </form>
                 </div>
             </div>
-            <div class="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400 text-sm">
+            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-primary text-sm">
                 <p>© {% now "Y" %} PeerLearn. {% trans "All rights reserved." %}</p>
             </div>
         </div>
@@ -542,7 +542,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Secret admin access - reveals after clicking copyright year 5 times
-            const yearElement = document.querySelector('footer p.text-gray-400.text-sm');
+            const yearElement = document.querySelector('footer p.text-primary.text-sm');
             const adminSecret = document.getElementById('admin-secret');
             
             if (yearElement && adminSecret) {

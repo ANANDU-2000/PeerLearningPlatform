@@ -1010,23 +1010,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const sessionUI = new SessionUIController();
     sessionUI.initEventListeners();
     
-    // Initialize WebRTC connection with robust error handling
-    try {
-        console.log('Initializing WebRTC connection for session #{{ session.id }}');
-        
-        // Default STUN servers in case none are provided from backend
-        const defaultStunServers = [
-            'stun:stun.l.google.com:19302',
-            'stun:stun1.l.google.com:19302',
-            'stun:stun2.l.google.com:19302'
-        ];
-        
-        // Log configuration for debugging
-        console.log('WebRTC Configuration:');
-        console.log('- User ID: {{ user.id }}');
-        console.log('- User Name: {{ user.get_full_name }}');
-        console.log('- Session ID: {{ session.id }}');
-        console.log('- Role: {% if is_mentor %}Mentor{% else %}Learner{% endif %}');
+    // Initialize WebRTC using our extracted function
+    initializeWebRTC(sessionUI);
         
         // WebRTC configuration
         const config = {
@@ -1289,15 +1274,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize Feather icons
-        feather.replace();
-        
-        // Initialize session UI controller
-        const sessionUI = new SessionUIController();
-        
-        // Initialize WebRTC
-        // Initialize WebRTC connection with robust error handling
+    // Initialize WebRTC function
+    function initializeWebRTC(sessionUI) {
         try {
             console.log('Initializing WebRTC connection for {{ session.id }}');
             
@@ -1348,6 +1326,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Show error message to user
             alert('Failed to initialize video connection. Please refresh the page to try again.');
         }
+    }
         
         // Add custom event handlers for WebRTC messages
         if (sessionUI.rtc) {

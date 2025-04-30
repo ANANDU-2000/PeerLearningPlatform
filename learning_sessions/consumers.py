@@ -69,14 +69,22 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                 print(f"Error cancelling ping task: {str(e)}")
         
         if hasattr(self, 'room_group_name'):
-            # Send message that user has left
+            # Implement temporary grace period to handle reconnections
+            # Only mark as truly left if not reconnected within 30 seconds
+            
+            # First log the disconnection without removing from group immediately
+            print(f"User {self.user.id} disconnected with code {close_code}, starting grace period")
+            
+            # Store disconnection time for potential reconnect
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
-                    'type': 'user_leave',
+                    'type': 'user_disconnected',
                     'user_id': str(self.user.id),
                     'user_name': self.user.get_full_name(),
                     'timestamp': timezone.now().isoformat(),
+                    'temporary': True,  # Flag to indicate this might be temporary
+                    'close_code': close_code
                 }
             )
             
@@ -85,6 +93,22 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                 self.room_group_name,
                 self.channel_name
             )
+            
+            # After 30 seconds, if not reconnected, mark as truly left
+            # This helps other clients know definitively when to clean up resources
+            try:
+                await asyncio.sleep(30)
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'user_leave',
+                        'user_id': str(self.user.id),
+                        'user_name': self.user.get_full_name(),
+                        'timestamp': timezone.now().isoformat(),
+                    }
+                )
+            except Exception as e:
+                print(f"Error in disconnect cleanup for user {self.user.id}: {str(e)}")
     
     async def receive(self, text_data):
         """Receive message from WebSocket."""

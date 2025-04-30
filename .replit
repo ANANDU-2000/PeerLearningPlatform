@@ -2,7 +2,7 @@ modules = ["python-3.11", "postgresql-16"]
 
 [nix]
 channel = "stable-24_05"
-packages = ["freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "tcl", "tk", "zlib"]
+packages = ["freetype", "glibcLocales", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "redis", "tcl", "tk", "zlib"]
 
 [workflows]
 runButton = "Project"
@@ -31,6 +31,10 @@ run = ["sh", "-c", "python manage.py runserver 0.0.0.0:5000"]
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 6379
+externalPort = 3000
 
 [[ports]]
 localPort = 8000

@@ -657,6 +657,132 @@ class SessionUIController {
     }
 
     /**
+     * Add a remote video stream to the video grid
+     */
+    addRemoteVideo(userId, userName, stream) {
+        console.log(`Adding remote video for user ${userName} (${userId})`);
+        
+        // Check if this video already exists
+        const existingContainer = document.getElementById(`video-container-${userId}`);
+        if (existingContainer) {
+            console.log(`Video container for user ${userId} already exists, updating stream`);
+            const videoElement = existingContainer.querySelector('video');
+            if (videoElement) {
+                videoElement.srcObject = stream;
+            }
+            return;
+        }
+        
+        // Create video container
+        const videoContainer = document.createElement('div');
+        videoContainer.className = 'video-container remote-video';
+        videoContainer.id = `video-container-${userId}`;
+        
+        // Create video element
+        const videoElement = document.createElement('video');
+        videoElement.autoplay = true;
+        videoElement.playsInline = true;
+        videoElement.id = `video-${userId}`;
+        videoElement.srcObject = stream;
+        
+        // Create label
+        const label = document.createElement('div');
+        label.className = 'video-label';
+        label.textContent = userName;
+        
+        // Add elements to container
+        videoContainer.appendChild(videoElement);
+        videoContainer.appendChild(label);
+        
+        // Add to video grid
+        const videoGrid = document.querySelector('.video-grid');
+        if (videoGrid) {
+            videoGrid.appendChild(videoContainer);
+            
+            // Update grid layout based on participant count
+            this.updateGridLayout();
+        }
+        
+        // Show notification
+        this.showNotification(`${userName} joined the session`, 'success');
+    }
+    
+    /**
+     * Remove a remote video from the grid
+     */
+    removeRemoteVideo(userId) {
+        console.log(`Removing remote video for user ${userId}`);
+        
+        // Find video container
+        const videoContainer = document.getElementById(`video-container-${userId}`);
+        if (videoContainer) {
+            // Get user name before removing
+            const label = videoContainer.querySelector('.video-label');
+            const userName = label ? label.textContent : 'Participant';
+            
+            // Remove from grid
+            videoContainer.remove();
+            
+            // Update grid layout
+            this.updateGridLayout();
+            
+            // Show notification
+            this.addSystemMessage(`${userName} left the session`);
+        }
+    }
+    
+    /**
+     * Update grid layout based on participant count
+     */
+    updateGridLayout() {
+        const videoGrid = document.querySelector('.video-grid');
+        if (!videoGrid) return;
+        
+        // Count number of video containers
+        const participants = videoGrid.querySelectorAll('.video-container').length;
+        
+        // Adjust grid columns based on count
+        if (participants <= 1) {
+            videoGrid.className = 'video-grid grid-cols-1';
+        } else if (participants === 2) {
+            videoGrid.className = 'video-grid grid-cols-1 md:grid-cols-2';
+        } else if (participants <= 4) {
+            videoGrid.className = 'video-grid grid-cols-2';
+        } else {
+            videoGrid.className = 'video-grid grid-cols-2 md:grid-cols-3';
+        }
+    }
+    
+    /**
+     * Update connection status indicator
+     */
+    updateConnectionStatus(state) {
+        console.log(`Connection status changed: ${state}`);
+        
+        // Update network quality indicator
+        const networkIndicator = document.getElementById('network-quality');
+        if (networkIndicator) {
+            // Remove all status classes
+            networkIndicator.classList.remove('good', 'fair', 'poor', 'disconnected');
+            
+            // Add appropriate class based on state
+            if (state === 'connected' || state === 'completed') {
+                networkIndicator.classList.add('good');
+                networkIndicator.querySelector('span').textContent = 'Good';
+            } else if (state === 'connecting') {
+                networkIndicator.classList.add('fair');
+                networkIndicator.querySelector('span').textContent = 'Connecting';
+            } else if (state === 'disconnected') {
+                networkIndicator.classList.add('poor');
+                networkIndicator.querySelector('span').textContent = 'Poor';
+            } else if (state === 'failed') {
+                networkIndicator.classList.add('disconnected');
+                networkIndicator.querySelector('span').textContent = 'Disconnected';
+            }
+        }
+    }
+    
+    /**
      * Show error message with better user feedback
      */
     showErrorMessage(message, showRefreshButton = false) {

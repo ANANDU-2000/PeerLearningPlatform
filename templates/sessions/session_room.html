@@ -1010,8 +1010,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const sessionUI = new SessionUIController();
     sessionUI.initEventListeners();
     
-    // Initialize WebRTC using our extracted function
-    initializeWebRTC(sessionUI);
+    // Set up WebRTC with all configuration
+    try {
+        console.log('Initializing WebRTC connection for session #{{ session.id }}');
+        
+        // Default STUN servers
+        const defaultStunServers = [
+            'stun:stun.l.google.com:19302',
+            'stun:stun1.l.google.com:19302',
+            'stun:stun2.l.google.com:19302'
+        ];
+        
+        // Log configuration for debugging
+        console.log('WebRTC Configuration:');
+        console.log('- User ID: {{ user.id }}');
+        console.log('- User Name: {{ user.get_full_name }}');
+        console.log('- Session ID: {{ session.id }}');
+        console.log('- Is Mentor: {% if is_mentor %}true{% else %}false{% endif %}');
         
         // WebRTC configuration
         const config = {
@@ -1274,59 +1289,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initialize WebRTC function
-    function initializeWebRTC(sessionUI) {
-        try {
-            console.log('Initializing WebRTC connection for {{ session.id }}');
-            
-            // Default STUN servers in case none are provided from backend
-            const defaultStunServers = [
-                'stun:stun.l.google.com:19302',
-                'stun:stun1.l.google.com:19302',
-                'stun:stun2.l.google.com:19302'
-            ];
-            
-            // Log configuration for debugging
-            console.log('WebRTC Configuration:');
-            console.log('- User ID: {{ user.id }}');
-            console.log('- User Name: {{ user.get_full_name }}');
-            console.log('- Session ID: {{ session.id }}');
-            console.log('- Is Mentor: {% if is_mentor %}true{% else %}false{% endif %}');
-            
-            // Initialize RTC with complete configuration
-            sessionUI.initRTC({
-                userId: '{{ user.id }}',
-                userName: '{{ user.get_full_name }}',
-                sessionId: '{{ session.id }}',
-                isMentor: {% if is_mentor %}true{% else %}false{% endif %},
-                localVideoId: 'local-video',
-                // Use provided STUN servers or fallback to defaults
-                stunServers: [
-                    {% for server in stun_servers %}'{{ server }}'{% if not forloop.last %}, {% endif %}{% empty %}
-                    'stun:stun.l.google.com:19302',
-                    'stun:stun1.l.google.com:19302',
-                    'stun:stun2.l.google.com:19302'
-                    {% endfor %}
-                ],
-                // Use provided TURN servers or empty array
-                turnServers: [
-                    {% for server in turn_servers %}'{{ server }}'{% if not forloop.last %}, {% endif %}{% endfor %}
-                ],
-                turnUsername: '{{ turn_username|default:"" }}',
-                turnCredential: '{{ turn_credential|default:"" }}',
-                // Set additional options for better reliability
-                debugMode: true,
-                connectionTimeout: 30000, // 30 seconds
-                reconnectAttempts: 5
-            });
-            
-            console.log('WebRTC initialization complete');
-        } catch (error) {
-            console.error('Error initializing WebRTC:', error);
-            // Show error message to user
-            alert('Failed to initialize video connection. Please refresh the page to try again.');
-        }
-    }
+    // Session timer and notification functions
         
         // Add custom event handlers for WebRTC messages
         if (sessionUI.rtc) {

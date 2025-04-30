@@ -12,17 +12,27 @@ class PeerLearnRTC {
         this.sessionId = config.sessionId;
         this.isMentor = config.isMentor;
         
-        // STUN/TURN servers configuration
-        this.stunServers = config.stunServers || [
-            'stun:stun.l.google.com:19302',
-            'stun:stun1.l.google.com:19302',
-            'stun:stun2.l.google.com:19302',
-            'stun:stun3.l.google.com:19302',
-            'stun:stun4.l.google.com:19302'
+        // WebSocket signaling URL (can be provided directly now)
+        this.signalingUrl = config.signalingUrl || null;
+        
+        // ICE servers configuration (used by RTCPeerConnection)
+        this.iceServers = config.iceServers || [
+            {
+                urls: [
+                    'stun:stun.l.google.com:19302',
+                    'stun:stun1.l.google.com:19302',
+                    'stun:stun2.l.google.com:19302',
+                    'stun:stun3.l.google.com:19302',
+                    'stun:stun4.l.google.com:19302'
+                ]
+            }
         ];
         
-        // TURN servers - required for networks with strict firewalls
-        this.turnServers = config.turnServers || [];
+        // For backward compatibility
+        this.stunServers = this.getStunServersFromIceConfig(this.iceServers);
+        this.turnServers = this.getTurnServersFromIceConfig(this.iceServers);
+        
+        // Additional config options
         this.turnUsername = config.turnUsername || '';
         this.turnCredential = config.turnCredential || '';
 
@@ -694,11 +704,19 @@ class PeerLearnRTC {
             
             // Try different WebSocket URL paths to ensure connection
             // First try the session-specific route, and if that fails, try the video route or room route
-            const wsUrls = [
+            let wsUrls = [];
+            
+            // If signalingUrl is provided in config, use it first
+            if (this.signalingUrl) {
+                wsUrls.push(this.signalingUrl);
+            }
+            
+            // Add fallback URLs
+            wsUrls = wsUrls.concat([
                 `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`,
                 `${protocol}//${window.location.host}/ws/video/${this.sessionId}/`,
                 `${protocol}//${window.location.host}/ws/room/${this.sessionId}/`
-            ];
+            ]);
             
             let currentUrlIndex = 0;
             const tryConnect = (urlIndex) => {
@@ -1114,30 +1132,9 @@ class PeerLearnRTC {
             this.peerConnections[userId].close();
         }
         
-        // Enhanced ICE server configuration with TURN
-        const iceServers = [];
-        
-        // Add STUN servers
-        this.stunServers.forEach(server => {
-            iceServers.push({ urls: server });
-        });
-        
-        // Add TURN servers if available
-        if (this.turnServers && this.turnServers.length > 0) {
-            this.turnServers.forEach(server => {
-                const turnConfig = {
-                    urls: server
-                };
-                
-                // Add credentials if provided
-                if (this.turnUsername && this.turnCredential) {
-                    turnConfig.username = this.turnUsername;
-                    turnConfig.credential = this.turnCredential;
-                }
-                
-                iceServers.push(turnConfig);
-            });
-        }
+        // Use the pre-configured ICE servers from the constructor
+        // This is already properly formatted with both STUN and TURN
+        const iceServers = this.iceServers;
         
         // Enhanced RTC configuration
         const rtcConfig = {
@@ -1618,6 +1615,63 @@ class PeerLearnRTC {
             case WebSocket.CLOSED: return 'CLOSED';
             default: return 'UNKNOWN';
         }
+    }
+    
+    /**
+     * Extract STUN servers from the ICE configuration
+     */
+    getStunServersFromIceConfig(iceServers) {
+        let stunServers = [];
+        
+        if (!iceServers || !Array.isArray(iceServers)) {
+            return ['stun:stun.l.google.com:19302'];
+        }
+        
+        iceServers.forEach(server => {
+            if (server.urls) {
+                // Handle both string and array formats
+                const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+                
+                urls.forEach(url => {
+                    if (typeof url === 'string' && url.startsWith('stun:')) {
+                        stunServers.push(url);
+                    }
+                });
+            }
+        });
+        
+        // If no STUN servers found, use default
+        if (stunServers.length === 0) {
+            return ['stun:stun.l.google.com:19302'];
+        }
+        
+        return stunServers;
+    }
+    
+    /**
+     * Extract TURN servers from the ICE configuration
+     */
+    getTurnServersFromIceConfig(iceServers) {
+        let turnServers = [];
+        
+        if (!iceServers || !Array.isArray(iceServers)) {
+            return [];
+        }
+        
+        iceServers.forEach(server => {
+            if (server.urls) {
+                // Handle both string and array formats
+                const urls = Array.isArray(server.urls) ? server.urls : [server.urls];
+                
+                urls.forEach(url => {
+                    if (typeof url === 'string' && url.startsWith('turn:')) {
+                        turnServers.push(url);
+                    }
+                });
+            }
+        });
+        
+        return turnServers;
     }
 
     /**

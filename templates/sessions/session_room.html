@@ -1042,9 +1042,20 @@ document.addEventListener('DOMContentLoaded', function() {
             // Video elements
             localVideo: document.getElementById('local-video'),
             
-            // ICE servers configuration
+            // ICE servers configuration with proper STUN/TURN servers
             iceServers: [
-                {urls: defaultStunServers}
+                {% if stun_servers %}
+                {urls: [{% for server in stun_servers %}'{{ server }}'{% if not forloop.last %}, {% endif %}{% endfor %}]},
+                {% else %}
+                {urls: defaultStunServers},
+                {% endif %}
+                {% if turn_servers and turn_username and turn_credential %}
+                {
+                    urls: [{% for server in turn_servers %}'{{ server }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+                    username: '{{ turn_username }}',
+                    credential: '{{ turn_credential }}'
+                }
+                {% endif %}
             ],
             
             // UI callbacks

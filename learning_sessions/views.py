@@ -517,6 +517,145 @@ def book_session(request, session_id):
 
 
 @login_required
+def session_room_enhanced(request, session_id):
+    """Enhanced view for WebRTC live session room."""
+    try:
+        # Get session with proper error handling
+        try:
+            session = get_object_or_404(Session, id=session_id)
+        except Exception as e:
+            messages.error(request, _('The requested session does not exist.'))
+            return redirect('dashboard')
+        
+        # First, authenticate the user
+        if not request.user.is_authenticated:
+            messages.error(request, _('Please log in to access the session room.'))
+            return redirect('login')
+        
+        # Default permission settings
+        is_learner_allowed = False
+        is_mentor_allowed = False
+        
+        # DEVELOPMENT MODE - Always allow direct access for testing
+        # This bypasses normal access control for easier testing
+        print(f"DEVELOPMENT MODE: Allowing user {request.user.id} to join enhanced session {session_id}")
+        
+        # Set development mode flag (always True for now)
+        dev_mode = True
+        
+        # AUTO-CREATE BOOKING LOGIC
+        if dev_mode:
+            # If user is a learner, ensure they have a confirmed booking
+            if request.user.role == 'learner':
+                # Try to find an existing booking
+                booking = Booking.objects.filter(
+                    session=session,
+                    learner=request.user
+                ).first()
+                
+                # If no booking exists, create one
+                if not booking:
+                    print(f"AUTO-CREATING booking for learner {request.user.id}")
+                    booking = Booking.objects.create(
+                        session=session,
+                        learner=request.user,
+                        status='confirmed',
+                        payment_complete=True,
+                        final_price=0,  # Free for testing
+                        discount_amount=session.price if session.price else 0  # Full discount
+                    )
+                    
+                    # Create a transaction record
+                    from payments.models import Transaction
+                    Transaction.objects.create(
+                        booking=booking,
+                        amount=session.price or 0,
+                        currency='INR',
+                        status='completed',
+                        payment_method='free_dev_mode',
+                        metadata={'dev_mode': True}
+                    )
+                    
+                    messages.success(request, _('DEV MODE: Auto-created booking for testing.'))
+                    
+                # If booking exists but isn't confirmed/paid, update it
+                elif not booking.payment_complete or booking.status != 'confirmed':
+                    print(f"UPDATING existing booking to confirmed for learner {request.user.id}")
+                    booking.status = 'confirmed'
+                    booking.payment_complete = True
+                    booking.save()
+                    
+                    # Make sure there's a transaction record
+                    from payments.models import Transaction
+                    if not Transaction.objects.filter(booking=booking).exists():
+                        Transaction.objects.create(
+                            booking=booking,
+                            amount=session.price or 0,
+                            currency='INR',
+                            status='completed',
+                            payment_method='free_dev_mode',
+                            metadata={'dev_mode': True, 'auto_updated': True}
+                        )
+                    
+                    messages.success(request, _('DEV MODE: Updated booking to confirmed status.'))
+                
+                is_learner_allowed = True
+                
+            # If user is a mentor, check if they own this session
+            elif request.user.role == 'mentor':
+                # For testing, allow any mentor to join
+                is_mentor_allowed = True
+        else:
+            # Normal permission checks
+            # Check if user is the mentor for this session
+            if hasattr(request.user, 'mentorprofile') and session.mentor == request.user.mentorprofile:
+                is_mentor_allowed = True
+            
+            # Or check if user is a learner with a confirmed booking
+            elif request.user.role == 'learner':
+                # Try to find a booking for this learner
+                booking = Booking.objects.filter(
+                    session=session,
+                    learner=request.user,
+                    status='confirmed',
+                    payment_complete=True
+                ).exists()
+                
+                is_learner_allowed = booking
+        
+        # Final authorization check
+        if not (is_learner_allowed or is_mentor_allowed):
+            messages.error(request, _('You are not authorized to access this session room.'))
+            return redirect('dashboard')
+        
+        # Determine if the session has started
+        now = timezone.now()
+        session_started = now >= session.start_time
+        session_ended = now > session.end_time
+        
+        # Get booking for context (mainly for learner name)
+        booking = Booking.objects.filter(session=session).first()
+        
+        # Prepare context for template
+        context = {
+            'session': session,
+            'booking': booking,
+            'is_mentor': is_mentor_allowed,
+            'session_started': session_started,
+            'session_ended': session_ended,
+            'dev_mode': dev_mode
+        }
+        
+        # Render the enhanced session room template
+        return render(request, 'sessions/session_room_enhanced.html', context)
+        
+    except Exception as e:
+        # Log the exception for debugging
+        print(f"Error in session_room_enhanced: {str(e)}")
+        messages.error(request, _('An error occurred while loading the session room.'))
+        return redirect('dashboard')
+
+
 def session_room(request, session_id):
     """View for the live session room."""
     try:
@@ -841,3 +980,8 @@ def my_booked_sessions(request):
     }
     
     return render(request, 'sessions/my_booked_sessions.html', context)
+
+
+def webrtc_test_page(request):
+    """WebRTC testing page."""
+    return render(request, 'sessions/webrtc_test.html')

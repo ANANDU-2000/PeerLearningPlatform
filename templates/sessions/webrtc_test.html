@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "WebRTC Test Page" %} | PeerLearn{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h1 class="text-2xl font-bold mb-6">{% trans "WebRTC Testing Center" %}</h1>
+        
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Test Session Information" %}</h2>
+            <div class="bg-gray-50 p-4 rounded-lg">
+                <p class="mb-2"><strong>{% trans "Session ID:" %}</strong> 8</p>
+                <p class="mb-2"><strong>{% trans "Title:" %}</strong> WebRTC Test Session</p>
+                <p class="mb-2"><strong>{% trans "Start Time:" %}</strong> {{ '2025-04-30T12:12:28'|date:"F j, Y g:i A" }}</p>
+                <p class="mb-2"><strong>{% trans "End Time:" %}</strong> {{ '2025-04-30T12:42:28'|date:"F j, Y g:i A" }}</p>
+                <p class="mb-2"><strong>{% trans "Status:" %}</strong> <span class="bg-green-100 text-green-800 text-xs font-medium mr-2 px-2.5 py-0.5 rounded">Scheduled</span></p>
+            </div>
+        </div>
+        
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Testing Options" %}</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Original Session Room -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium mb-3">{% trans "Standard Session Room" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "Join the session using the current implementation." %}</p>
+                    <a href="{% url 'session_room' 8 %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded">
+                        {% trans "Join Standard Room" %}
+                    </a>
+                </div>
+                
+                <!-- Enhanced Session Room -->
+                <div class="border border-gray-200 rounded-lg p-4 bg-gradient-to-r from-indigo-50 to-purple-50">
+                    <h3 class="text-lg font-medium mb-3">{% trans "Enhanced WebRTC Room" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "Try the new enhanced implementation with improved error handling and UI." %}</p>
+                    <a href="{% url 'session_room_enhanced' 8 %}" class="inline-block bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-medium py-2 px-4 rounded">
+                        {% trans "Join Enhanced Room" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-8">
+            <h2 class="text-xl font-semibold mb-4">{% trans "Test Scripts" %}</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Create Test Session -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium mb-3">{% trans "Create Test Session" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "Create a new test session with booking." %}</p>
+                    <div class="flex items-center gap-2">
+                        <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm flex-grow">python scripts/test_sessions.py</code>
+                        <button onclick="copyToClipboard('python scripts/test_sessions.py')" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- WebRTC Console Test -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="text-lg font-medium mb-3">{% trans "WebRTC Connection Info" %}</h3>
+                    <p class="text-gray-600 mb-4">{% trans "Show connection details and debugging info." %}</p>
+                    <div class="flex items-center gap-2">
+                        <code class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm flex-grow">python scripts/test_webrtc_console.py</code>
+                        <button onclick="copyToClipboard('python scripts/test_webrtc_console.py')" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-lightbulb text-yellow-500"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-lg font-medium text-yellow-800">{% trans "Testing Tips" %}</h3>
+                    <div class="mt-2 text-yellow-700">
+                        <p class="mb-2">{% trans "To fully test the WebRTC functionality:" %}</p>
+                        <ul class="list-disc list-inside">
+                            <li>{% trans "Open two different browsers or incognito windows" %}</li>
+                            <li>{% trans "Log in as mentor in one window and learner in another" %}</li>
+                            <li>{% trans "Join the same session from both windows" %}</li>
+                            <li>{% trans "Accept camera/microphone permissions when prompted" %}</li>
+                            <li>{% trans "Try both session room implementations for comparison" %}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Command copied to clipboard');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+        });
+    }
+</script>
+{% endblock %}

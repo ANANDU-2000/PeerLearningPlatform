@@ -1,0 +1,794 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}{{ session.title }} | {% trans "Enhanced Session" %} | PeerLearn{% endblock %}
+
+{% block meta %}
+<meta name="dashboard-url" content="{% if is_mentor %}{% url 'mentor_dashboard' %}{% else %}{% url 'learner_dashboard' %}{% endif %}">
+<meta name="is-mentor" content="{% if is_mentor %}true{% else %}false{% endif %}">
+<meta name="session-id" content="{{ session.id }}">
+<meta name="user-id" content="{{ request.user.id }}">
+<meta name="user-name" content="{{ request.user.first_name }} {{ request.user.last_name }}">
+<meta name="dev-mode" content="{% if dev_mode %}true{% else %}false{% endif %}">
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Full-screen layout for enhanced session room */
+    body {
+        overflow: hidden;
+        background: #f8f9fa;
+    }
+    
+    .session-room {
+        height: calc(100vh - 64px); /* Full height minus navbar */
+    }
+
+    /* Enhanced pre-session countdown overlay with glassmorphism */
+    .pre-session-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to right bottom, rgba(15, 23, 42, 0.85), rgba(3, 7, 18, 0.95));
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: white;
+    }
+
+    .countdown-container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        padding: 2rem;
+        text-align: center;
+        max-width: 600px;
+        width: 90%;
+    }
+
+    .session-info {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    /* Video containers */
+    .video-container {
+        background-color: #0f172a;
+        border-radius: 12px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .video-container video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .video-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+        color: white;
+        padding: 1rem;
+    }
+
+    /* Role-specific styling */
+    .learner-theme .btn-primary {
+        background-color: #FF5734;
+        border-color: #FF5734;
+    }
+    
+    .learner-theme .btn-primary:hover {
+        background-color: #e74a2b;
+        border-color: #e74a2b;
+    }
+    
+    .mentor-theme .btn-primary {
+        background-color: #7C3AED;
+        border-color: #7C3AED;
+    }
+    
+    .mentor-theme .btn-primary:hover {
+        background-color: #6d32d1;
+        border-color: #6d32d1;
+    }
+
+    /* Chat area */
+    .chat-area {
+        border-radius: 12px;
+        background: #ffffff;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .chat-messages {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 1rem;
+    }
+
+    .chat-input {
+        border-top: 1px solid #e5e7eb;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 0 0 12px 12px;
+    }
+
+    /* Control panel */
+    .control-panel {
+        background: white;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    .control-btn {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .control-btn:hover {
+        transform: scale(1.05);
+    }
+
+    .control-btn i {
+        font-size: 1.25rem;
+    }
+
+    .control-btn-muted {
+        background-color: #ef4444;
+        color: white;
+    }
+
+    /* Connection status */
+    .connection-status {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .status-connected {
+        background-color: #10b981;
+    }
+
+    .status-connecting {
+        background-color: #f59e0b;
+    }
+
+    .status-disconnected {
+        background-color: #ef4444;
+    }
+
+    /* Responsive layout */
+    @media (max-width: 768px) {
+        .session-container {
+            flex-direction: column;
+        }
+        
+        .video-container {
+            height: 40vh;
+        }
+        
+        .control-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            border-radius: 16px 16px 0 0;
+            z-index: 100;
+        }
+    }
+
+    /* Loading spinner */
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top: 4px solid white;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* DevMode indicator */
+    .dev-mode-banner {
+        position: fixed;
+        top: 70px;
+        right: 10px;
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        z-index: 1000;
+    }
+
+    /* Error overlay */
+    .error-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+    }
+
+    .error-container {
+        max-width: 500px;
+        padding: 2rem;
+        background: #1f2937;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .error-icon {
+        font-size: 3rem;
+        color: #ef4444;
+        margin-bottom: 1rem;
+    }
+
+    /* Message bubbles */
+    .message-bubble {
+        border-radius: 18px;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        max-width: 80%;
+    }
+
+    .message-self {
+        background-color: #eff6ff;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+    }
+
+    .message-other {
+        background-color: #f3f4f6;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+
+    .message-system {
+        background-color: #fef3c7;
+        align-self: center;
+        font-style: italic;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block body_class %}{% if is_mentor %}mentor-theme{% else %}learner-theme{% endif %}{% endblock %}
+
+{% block content %}
+<div class="session-room bg-gray-50">
+    {% if dev_mode %}
+    <div class="dev-mode-banner">
+        <i class="fas fa-code"></i> DEV MODE
+    </div>
+    {% endif %}
+
+    <!-- Pre-session countdown overlay (shown if session hasn't started) -->
+    {% if not session_started %}
+    <div class="pre-session-overlay" id="preSessionOverlay">
+        <div class="countdown-container">
+            <h2 class="text-2xl font-bold mb-4">
+                {% trans "Your session will begin soon" %}
+            </h2>
+            
+            <div class="flex justify-center items-center mb-4">
+                <div class="text-4xl font-bold tabular-nums" id="countdown">
+                    --:--:--
+                </div>
+            </div>
+            
+            <div class="session-info">
+                <h3 class="text-lg font-semibold">{{ session.title }}</h3>
+                <p class="text-sm opacity-80">
+                    {% if is_mentor %}
+                        {% trans "Learner" %}: {{ booking.learner.first_name }} {{ booking.learner.last_name }}
+                    {% else %}
+                        {% trans "Mentor" %}: {{ session.mentor.user.first_name }} {{ session.mentor.user.last_name }}
+                    {% endif %}
+                </p>
+                <p class="text-sm opacity-80">
+                    {% trans "Start time" %}: {{ session.start_time|date:"F j, Y g:i A" }}
+                </p>
+                <p class="text-sm opacity-80">
+                    {% trans "Duration" %}: {{ session.duration }} {% trans "minutes" %}
+                </p>
+            </div>
+            
+            <div class="mt-6">
+                <button id="setupDevicesBtn" class="btn btn-primary px-6 py-2 rounded-lg">
+                    <i class="fas fa-headset mr-2"></i> {% trans "Setup Audio/Video" %}
+                </button>
+            </div>
+            
+            <div class="text-sm mt-4 opacity-80">
+                {% trans "Please check your audio and video settings before the session begins." %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Session ended overlay (shown if session has ended) -->
+    {% if session_ended %}
+    <div class="pre-session-overlay" id="sessionEndedOverlay">
+        <div class="countdown-container">
+            <h2 class="text-2xl font-bold mb-4">
+                {% trans "This session has ended" %}
+            </h2>
+            
+            <div class="flex justify-center items-center mb-6">
+                <i class="fas fa-check-circle text-5xl text-green-400"></i>
+            </div>
+            
+            <div class="session-info">
+                <h3 class="text-lg font-semibold">{{ session.title }}</h3>
+                <p class="text-sm opacity-80">
+                    {% if is_mentor %}
+                        {% trans "Learner" %}: {{ booking.learner.first_name }} {{ booking.learner.last_name }}
+                    {% else %}
+                        {% trans "Mentor" %}: {{ session.mentor.user.first_name }} {{ session.mentor.user.last_name }}
+                    {% endif %}
+                </p>
+                <p class="text-sm opacity-80">
+                    {% trans "Session time" %}: {{ session.start_time|date:"F j, Y g:i A" }} - {{ session.end_time|date:"g:i A" }}
+                </p>
+            </div>
+            
+            <div class="mt-6">
+                {% if is_mentor %}
+                    <a href="{% url 'mentor_dashboard' %}" class="btn btn-primary px-6 py-2 rounded-lg">
+                        <i class="fas fa-home mr-2"></i> {% trans "Return to Dashboard" %}
+                    </a>
+                {% else %}
+                    <div class="space-y-3">
+                        <a href="{% url 'submit_feedback' booking.id %}" class="btn btn-primary px-6 py-2 rounded-lg block w-full">
+                            <i class="fas fa-star mr-2"></i> {% trans "Submit Feedback" %}
+                        </a>
+                        <a href="{% url 'learner_dashboard' %}" class="btn btn-outline-secondary px-6 py-2 rounded-lg block w-full">
+                            {% trans "Return to Dashboard" %}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main session room content (visible during active session) -->
+    <div class="flex h-full session-container">
+        <!-- Left panel (videos) - Takes 75% of width -->
+        <div class="w-3/4 p-4 relative" id="videoPanel">
+            <!-- Main video area -->
+            <div class="video-container h-4/5 mb-4" id="mainVideoContainer">
+                <div class="flex items-center justify-center h-full bg-gray-800 text-white">
+                    <div class="text-center">
+                        <div class="loading-spinner mx-auto mb-4"></div>
+                        <p class="text-lg">{% trans "Connecting to session..." %}</p>
+                        <p class="text-sm opacity-70 mt-2" id="connectionStatus">{% trans "Initializing WebRTC..." %}</p>
+                    </div>
+                </div>
+                <div class="connection-status status-connecting" id="connectionStatusBadge">
+                    <i class="fas fa-sync-alt fa-spin"></i>
+                    <span>{% trans "Connecting" %}</span>
+                </div>
+            </div>
+            
+            <!-- Remote video thumbnails -->
+            <div class="flex gap-4 h-1/5" id="videoThumbnails">
+                <div class="video-container" id="localVideoContainer">
+                    <video id="localVideo" autoplay muted playsinline></video>
+                    <div class="video-overlay">
+                        <p class="font-medium">
+                            {% trans "You" %} ({{ request.user.first_name }})
+                            <span class="text-xs ml-2" id="localVideoStatus">
+                                <i class="fas fa-microphone-slash text-red-500"></i>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right panel (chat + controls) - Takes 25% of width -->
+        <div class="w-1/4 p-4 flex flex-col gap-4">
+            <!-- Chat area -->
+            <div class="chat-area flex-grow">
+                <div class="px-4 py-3 bg-gray-50 border-b font-medium">
+                    <i class="fas fa-comments mr-2"></i> {% trans "Session Chat" %}
+                </div>
+                
+                <div class="chat-messages flex flex-col" id="chatMessages">
+                    <!-- System message -->
+                    <div class="message-bubble message-system">
+                        {% trans "Welcome to the session. Messages are only visible during this session." %}
+                    </div>
+                </div>
+                
+                <div class="chat-input">
+                    <div class="flex gap-2">
+                        <input type="text" class="form-control flex-grow" id="chatInput" placeholder="{% trans 'Type your message...' %}">
+                        <button class="btn btn-primary" id="sendMessageBtn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Control panel -->
+            <div class="control-panel">
+                <div class="text-center mb-3 font-medium">
+                    <i class="fas fa-sliders-h mr-2"></i> {% trans "Controls" %}
+                </div>
+                
+                <div class="flex justify-center gap-3 mb-4">
+                    <button class="control-btn bg-gray-100" id="toggleMicBtn" title="{% trans 'Toggle microphone' %}">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    
+                    <button class="control-btn bg-gray-100" id="toggleCameraBtn" title="{% trans 'Toggle camera' %}">
+                        <i class="fas fa-video"></i>
+                    </button>
+                    
+                    <button class="control-btn bg-gray-100" id="toggleScreenShareBtn" title="{% trans 'Share screen' %}">
+                        <i class="fas fa-desktop"></i>
+                    </button>
+                    
+                    <button class="control-btn bg-red-500 text-white" id="endCallBtn" title="{% trans 'End call' %}">
+                        <i class="fas fa-phone-slash"></i>
+                    </button>
+                </div>
+                
+                <div class="text-center">
+                    <button class="btn btn-sm btn-outline-secondary" id="settingsBtn">
+                        <i class="fas fa-cog mr-1"></i> {% trans "Settings" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-labelledby="settingsModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="settingsModalLabel">{% trans "Device Settings" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="audioInput" class="form-label">{% trans "Microphone" %}</label>
+                        <select class="form-select" id="audioInput"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="videoInput" class="form-label">{% trans "Camera" %}</label>
+                        <select class="form-select" id="videoInput"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="audioOutput" class="form-label">{% trans "Speaker" %}</label>
+                        <select class="form-select" id="audioOutput"></select>
+                    </div>
+                    
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="enableStatsSwitch">
+                        <label class="form-check-label" for="enableStatsSwitch">
+                            {% trans "Show connection stats" %}
+                        </label>
+                    </div>
+                    
+                    <div id="connectionStats" class="bg-gray-100 p-3 rounded text-xs font-mono hidden">
+                        <div class="font-bold mb-1">{% trans "Connection Statistics" %}</div>
+                        <div id="statsContent">-</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+                    <button type="button" class="btn btn-primary" id="applySettingsBtn">{% trans "Apply" %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error modal -->
+    <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="errorModalLabel">{% trans "Connection Error" %}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <p id="errorMessage" class="text-center">
+                        {% trans "An error occurred during connection setup." %}
+                    </p>
+                    <div class="alert alert-secondary mt-3">
+                        <p class="font-medium">{% trans "Troubleshooting steps:" %}</p>
+                        <ul class="list-disc list-inside text-sm mt-2">
+                            <li>{% trans "Make sure your camera and microphone are connected" %}</li>
+                            <li>{% trans "Allow browser permissions for camera and microphone" %}</li>
+                            <li>{% trans "Try using a different browser (Chrome or Firefox recommended)" %}</li>
+                            <li>{% trans "Check your internet connection" %}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+                    <button type="button" class="btn btn-primary" id="retryConnectionBtn">
+                        <i class="fas fa-sync-alt mr-1"></i> {% trans "Retry Connection" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Load WebRTC scripts -->
+<script src="{% static 'js/webrtc/webrtc_enhanced.js' %}"></script>
+<script src="{% static 'js/webrtc/session-ui.js' %}"></script>
+
+<script>
+// Session configuration from template context
+const sessionConfig = {
+    sessionId: {{ session.id }},
+    userId: {{ request.user.id }},
+    userName: "{{ request.user.first_name }} {{ request.user.last_name }}",
+    isMentor: {% if is_mentor %}true{% else %}false{% endif %},
+    devMode: {% if dev_mode %}true{% else %}false{% endif %},
+    sessionStartTime: "{{ session.start_time|date:'c' }}",
+    sessionEndTime: "{{ session.end_time|date:'c' }}"
+};
+
+// Initialize session countdown
+function initializeCountdown() {
+    const countdownElement = document.getElementById('countdown');
+    const preSessionOverlay = document.getElementById('preSessionOverlay');
+    
+    if (!countdownElement || !preSessionOverlay) return;
+    
+    const startTime = new Date(sessionConfig.sessionStartTime);
+    
+    function updateCountdown() {
+        const now = new Date();
+        const diff = startTime - now;
+        
+        if (diff <= 0) {
+            // Session has started, remove overlay and initialize WebRTC
+            preSessionOverlay.classList.add('hidden');
+            initializeWebRTC();
+            return;
+        }
+        
+        // Calculate hours, minutes, seconds
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        
+        // Update countdown display
+        countdownElement.textContent = 
+            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        
+        // Schedule next update
+        setTimeout(updateCountdown, 1000);
+    }
+    
+    // Initial update
+    updateCountdown();
+}
+
+// Initialize WebRTC connection
+function initializeWebRTC() {
+    // Create SessionRoomUI instance to manage the UI
+    const sessionUI = new SessionRoomUI({
+        localVideoContainer: 'localVideoContainer',
+        mainVideoContainer: 'mainVideoContainer',
+        localVideo: 'localVideo',
+        connectionStatus: 'connectionStatus',
+        connectionStatusBadge: 'connectionStatusBadge',
+        chatMessages: 'chatMessages',
+        chatInput: 'chatInput',
+        sendMessageBtn: 'sendMessageBtn',
+        toggleMicBtn: 'toggleMicBtn',
+        toggleCameraBtn: 'toggleCameraBtn',
+        toggleScreenShareBtn: 'toggleScreenShareBtn',
+        endCallBtn: 'endCallBtn',
+        settingsBtn: 'settingsBtn',
+        settingsModal: 'settingsModal',
+        audioInput: 'audioInput',
+        videoInput: 'videoInput',
+        audioOutput: 'audioOutput',
+        applySettingsBtn: 'applySettingsBtn',
+        enableStatsSwitch: 'enableStatsSwitch',
+        connectionStats: 'connectionStats',
+        statsContent: 'statsContent',
+        errorModal: 'errorModal',
+        errorMessage: 'errorMessage',
+        retryConnectionBtn: 'retryConnectionBtn',
+        isMentor: sessionConfig.isMentor,
+        userId: sessionConfig.userId,
+        userName: sessionConfig.userName
+    });
+    
+    // Initialize the Enhanced WebRTC client
+    const rtcClient = new EnhancedWebRTC({
+        sessionId: sessionConfig.sessionId,
+        userId: sessionConfig.userId,
+        userName: sessionConfig.userName,
+        isMentor: sessionConfig.isMentor,
+        devMode: sessionConfig.devMode,
+        onLocalStream: (stream) => {
+            sessionUI.setLocalStream(stream);
+        },
+        onRemoteStream: (userId, userName, stream, isRemoteMentor) => {
+            sessionUI.setRemoteStream(userId, userName, stream, isRemoteMentor);
+        },
+        onConnectionStateChange: (state) => {
+            sessionUI.updateConnectionState(state);
+        },
+        onChatMessage: (messageData) => {
+            sessionUI.addChatMessage(messageData);
+        },
+        onError: (error) => {
+            // Show error in UI
+            const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+            document.getElementById('errorMessage').textContent = error.message || "Connection error occurred";
+            errorModal.show();
+        }
+    });
+    
+    // Connect UI events to WebRTC client
+    document.getElementById('sendMessageBtn').addEventListener('click', () => {
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        if (message) {
+            rtcClient.sendChatMessage(message);
+            input.value = '';
+        }
+    });
+    
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('sendMessageBtn').click();
+        }
+    });
+    
+    document.getElementById('toggleMicBtn').addEventListener('click', () => {
+        rtcClient.toggleMicrophone();
+        sessionUI.toggleMicrophone();
+    });
+    
+    document.getElementById('toggleCameraBtn').addEventListener('click', () => {
+        rtcClient.toggleCamera();
+        sessionUI.toggleCamera();
+    });
+    
+    document.getElementById('toggleScreenShareBtn').addEventListener('click', () => {
+        rtcClient.toggleScreenShare();
+        sessionUI.toggleScreenShare();
+    });
+    
+    document.getElementById('endCallBtn').addEventListener('click', () => {
+        sessionUI.confirmEndCall();
+    });
+    
+    document.getElementById('retryConnectionBtn').addEventListener('click', () => {
+        rtcClient.reconnect();
+        bootstrap.Modal.getInstance(document.getElementById('errorModal')).hide();
+    });
+    
+    // Apply settings button
+    document.getElementById('applySettingsBtn').addEventListener('click', () => {
+        const audioInputId = document.getElementById('audioInput').value;
+        const videoInputId = document.getElementById('videoInput').value;
+        const audioOutputId = document.getElementById('audioOutput').value;
+        
+        rtcClient.changeAudioInput(audioInputId);
+        rtcClient.changeVideoInput(videoInputId);
+        sessionUI.changeAudioOutput(audioOutputId);
+        
+        bootstrap.Modal.getInstance(document.getElementById('settingsModal')).hide();
+    });
+    
+    // Initialize WebRTC connection
+    rtcClient.initialize();
+    
+    // Initialize device settings
+    sessionUI.populateDeviceSelectors();
+}
+
+// Setup Devices button (during pre-session)
+const setupDevicesBtn = document.getElementById('setupDevicesBtn');
+if (setupDevicesBtn) {
+    setupDevicesBtn.addEventListener('click', () => {
+        // Request permissions early and show settings modal
+        navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+            .then(stream => {
+                // Stop tracks after getting permissions
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Create UI for test purposes
+                const sessionUI = new SessionRoomUI({
+                    audioInput: 'audioInput',
+                    videoInput: 'videoInput',
+                    audioOutput: 'audioOutput'
+                });
+                
+                // Show settings modal
+                sessionUI.populateDeviceSelectors();
+                const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+                settingsModal.show();
+            })
+            .catch(err => {
+                console.error("Error accessing media devices:", err);
+                
+                // Show error modal
+                const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+                document.getElementById('errorMessage').textContent = 
+                    `Could not access your camera or microphone: ${err.message}`;
+                errorModal.show();
+            });
+    });
+}
+
+// Document ready
+document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('preSessionOverlay') && !document.getElementById('sessionEndedOverlay')) {
+        // Session is active (not pre-session and not ended)
+        initializeWebRTC();
+    } else if (document.getElementById('preSessionOverlay')) {
+        // Session hasn't started yet
+        initializeCountdown();
+    }
+    
+    // Initialize all Bootstrap tooltips
+    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+});
+</script>
+{% endblock %}

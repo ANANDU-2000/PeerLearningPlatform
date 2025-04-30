@@ -1,1819 +1,897 @@
 /**
- * UI Controller for WebRTC Session Room
- * Manages UI interactions for video sessions
+ * Session room UI management for PeerLearn WebRTC sessions
+ * This handles the user interface elements during live video sessions
+ * including video containers, controls, chat, and notifications.
  */
-
-class SessionUIController {
-    constructor() {
-        // UI elements
-        this.videoGrid = document.getElementById('video-grid');
-        this.chatMessages = document.getElementById('chat-messages');
-        this.chatForm = document.getElementById('chat-form');
-        this.chatInput = document.getElementById('chat-input');
-        this.leaveButton = document.getElementById('leave-session');
-        
-        // Video controls
-        this.videoToggle = document.getElementById('video-toggle');
-        this.videoToggleMini = document.getElementById('video-toggle-mini');
-        this.audioToggle = document.getElementById('audio-toggle');
-        this.audioToggleMini = document.getElementById('audio-toggle-mini');
-        this.screenShareButton = document.getElementById('screen-share');
-        this.raiseHandButton = document.getElementById('raise-hand');
-        this.leaveRejoinButton = document.getElementById('leave-rejoin');
-        this.leaveRejoinMiniButton = document.getElementById('leave-rejoin-mini');
-        this.videoSettingsButton = document.getElementById('video-settings');
-        
-        // Tab navigation
-        this.videosTab = document.getElementById('videos-tab');
-        this.chatTab = document.getElementById('chat-tab');
-        this.whiteboardTab = document.getElementById('whiteboard-tab');
-        this.videosContent = document.getElementById('videos-content');
-        this.chatContent = document.getElementById('chat-content');
-        this.whiteboardContent = document.getElementById('whiteboard-content');
-        
-        // Session timer
-        this.sessionTimer = document.getElementById('session-timer');
-        
-        // Network quality indicator
-        this.networkQualityIndicator = document.getElementById('network-quality');
-        
-        // Video buffering detection
-        this.videoBufferingDetection = {
-            enabled: true,
-            checkInterval: null,
-            lastPlayingState: true
-        };
-        
-        // Whiteboard elements
-        this.whiteboardCanvas = document.getElementById('whiteboard-canvas');
-        this.whiteboardColorButtons = document.querySelectorAll('[data-color]');
-        this.whiteboardLineWidth = document.getElementById('wb-line-width');
-        this.whiteboardTools = {
-            pen: document.getElementById('wb-pen-tool'),
-            rect: document.getElementById('wb-square-tool'),
-            circle: document.getElementById('wb-circle-tool'),
-            text: document.getElementById('wb-text-tool'),
-            eraser: document.getElementById('wb-eraser-tool')
-        };
-        this.whiteboardActions = {
-            undo: document.getElementById('wb-undo'),
-            clear: document.getElementById('wb-clear'),
-            save: document.getElementById('wb-save')
-        };
-        this.whiteboardMentorControls = {
-            allowAll: document.getElementById('wb-allow-all'),
-            disallowAll: document.getElementById('wb-disallow-all')
-        };
-        
-        // WebRTC client
-        this.rtc = null;
-        
-        // Screen share stream
-        this.screenStream = null;
-        this.isScreenSharing = false;
-        
-        // Hand raised state
-        this.isHandRaised = false;
-        
-        // Whiteboard controller
-        this.whiteboard = null;
-        
-        // Initialize event listeners
-        this.initEventListeners();
-        
-        // Start session timer if end time is available
-        this.startSessionTimer();
-    }
-
+class SessionRoomUI {
     /**
-     * Initialize WebRTC client
+     * Create a new SessionRoomUI instance
+     * 
+     * @param {Object} options - Configuration options with element IDs and user data
      */
-    initRTC(config) {
-        this.rtc = new PeerLearnRTC({
-            ...config,
-            onUserJoined: this.handleUserJoined.bind(this),
-            onUserLeft: this.handleUserLeft.bind(this),
-            onChatMessage: this.handleChatMessage.bind(this),
-            onError: this.handleError.bind(this),
-            onConnectionStateChange: this.handleConnectionStateChange.bind(this),
-            onSessionReconnect: this.handleSessionReconnect.bind(this),
-            onRejoinSuccess: this.handleRejoinSuccess.bind(this),
-            onRejoinFailure: this.handleRejoinFailure.bind(this),
-            debugMode: true
+    constructor(options) {
+        // Store references to UI elements
+        this.elements = {};
+        
+        // Map option IDs to element references
+        const elementIds = [
+            'localVideoContainer', 'mainVideoContainer', 'localVideo', 
+            'connectionStatus', 'connectionStatusBadge', 'chatMessages', 
+            'chatInput', 'sendMessageBtn', 'toggleMicBtn', 'toggleCameraBtn', 
+            'toggleScreenShareBtn', 'endCallBtn', 'settingsBtn', 
+            'settingsModal', 'audioInput', 'videoInput', 'audioOutput',
+            'applySettingsBtn', 'enableStatsSwitch', 'connectionStats',
+            'statsContent', 'errorModal', 'errorMessage', 'retryConnectionBtn'
+        ];
+        
+        elementIds.forEach(id => {
+            if (options[id]) {
+                this.elements[id] = 
+                    typeof options[id] === 'string' 
+                        ? document.getElementById(options[id]) 
+                        : options[id];
+            }
         });
         
-        this.rtc.init();
+        // User information
+        this.userId = options.userId;
+        this.userName = options.userName;
+        this.isMentor = options.isMentor;
         
-        // Start video buffering detection
-        this.startBufferingDetection();
-    }
-
-    /**
-     * Initialize UI event listeners
-     */
-    initEventListeners() {
-        // Leave session button
-        if (this.leaveButton) {
-            this.leaveButton.addEventListener('click', () => {
-                this.leaveSession();
-            });
-        }
+        // State
+        this.micMuted = false;
+        this.cameraOff = false;
+        this.screenSharing = false;
+        this.statsEnabled = false;
+        this.statsInterval = null;
+        this.activeRemoteUser = null; // For main display
+        this.connectionState = 'disconnected';
         
-        // Video toggle buttons (main and mini)
-        if (this.videoToggle) {
-            this.videoToggle.addEventListener('click', () => {
-                this.toggleVideo();
-            });
-        }
-        
-        if (this.videoToggleMini) {
-            this.videoToggleMini.addEventListener('click', () => {
-                this.toggleVideo();
-            });
-        }
-        
-        // Audio toggle buttons (main and mini)
-        if (this.audioToggle) {
-            this.audioToggle.addEventListener('click', () => {
-                this.toggleAudio();
-            });
-        }
-        
-        if (this.audioToggleMini) {
-            this.audioToggleMini.addEventListener('click', () => {
-                this.toggleAudio();
-            });
-        }
-        
-        // Screen sharing
-        if (this.screenShareButton) {
-            this.screenShareButton.addEventListener('click', () => {
-                this.toggleScreenSharing();
-            });
-        }
-        
-        // Raise hand (for learners)
-        if (this.raiseHandButton) {
-            this.raiseHandButton.addEventListener('click', () => {
-                this.toggleRaiseHand();
-            });
-        }
-        
-        // Leave and rejoin session (main button)
-        if (this.leaveRejoinButton) {
-            this.leaveRejoinButton.addEventListener('click', () => {
-                this.leaveAndRejoin();
-            });
-        }
-        
-        // Leave and rejoin session (mini button)
-        if (this.leaveRejoinMiniButton) {
-            this.leaveRejoinMiniButton.addEventListener('click', () => {
-                this.leaveAndRejoin();
-            });
-        }
-        
-        // Video settings button
-        if (this.videoSettingsButton) {
-            this.videoSettingsButton.addEventListener('click', () => {
-                // Show video/audio settings modal (future implementation)
-                alert('Video settings will be available in a future update.');
-            });
-        }
-        
-        // Chat form submission
-        if (this.chatForm) {
-            this.chatForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.sendChatMessage();
-            });
-        }
-        
-        // Tab switching
-        if (this.videosTab) {
-            this.videosTab.addEventListener('click', () => {
-                this.switchTab('videos');
-            });
-        }
-        
-        if (this.chatTab) {
-            this.chatTab.addEventListener('click', () => {
-                this.switchTab('chat');
-            });
-        }
-        
-        if (this.whiteboardTab) {
-            this.whiteboardTab.addEventListener('click', () => {
-                this.switchTab('whiteboard');
-                this.initWhiteboard();
-            });
-        }
-        
-        // Whiteboard color selection
-        if (this.whiteboardColorButtons) {
-            this.whiteboardColorButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const color = button.getAttribute('data-color');
-                    this.setWhiteboardColor(color);
-                    
-                    // Update UI
-                    this.whiteboardColorButtons.forEach(b => b.classList.remove('ring-2'));
-                    button.classList.add('ring-2');
-                });
-            });
-        }
-        
-        // Whiteboard tool selection
-        if (this.whiteboardTools) {
-            Object.keys(this.whiteboardTools).forEach(tool => {
-                const button = this.whiteboardTools[tool];
-                if (button) {
-                    button.addEventListener('click', () => {
-                        this.setWhiteboardTool(tool);
-                        
-                        // Update UI
-                        Object.values(this.whiteboardTools).forEach(b => {
-                            b.classList.remove('bg-gray-200');
-                        });
-                        button.classList.add('bg-gray-200');
-                    });
-                }
-            });
-        }
-        
-        // Whiteboard actions
-        if (this.whiteboardActions.undo) {
-            this.whiteboardActions.undo.addEventListener('click', () => {
-                this.undoWhiteboard();
-            });
-        }
-        
-        if (this.whiteboardActions.clear) {
-            this.whiteboardActions.clear.addEventListener('click', () => {
-                if (confirm('Are you sure you want to clear the whiteboard?')) {
-                    this.clearWhiteboard();
-                }
-            });
-        }
-        
-        if (this.whiteboardActions.save) {
-            this.whiteboardActions.save.addEventListener('click', () => {
-                this.saveWhiteboard();
-            });
-        }
-        
-        // Whiteboard mentor controls
-        if (this.whiteboardMentorControls.allowAll) {
-            this.whiteboardMentorControls.allowAll.addEventListener('click', () => {
-                this.setWhiteboardPermissions(true);
-            });
-        }
-        
-        if (this.whiteboardMentorControls.disallowAll) {
-            this.whiteboardMentorControls.disallowAll.addEventListener('click', () => {
-                this.setWhiteboardPermissions(false);
-            });
-        }
-        
-        // Window beforeunload event
-        window.addEventListener('beforeunload', (e) => {
-            // Close connections gracefully
-            if (this.rtc) {
-                this.rtc.close();
-            }
-            
-            // Stop screen sharing if active
-            this.stopScreenSharing();
-        });
-    }
-
-    /**
-     * Handle new user joining the session
-     */
-    handleUserJoined(data) {
-        // Display a system message in chat
-        this.addSystemMessage(`${data.user_name} has joined the session.`);
-        
-        // Add a notification on mobile
-        this.showNotification(`${data.user_name} has joined`);
-    }
-
-    /**
-     * Handle user leaving the session
-     */
-    handleUserLeft(data) {
-        // Display a system message in chat
-        this.addSystemMessage(`${data.user_name} has left the session.`);
-    }
-
-    /**
-     * Handle chat message
-     */
-    handleChatMessage(data) {
-        const isSelf = data.from_user_id === this.rtc.userId;
-        this.addChatMessage(data.message, data.from_user_name, data.timestamp, isSelf);
-        
-        // Show notification for new messages if chat tab is not active
-        if (!isSelf && !this.chatContent.classList.contains('active')) {
-            this.showNotification(`New message from ${data.from_user_name}`);
-            
-            // Add a badge to the chat tab
-            const badge = document.createElement('span');
-            badge.className = 'badge';
-            this.chatTab.appendChild(badge);
-        }
-    }
-
-    /**
-     * Handle WebRTC errors
-     */
-    handleError(message) {
-        console.error(message);
-        this.showErrorMessage(message);
-    }
-
-    /**
-     * Add chat message to the UI
-     */
-    addChatMessage(message, userName, timestamp, isSelf) {
-        if (!this.chatMessages) return;
-        
-        const messageElement = document.createElement('div');
-        messageElement.className = isSelf ? 'chat-message self' : 'chat-message';
-        
-        const time = new Date(timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        messageElement.innerHTML = `
-            <div class="chat-bubble ${isSelf ? 'bg-blue-100' : 'bg-gray-100'}">
-                ${!isSelf ? `<span class="font-medium">${userName}</span>: ` : ''}
-                <span class="message-text">${message}</span>
-                <span class="message-time text-xs text-gray-500">${time}</span>
-            </div>
-        `;
-        
-        this.chatMessages.appendChild(messageElement);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
-
-    /**
-     * Add system message to chat
-     */
-    addSystemMessage(message) {
-        if (!this.chatMessages) return;
-        
-        const messageElement = document.createElement('div');
-        messageElement.className = 'chat-message system';
-        
-        messageElement.innerHTML = `
-            <div class="chat-bubble system bg-gray-200 text-center text-sm py-1">
-                ${message}
-            </div>
-        `;
-        
-        this.chatMessages.appendChild(messageElement);
-        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
-    }
-
-    /**
-     * Send chat message
-     */
-    sendChatMessage() {
-        if (!this.chatInput || !this.rtc) return;
-        
-        const message = this.chatInput.value.trim();
-        if (message) {
-            this.rtc.sendChatMessage(message);
-            this.chatInput.value = '';
-        }
-    }
-
-    /**
-     * Toggle local video
-     */
-    toggleVideo() {
-        if (!this.rtc || !this.videoToggle) return;
-        
-        const enabled = this.rtc.toggleVideo();
-        
-        // Update button UI for main control
-        this.videoToggle.innerHTML = enabled
-            ? '<i data-feather="video" class="h-6 w-6"></i>'
-            : '<i data-feather="video-off" class="h-6 w-6"></i>';
-            
-        // Update button UI for mini control
-        if (this.videoToggleMini) {
-            this.videoToggleMini.innerHTML = enabled
-                ? '<i data-feather="video" class="h-5 w-5"></i>'
-                : '<i data-feather="video-off" class="h-5 w-5"></i>';
-        }
-        
-        // Update button color based on state
-        if (enabled) {
-            this.videoToggle.classList.remove('bg-red-600');
-            this.videoToggle.classList.add('bg-black', 'bg-opacity-70');
-            if (this.videoToggleMini) {
-                this.videoToggleMini.classList.remove('bg-red-600');
-                this.videoToggleMini.classList.add('bg-black', 'bg-opacity-70');
-            }
-        } else {
-            this.videoToggle.classList.add('bg-red-600');
-            this.videoToggle.classList.remove('bg-black', 'bg-opacity-70');
-            if (this.videoToggleMini) {
-                this.videoToggleMini.classList.add('bg-red-600');
-                this.videoToggleMini.classList.remove('bg-black', 'bg-opacity-70');
-            }
-        }
-        
-        // Update status text
-        const videoStatus = document.getElementById('video-status');
-        if (videoStatus) {
-            videoStatus.textContent = enabled ? 'On' : 'Off';
-            if (enabled) {
-                videoStatus.classList.remove('text-red-400');
-            } else {
-                videoStatus.classList.add('text-red-400');
-            }
-        }
-        
-        // Add visual indicator on video element
-        const localVideoContainer = document.querySelector('.video-container.local');
-        if (localVideoContainer) {
-            if (!enabled) {
-                // Add camera off indicator if not already present
-                if (!localVideoContainer.querySelector('.video-off-indicator')) {
-                    const indicator = document.createElement('div');
-                    indicator.className = 'video-off-indicator absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 z-10';
-                    indicator.innerHTML = '<i data-feather="video-off" class="h-12 w-12 text-white opacity-60"></i>';
-                    localVideoContainer.appendChild(indicator);
-                }
-            } else {
-                // Remove camera off indicator
-                const indicator = localVideoContainer.querySelector('.video-off-indicator');
-                if (indicator) {
-                    indicator.remove();
-                }
-            }
-        }
-        
-        // Re-initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-    }
-
-    /**
-     * Toggle local audio
-     */
-    toggleAudio() {
-        if (!this.rtc || !this.audioToggle) return;
-        
-        const enabled = this.rtc.toggleAudio();
-        
-        // Update button UI for main control
-        this.audioToggle.innerHTML = enabled
-            ? '<i data-feather="mic" class="h-6 w-6"></i>'
-            : '<i data-feather="mic-off" class="h-6 w-6"></i>';
-            
-        // Update button UI for mini control
-        if (this.audioToggleMini) {
-            this.audioToggleMini.innerHTML = enabled
-                ? '<i data-feather="mic" class="h-5 w-5"></i>'
-                : '<i data-feather="mic-off" class="h-5 w-5"></i>';
-        }
-        
-        // Update button color based on state
-        if (enabled) {
-            this.audioToggle.classList.remove('bg-red-600');
-            this.audioToggle.classList.add('bg-black', 'bg-opacity-70');
-            if (this.audioToggleMini) {
-                this.audioToggleMini.classList.remove('bg-red-600');
-                this.audioToggleMini.classList.add('bg-black', 'bg-opacity-70');
-            }
-        } else {
-            this.audioToggle.classList.add('bg-red-600');
-            this.audioToggle.classList.remove('bg-black', 'bg-opacity-70');
-            if (this.audioToggleMini) {
-                this.audioToggleMini.classList.add('bg-red-600');
-                this.audioToggleMini.classList.remove('bg-black', 'bg-opacity-70');
-            }
-        }
-        
-        // Update status text
-        const audioStatus = document.getElementById('audio-status');
-        if (audioStatus) {
-            audioStatus.textContent = enabled ? 'On' : 'Off';
-            if (enabled) {
-                audioStatus.classList.remove('text-red-400');
-            } else {
-                audioStatus.classList.add('text-red-400');
-            }
-        }
-        
-        // Add visual indicator on video element
-        const localVideoContainer = document.querySelector('.video-container.local');
-        if (localVideoContainer) {
-            if (!enabled) {
-                // Add microphone muted indicator if not already present
-                if (!localVideoContainer.querySelector('.audio-off-indicator')) {
-                    const indicator = document.createElement('div');
-                    indicator.className = 'audio-off-indicator absolute bottom-2 left-2 bg-red-600 text-white p-1 rounded-full z-20';
-                    indicator.innerHTML = '<i data-feather="mic-off" class="h-4 w-4"></i>';
-                    localVideoContainer.appendChild(indicator);
-                }
-            } else {
-                // Remove microphone muted indicator
-                const indicator = localVideoContainer.querySelector('.audio-off-indicator');
-                if (indicator) {
-                    indicator.remove();
-                }
-            }
-        }
-        
-        // Re-initialize feather icons
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
+        // Initialize UI
+        this.initializeUI();
     }
     
     /**
-     * Leave and rejoin the session
+     * Initialize UI elements and event listeners
      */
-    leaveAndRejoin() {
-        // Create confirmation message
-        const confirmMsg = this.translations?.confirmRejoin || "Are you sure you want to leave and rejoin the session? This will reset your connection.";
+    initializeUI() {
+        // Apply role-specific styling
+        this.applyRoleStyling();
         
-        // Ask for confirmation
-        if (confirm(confirmMsg)) {
-            // Show loading overlay
-            const loadingOverlay = document.createElement('div');
-            loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50';
-            loadingOverlay.innerHTML = `
-                <div class="bg-white p-6 rounded-lg shadow-lg text-center">
-                    <div class="spinner mb-4 mx-auto"></div>
-                    <p class="text-lg font-medium">${this.translations?.reconnecting || "Reconnecting..."}</p>
-                    <p class="text-sm text-gray-600 mt-2">${this.translations?.pleaseWait || "Please wait while we reconnect you to the session."}</p>
-                </div>
-            `;
-            document.body.appendChild(loadingOverlay);
-            
-            // Disconnect and reconnect
-            if (this.rtc) {
-                this.rtc.disconnect();
-                
-                // Add delay to ensure connections are properly closed
-                setTimeout(() => {
-                    // Reinitialize connection
-                    this.rtc.connect();
-                    
-                    // Remove loading overlay after connection is reestablished
-                    setTimeout(() => {
-                        loadingOverlay.classList.add('fade-out');
-                        setTimeout(() => {
-                            loadingOverlay.remove();
-                        }, 300);
-                        
-                        // Show success message in chat
-                        this.addSystemMessage(this.translations?.reconnectSuccess || "Successfully reconnected to the session.");
-                    }, 2000);
-                }, 1000);
-            }
-        }
-    }
-
-    /**
-     * Switch between tabs (videos, chat, whiteboard)
-     */
-    switchTab(tabName) {
-        // Hide all tab contents
-        if (this.videosContent) this.videosContent.classList.add('hidden');
-        if (this.chatContent) this.chatContent.classList.add('hidden');
-        if (this.whiteboardContent) this.whiteboardContent.classList.add('hidden');
+        // Set up responsive layout
+        this.setupResponsiveLayout();
         
-        // Remove active class from all tabs
-        if (this.videosTab) this.videosTab.classList.remove('active', 'border-blue-500', 'text-blue-600');
-        if (this.chatTab) this.chatTab.classList.remove('active', 'border-blue-500', 'text-blue-600');
-        if (this.whiteboardTab) this.whiteboardTab.classList.remove('active', 'border-blue-500', 'text-blue-600');
-        
-        // Show the selected tab content
-        if (tabName === 'videos' && this.videosContent) {
-            this.videosContent.classList.remove('hidden');
-            this.videosTab.classList.add('active', 'border-blue-500', 'text-blue-600');
-        } else if (tabName === 'chat' && this.chatContent) {
-            this.chatContent.classList.remove('hidden');
-            this.chatTab.classList.add('active', 'border-blue-500', 'text-blue-600');
-            
-            // Remove notification badge when switching to chat
-            const badge = this.chatTab.querySelector('.badge');
-            if (badge) {
-                badge.remove();
-            }
-        } else if (tabName === 'whiteboard' && this.whiteboardContent) {
-            this.whiteboardContent.classList.remove('hidden');
-            this.whiteboardTab.classList.add('active', 'border-blue-500', 'text-blue-600');
-        }
-    }
-
-    /**
-     * Toggle whiteboard (unused in this version)
-     */
-    toggleWhiteboard() {
-        // This would implement whiteboard functionality in the future
-        console.log("Whiteboard functionality not implemented yet");
-    }
-
-    /**
-     * Show mobile notification
-     */
-    showNotification(message, type = 'info', duration = 5000) {
-        // Create notification element
-        const notification = document.createElement('div');
-        
-        // Style based on type
-        let bgColor = 'bg-gray-800';
-        if (type === 'success') {
-            bgColor = 'bg-green-600';
-        } else if (type === 'error') {
-            bgColor = 'bg-red-600';
-        } else if (type === 'warning') {
-            bgColor = 'bg-yellow-500';
+        // Set up UI elements if they exist
+        if (this.elements.settingsBtn) {
+            this.elements.settingsBtn.addEventListener('click', () => {
+                this.toggleSettings();
+            });
         }
         
-        notification.className = `fixed top-4 left-0 right-0 mx-auto w-64 ${bgColor} text-white py-2 px-4 rounded-md shadow-lg z-50 text-center`;
-        notification.style.maxWidth = '80%';
-        notification.textContent = message;
-        
-        // Add to page
-        document.body.appendChild(notification);
-        
-        // Remove after specified duration
-        setTimeout(() => {
-            notification.classList.add('fade-out');
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    document.body.removeChild(notification);
-                }
-            }, 300);
-        }, duration);
-    }
-
-    /**
-     * Add a remote video stream to the video grid
-     */
-    addRemoteVideo(userId, userName, stream) {
-        console.log(`Adding remote video for user ${userName} (${userId})`);
-        
-        // Check if this video already exists
-        const existingContainer = document.getElementById(`video-container-${userId}`);
-        if (existingContainer) {
-            console.log(`Video container for user ${userId} already exists, updating stream`);
-            const videoElement = existingContainer.querySelector('video');
-            if (videoElement) {
-                videoElement.srcObject = stream;
-            }
-            return;
+        if (this.elements.enableStatsSwitch) {
+            this.elements.enableStatsSwitch.addEventListener('change', () => {
+                this.toggleConnectionStats();
+            });
         }
         
-        // Create video container
-        const videoContainer = document.createElement('div');
-        videoContainer.className = 'video-container remote-video';
-        videoContainer.id = `video-container-${userId}`;
+        // Setup control button event listeners
+        this.setupControlsUI();
         
-        // Create video element
+        // Setup chat UI
+        this.setupChatUI();
+    }
+    
+    /**
+     * Create and attach the local video element
+     */
+    createLocalVideoElement() {
+        if (!this.elements.localVideoContainer) return;
+        
         const videoElement = document.createElement('video');
+        videoElement.id = 'localVideo';
+        videoElement.autoplay = true;
+        videoElement.muted = true; // Always mute local video to prevent echo
+        videoElement.playsInline = true;
+        
+        this.elements.localVideoContainer.appendChild(videoElement);
+        this.elements.localVideo = videoElement;
+        
+        // Add overlay with user name
+        const overlay = document.createElement('div');
+        overlay.className = 'video-overlay';
+        overlay.innerHTML = `
+            <p class="font-medium">
+                ${this.translations?.you || 'You'} (${this.userName})
+                <span class="text-xs ml-2" id="localVideoStatus">
+                    <i class="fas fa-microphone-slash text-red-500"></i>
+                </span>
+            </p>
+        `;
+        
+        this.elements.localVideoContainer.appendChild(overlay);
+    }
+    
+    /**
+     * Create and attach a remote video element for a user
+     * 
+     * @param {string} userId - The user ID
+     * @param {string} userName - The user's display name
+     * @param {boolean} isRemoteMentor - Whether this user is a mentor
+     */
+    createRemoteVideoElement(userId, userName, isRemoteMentor = false) {
+        if (!this.elements.mainVideoContainer) return;
+        
+        // Create container for the remote video
+        const videoContainer = document.createElement('div');
+        videoContainer.id = `remote-container-${userId}`;
+        videoContainer.className = 'video-container h-full';
+        
+        // Create the video element
+        const videoElement = document.createElement('video');
+        videoElement.id = `remote-video-${userId}`;
         videoElement.autoplay = true;
         videoElement.playsInline = true;
-        videoElement.id = `video-${userId}`;
-        videoElement.srcObject = stream;
         
-        // Create label
-        const label = document.createElement('div');
-        label.className = 'video-label';
-        label.textContent = userName;
+        // Create overlay with user name
+        const overlay = document.createElement('div');
+        overlay.className = 'video-overlay';
+        overlay.innerHTML = `
+            <p class="font-medium">
+                ${isRemoteMentor ? 'Mentor' : 'Learner'}: ${userName}
+                <span class="text-xs ml-2" id="remoteVideoStatus-${userId}">
+                    <i class="fas fa-microphone text-green-500"></i>
+                </span>
+            </p>
+        `;
         
-        // Add elements to container
+        // Set up the thumbnails in the bottom row
+        const thumbnailContainer = document.createElement('div');
+        thumbnailContainer.id = `thumbnail-${userId}`;
+        thumbnailContainer.className = 'video-container';
+        thumbnailContainer.style.flex = '0 0 25%';
+        
+        // Create thumbnail video element (which will be a clone of the stream)
+        const thumbnailVideo = document.createElement('video');
+        thumbnailVideo.id = `thumbnail-video-${userId}`;
+        thumbnailVideo.autoplay = true;
+        thumbnailVideo.muted = true;
+        thumbnailVideo.playsInline = true;
+        
+        // Create thumbnail overlay
+        const thumbnailOverlay = document.createElement('div');
+        thumbnailOverlay.className = 'video-overlay';
+        thumbnailOverlay.innerHTML = `
+            <p class="font-medium text-sm">
+                ${isRemoteMentor ? 'Mentor' : 'Learner'}: ${userName}
+            </p>
+        `;
+        
+        // Append elements
         videoContainer.appendChild(videoElement);
-        videoContainer.appendChild(label);
+        videoContainer.appendChild(overlay);
         
-        // Add to video grid
-        const videoGrid = document.querySelector('.video-grid');
-        if (videoGrid) {
-            videoGrid.appendChild(videoContainer);
-            
-            // Update grid layout based on participant count
-            this.updateGridLayout();
+        thumbnailContainer.appendChild(thumbnailVideo);
+        thumbnailContainer.appendChild(thumbnailOverlay);
+        
+        // Add to the main container
+        this.elements.mainVideoContainer.innerHTML = '';
+        this.elements.mainVideoContainer.appendChild(videoContainer);
+        
+        // Add thumbnail to the thumbnails row
+        if (this.elements.videoThumbnails) {
+            this.elements.videoThumbnails.appendChild(thumbnailContainer);
         }
         
-        // Show notification
-        this.showNotification(`${userName} joined the session`, 'success');
+        // Set active remote user
+        this.activeRemoteUser = userId;
+        
+        // Add click event to the thumbnail to focus that user
+        thumbnailContainer.addEventListener('click', () => {
+            this.setActiveParticipant(userId);
+        });
+        
+        return { 
+            mainVideo: videoElement, 
+            thumbnailVideo: thumbnailVideo
+        };
     }
     
     /**
-     * Remove a remote video from the grid
+     * Set up the chat UI elements and event handlers
      */
-    removeRemoteVideo(userId) {
-        console.log(`Removing remote video for user ${userId}`);
-        
-        // Find video container
-        const videoContainer = document.getElementById(`video-container-${userId}`);
-        if (videoContainer) {
-            // Get user name before removing
-            const label = videoContainer.querySelector('.video-label');
-            const userName = label ? label.textContent : 'Participant';
-            
-            // Remove from grid
-            videoContainer.remove();
-            
-            // Update grid layout
-            this.updateGridLayout();
-            
-            // Show notification
-            this.addSystemMessage(`${userName} left the session`);
-        }
-    }
-    
-    /**
-     * Update grid layout based on participant count
-     */
-    updateGridLayout() {
-        const videoGrid = document.querySelector('.video-grid');
-        if (!videoGrid) return;
-        
-        // Count number of video containers
-        const participants = videoGrid.querySelectorAll('.video-container').length;
-        
-        // Adjust grid columns based on count
-        if (participants <= 1) {
-            videoGrid.className = 'video-grid grid-cols-1';
-        } else if (participants === 2) {
-            videoGrid.className = 'video-grid grid-cols-1 md:grid-cols-2';
-        } else if (participants <= 4) {
-            videoGrid.className = 'video-grid grid-cols-2';
-        } else {
-            videoGrid.className = 'video-grid grid-cols-2 md:grid-cols-3';
-        }
-    }
-    
-    /**
-     * Update connection status indicator
-     */
-    updateConnectionStatus(state) {
-        console.log(`Connection status changed: ${state}`);
-        
-        // Update network quality indicator
-        const networkIndicator = document.getElementById('network-quality');
-        if (networkIndicator) {
-            // Remove all status classes
-            networkIndicator.classList.remove('good', 'fair', 'poor', 'disconnected');
-            
-            // Add appropriate class based on state
-            if (state === 'connected' || state === 'completed') {
-                networkIndicator.classList.add('good');
-                networkIndicator.querySelector('span').textContent = 'Good';
-            } else if (state === 'connecting') {
-                networkIndicator.classList.add('fair');
-                networkIndicator.querySelector('span').textContent = 'Connecting';
-            } else if (state === 'disconnected') {
-                networkIndicator.classList.add('poor');
-                networkIndicator.querySelector('span').textContent = 'Poor';
-            } else if (state === 'failed') {
-                networkIndicator.classList.add('disconnected');
-                networkIndicator.querySelector('span').textContent = 'Disconnected';
-            }
-        }
-    }
-    
-    /**
-     * Show error message with better user feedback
-     */
-    showErrorMessage(message, showRefreshButton = false) {
-        console.error("WebRTC error:", message);
-        
-        // Parse the error message to provide more user-friendly information
-        let userMessage = '';
-        let errorType = 'error';  // Default error type
-        let errorTimeout = 8000;  // Default timeout duration
-        let isReconnecting = false;  // Flag for reconnection messages
-        let errorClass = 'bg-red-600 text-white';  // Default styling
-        let errorTitle = 'Connection Error';  // Default title
-        
-        // Customize message based on error type
-        if (typeof message === 'string') {
-            // Media device access issues
-            if (message.includes('camera') || message.includes('microphone') || 
-                message.includes('NotAllowedError') || message.includes('PermissionDeniedError')) {
-                userMessage = 'Camera or microphone access was denied. Please check your browser permissions and try again.';
-                errorType = 'media';
-                errorTitle = 'Media Access Error';
-                
-            // Device not available errors
-            } else if (message.includes('NotFoundError') || message.includes('NotReadableError') || 
-                       message.includes('OverconstrainedError') || message.includes('TrackStartError')) {
-                userMessage = 'Could not access your camera or microphone. Please verify your device is connected and not in use by another application.';
-                errorType = 'device';
-                errorTitle = 'Device Error';
-                
-            // WebSocket connection issues
-            } else if (message.includes('WebSocket') || message.includes('connection')) {
-                // Reconnecting messages are informational, not errors
-                if (message.includes('reconnecting') || message.includes('Reconnecting') || 
-                    message.includes('Attempt') || message.includes('attempt')) {
-                    isReconnecting = true;
-                    userMessage = message; // Use original message
-                    errorType = 'reconnecting';
-                    errorTitle = 'Reconnecting';
-                    errorClass = 'bg-yellow-500 text-white';
-                    errorTimeout = 4000; // Shorter timeout for status updates
-                } else if (message.includes('re-established') || message.includes('recovered')) {
-                    userMessage = 'Connection restored successfully!';
-                    errorType = 'success';
-                    errorTitle = 'Connected';
-                    errorClass = 'bg-green-600 text-white';
-                    errorTimeout = 3000; // Even shorter timeout for success messages
-                } else {
-                    // Check network conditions if available
-                    let networkInfo = '';
-                    if (navigator.connection) {
-                        const effectiveType = navigator.connection.effectiveType || "unknown";
-                        const downlink = navigator.connection.downlink || 0;
-                        
-                        if (effectiveType === '2g' || downlink < 0.5) {
-                            networkInfo = " Your network connection appears to be very slow. If possible, switch to a better network.";
-                        } else if (effectiveType === '3g' || downlink < 2) {
-                            networkInfo = " Your network connection is moderate. Video quality might be reduced.";
-                        }
-                    }
-                    
-                    userMessage = 'Connection to the session server failed. Please check your internet connection and refresh the page.' + networkInfo;
-                    userMessage += '\n\nTroubleshooting tips:\n• Try refreshing the page\n• Check if other sites work\n• Try using a wired connection if on Wi-Fi\n• Restart your router if problems persist';
-                }
-                
-            // ICE connection issues (peer-to-peer connectivity)
-            } else if (message.includes('ICE') || message.includes('peer') || 
-                       message.includes('STUN') || message.includes('TURN')) {
-                userMessage = 'Failed to establish direct connection with other participants. This may be due to network firewall restrictions.';
-                
-                // Add troubleshooting suggestions
-                userMessage += '\n\nTry these steps:\n• If you\'re on a corporate/school network, try a different network\n• Disable VPN if you\'re using one\n• Try a different browser\n• If problems persist, the session may need to be rescheduled on a more compatible network';
-                errorType = 'ice';
-                
-            // Client-side errors and fallbacks
-            } else if (message.includes('browser') || message.includes('support')) {
-                userMessage = 'Your browser may have limited support for video calls. For best experience, use Chrome, Firefox, or Safari.';
-                errorType = 'browser';
-                errorTitle = 'Browser Support Issue';
-            } else {
-                // Default case - use the original message
-                userMessage = message;
-            }
-        } else {
-            // For non-string messages
-            userMessage = 'An error occurred with the video connection. Please refresh the page to try again.';
-        }
-        
-        // Use the global notification system if available
-        if (typeof window.showNotification === 'function') {
-            window.showNotification(userMessage, errorType === 'success' ? 'success' : 'error', errorTimeout);
+    setupChatUI() {
+        if (!this.elements.chatMessages || !this.elements.chatInput || !this.elements.sendMessageBtn) {
             return;
         }
         
-        // Create a more visually appealing error element
-        const errorContainer = document.createElement('div');
-        errorContainer.className = `fixed top-4 left-0 right-0 mx-auto w-96 ${errorClass} py-3 px-4 rounded-md shadow-lg z-50`;
-        errorContainer.style.maxWidth = '90%';
+        // Handle pressing Enter in the chat input
+        this.elements.chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.sendChatMessage();
+            }
+        });
         
-        // Choose icon based on error type
-        let iconPath = '';
-        if (errorType === 'success') {
-            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>';
-        } else if (errorType === 'reconnecting') {
-            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>';
-        } else if (errorType === 'media' || errorType === 'device') {
-            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>';
-        } else {
-            // Default warning icon
-            iconPath = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>';
+        // Handle clicking the send button
+        this.elements.sendMessageBtn.addEventListener('click', () => {
+            this.sendChatMessage();
+        });
+    }
+    
+    /**
+     * Send chat message and clear input
+     */
+    sendChatMessage() {
+        if (!this.elements.chatInput) return;
+        
+        const message = this.elements.chatInput.value.trim();
+        if (message) {
+            // The actual sending is handled by the WebRTC class
+            // This method will be called by the WebRTC class's sendChatMessage
+            this.elements.chatInput.value = '';
         }
+    }
+    
+    /**
+     * Add a chat message to the UI
+     * 
+     * @param {Object} messageData - Message data
+     * @param {string} messageData.userId - Sender's user ID
+     * @param {string} messageData.userName - Sender's display name
+     * @param {string} messageData.message - Message content
+     * @param {string} messageData.timestamp - ISO timestamp
+     * @param {boolean} messageData.isSystem - Whether it's a system message
+     * @param {boolean} messageData.isLocal - Whether it's from the local user
+     */
+    addChatMessage(messageData) {
+        if (!this.elements.chatMessages) return;
         
-        // Create inner content with icon
-        errorContainer.innerHTML = `
-            <div class="flex items-center">
-                <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    ${iconPath}
-                </svg>
-                <div>
-                    <h3 class="font-bold">${errorTitle}</h3>
-                    <p class="text-sm">${userMessage}</p>
-                    ${(!isReconnecting) ? '<p class="text-xs mt-1">You can <button id="refresh-page" class="underline">refresh the page</button> to try again</p>' : ''}
+        const { userId, userName, message, timestamp, isSystem, isLocal } = messageData;
+        
+        // Create message bubble
+        const bubble = document.createElement('div');
+        
+        if (isSystem) {
+            bubble.className = 'message-bubble message-system';
+            bubble.innerHTML = this.escapeHtml(message);
+        } else if (isLocal || userId === this.userId) {
+            bubble.className = 'message-bubble message-self';
+            bubble.innerHTML = `
+                <div class="font-medium text-sm">${this.escapeHtml(userName)}</div>
+                <div>${this.escapeHtml(message)}</div>
+                <div class="text-xs text-gray-500 text-right mt-1">
+                    ${new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
-            </div>
-            <button class="absolute top-2 right-2 text-white hover:text-gray-200" id="close-error">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        `;
-        
-        // Add to page
-        document.body.appendChild(errorContainer);
-        
-        // Add refresh page functionality if present
-        const refreshButton = errorContainer.querySelector('#refresh-page');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', () => {
-                window.location.reload();
-            });
+            `;
+        } else {
+            bubble.className = 'message-bubble message-other';
+            bubble.innerHTML = `
+                <div class="font-medium text-sm">${this.escapeHtml(userName)}</div>
+                <div>${this.escapeHtml(message)}</div>
+                <div class="text-xs text-gray-500 text-right mt-1">
+                    ${new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+            `;
         }
         
-        // Only add error styling to video for connection errors
-        if (['error', 'ice', 'reconnecting'].includes(errorType)) {
-            // Add error class to video container for visual indication
-            const localVideoContainer = document.querySelector('.video-container');
-            if (localVideoContainer) {
-                localVideoContainer.classList.add('connection-error');
-                
-                // Remove the error class after reconnection
-                if (errorType === 'success') {
-                    localVideoContainer.classList.remove('connection-error');
-                }
-            }
+        // Add the message to the chat area
+        this.elements.chatMessages.appendChild(bubble);
+        
+        // Scroll to bottom
+        this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
+    }
+    
+    /**
+     * Escape HTML to prevent XSS in chat messages
+     * 
+     * @param {string} text - Text to escape
+     * @returns {string} - Escaped text
+     */
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    /**
+     * Set up the controls UI elements and event handlers
+     */
+    setupControlsUI() {
+        // Set initial state for control buttons
+        if (this.elements.toggleMicBtn) {
+            this.elements.toggleMicBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            this.elements.toggleMicBtn.title = 'Mute microphone';
+            this.elements.toggleMicBtn.classList.remove('control-btn-muted');
         }
         
-        // Add event listener to close button
-        const closeButton = errorContainer.querySelector('#close-error');
-        if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                errorContainer.classList.add('fade-out');
-                setTimeout(() => {
-                    if (errorContainer.parentNode) {
-                        document.body.removeChild(errorContainer);
-                    }
-                }, 300);
-            });
+        if (this.elements.toggleCameraBtn) {
+            this.elements.toggleCameraBtn.innerHTML = '<i class="fas fa-video"></i>';
+            this.elements.toggleCameraBtn.title = 'Turn off camera';
+            this.elements.toggleCameraBtn.classList.remove('control-btn-muted');
         }
         
-        // Auto-remove after timeout (except for critical errors that need attention)
-        if (errorType !== 'critical') {
-            setTimeout(() => {
-                if (errorContainer.parentNode) {
-                    errorContainer.classList.add('fade-out');
-                    setTimeout(() => {
-                        if (errorContainer.parentNode) {
-                            document.body.removeChild(errorContainer);
-                        }
-                    }, 300);
-                }
-            }, errorTimeout);
-        }
-        
-        // For connection errors, also show a more subtle message in the video grid
-        if (['error', 'ice', 'browser'].includes(errorType)) {
-            this.showInlineErrorMessage(userMessage, showRefreshButton);
-        }
-        
-        // For reconnection success, also add a system message in chat
-        if (errorType === 'success') {
-            this.addSystemMessage('🟢 Connection restored successfully!');
-        } else if (errorType === 'reconnecting') {
-            this.addSystemMessage('🟠 Attempting to reconnect to session...');
+        if (this.elements.toggleScreenShareBtn) {
+            this.elements.toggleScreenShareBtn.innerHTML = '<i class="fas fa-desktop"></i>';
+            this.elements.toggleScreenShareBtn.title = 'Share your screen';
+            this.elements.toggleScreenShareBtn.classList.remove('control-btn-muted');
         }
     }
     
     /**
-     * Show inline error message in the video grid
+     * Toggle microphone mute state
      */
-    showInlineErrorMessage(message, showRefreshButton = true) {
-        // Only proceed if we have a video grid
-        if (!this.videoGrid) return;
+    toggleMicrophone() {
+        if (!this.elements.toggleMicBtn) return;
         
-        // Remove any existing inline error messages
-        const existingErrors = this.videoGrid.querySelectorAll('.inline-error-message');
-        existingErrors.forEach(el => el.remove());
+        this.micMuted = !this.micMuted;
         
-        // Create inline error message
-        const inlineError = document.createElement('div');
-        inlineError.className = 'inline-error-message p-4 m-2 bg-red-50 border border-red-200 text-red-800 rounded-lg';
-        
-        // Create HTML with conditional refresh button
-        const refreshButtonHTML = showRefreshButton ? `
-            <div class="mt-3 ml-7">
-                <button class="px-3 py-1 text-xs font-medium text-white bg-red-600 rounded hover:bg-red-700 transition" onclick="location.reload()">
-                    Refresh Page
-                </button>
-            </div>
-        ` : '';
-        
-        inlineError.innerHTML = `
-            <div class="flex items-center mb-2">
-                <svg class="w-5 h-5 mr-2 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                </svg>
-                <span class="font-medium">Connection Issue</span>
-            </div>
-            <p class="ml-7 text-sm">${message}</p>
-            ${refreshButtonHTML}
-        `;
-        
-        // Add to the video grid
-        this.videoGrid.insertBefore(inlineError, this.videoGrid.firstChild);
-    }
-
-    /**
-     * Leave the session
-     */
-    leaveSession() {
-        if (this.rtc) {
-            this.rtc.close();
+        if (this.micMuted) {
+            this.elements.toggleMicBtn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+            this.elements.toggleMicBtn.title = 'Unmute microphone';
+            this.elements.toggleMicBtn.classList.add('control-btn-muted');
+        } else {
+            this.elements.toggleMicBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            this.elements.toggleMicBtn.title = 'Mute microphone';
+            this.elements.toggleMicBtn.classList.remove('control-btn-muted');
         }
         
-        // Stop screen sharing if active
-        this.stopScreenSharing();
-        
-        // Redirect back to dashboard
-        const dashboardUrl = document.querySelector('meta[name="dashboard-url"]').getAttribute('content');
-        window.location.href = dashboardUrl;
+        // Update local video status
+        const localVideoStatus = document.getElementById('localVideoStatus');
+        if (localVideoStatus) {
+            localVideoStatus.innerHTML = this.micMuted 
+                ? '<i class="fas fa-microphone-slash text-red-500"></i>' 
+                : '<i class="fas fa-microphone text-green-500"></i>';
+        }
     }
-
+    
     /**
-     * Start the session timer countdown
+     * Toggle camera on/off state
      */
-    startSessionTimer() {
-        if (!this.sessionTimer) return;
+    toggleCamera() {
+        if (!this.elements.toggleCameraBtn) return;
         
-        const endTimeStr = this.sessionTimer.getAttribute('data-end-time');
-        if (!endTimeStr) return;
+        this.cameraOff = !this.cameraOff;
         
-        const endTime = new Date(endTimeStr);
-        
-        // Update timer every second
-        this.timerInterval = setInterval(() => {
-            const now = new Date();
-            const diff = endTime - now;
-            
-            if (diff <= 0) {
-                // Session has ended
-                clearInterval(this.timerInterval);
-                this.sessionTimer.textContent = "00:00:00";
-                this.addSystemMessage("The session time has ended. You can continue using this room, but you won't be able to rejoin if you leave.");
-                return;
-            }
-            
-            // Calculate hours, minutes, seconds
-            const hours = Math.floor(diff / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-            
-            // Format time as HH:MM:SS
-            const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-            this.sessionTimer.textContent = timeStr;
-            
-            // Warning when 5 minutes left
-            if (diff <= 5 * 60 * 1000 && diff > 4.9 * 60 * 1000) {
-                this.addSystemMessage("⚠️ The session will end in 5 minutes.");
-                this.showNotification("Session ending in 5 minutes");
-            }
-            
-            // Warning when 1 minute left
-            if (diff <= 60 * 1000 && diff > 59 * 1000) {
-                this.addSystemMessage("⚠️ The session will end in 1 minute.");
-                this.showNotification("Session ending in 1 minute");
-            }
-        }, 1000);
+        if (this.cameraOff) {
+            this.elements.toggleCameraBtn.innerHTML = '<i class="fas fa-video-slash"></i>';
+            this.elements.toggleCameraBtn.title = 'Turn on camera';
+            this.elements.toggleCameraBtn.classList.add('control-btn-muted');
+        } else {
+            this.elements.toggleCameraBtn.innerHTML = '<i class="fas fa-video"></i>';
+            this.elements.toggleCameraBtn.title = 'Turn off camera';
+            this.elements.toggleCameraBtn.classList.remove('control-btn-muted');
+        }
     }
-
+    
     /**
-     * Toggle screen sharing
+     * Toggle screen sharing state
      */
-    toggleScreenSharing() {
-        var self = this;
+    toggleScreenShare() {
+        if (!this.elements.toggleScreenShareBtn) return;
         
-        if (this.isScreenSharing) {
-            this.stopScreenSharing();
-            return;
+        this.screenSharing = !this.screenSharing;
+        
+        if (this.screenSharing) {
+            this.elements.toggleScreenShareBtn.innerHTML = '<i class="fas fa-stop-circle"></i>';
+            this.elements.toggleScreenShareBtn.title = 'Stop sharing';
+            this.elements.toggleScreenShareBtn.classList.add('bg-blue-500');
+            this.elements.toggleScreenShareBtn.classList.add('text-white');
+        } else {
+            this.elements.toggleScreenShareBtn.innerHTML = '<i class="fas fa-desktop"></i>';
+            this.elements.toggleScreenShareBtn.title = 'Share your screen';
+            this.elements.toggleScreenShareBtn.classList.remove('bg-blue-500');
+            this.elements.toggleScreenShareBtn.classList.remove('text-white');
+        }
+    }
+    
+    /**
+     * Raise hand to get attention
+     */
+    raiseHand() {
+        // Implementation could include:
+        // 1. Visual indicator in the UI
+        // 2. Sending a notification to other participants
+        // 3. Playing a sound
+        
+        console.log('Hand raised feature not fully implemented');
+    }
+    
+    /**
+     * Show hand raised notification for remote user
+     * 
+     * @param {string} userId - User ID of the person raising hand
+     * @param {string} userName - Display name of the person raising hand
+     */
+    showHandRaised(userId, userName) {
+        // Implementation could include:
+        // 1. Visual indicator on the user's video thumbnail
+        // 2. Notification message in chat
+        // 3. Alert sound
+        
+        // Add a system message in chat for now
+        this.addChatMessage({
+            userId: 'system',
+            userName: 'System',
+            message: `${userName} has raised their hand.`,
+            timestamp: new Date().toISOString(),
+            isSystem: true
+        });
+    }
+    
+    /**
+     * Toggle settings panel
+     */
+    toggleSettings() {
+        if (!this.elements.settingsModal) return;
+        
+        const modal = bootstrap.Modal.getOrCreateInstance(this.elements.settingsModal);
+        modal.toggle();
+    }
+    
+    /**
+     * Populate device selection dropdown menus
+     */
+    populateDeviceSelectors() {
+        if (!this.elements.audioInput || !this.elements.videoInput) return;
+        
+        // Clear existing options first
+        this.elements.audioInput.innerHTML = '';
+        this.elements.videoInput.innerHTML = '';
+        
+        if (this.elements.audioOutput) {
+            this.elements.audioOutput.innerHTML = '';
         }
         
-        try {
-            // Get screen stream
-            navigator.mediaDevices.getDisplayMedia({
-                video: {
-                    cursor: 'always'
-                },
-                audio: false
-            }).then(function(stream) {
-                self.screenStream = stream;
+        // Get device list
+        navigator.mediaDevices.enumerateDevices()
+            .then(devices => {
+                // Group devices by type
+                const audioInputs = devices.filter(device => device.kind === 'audioinput');
+                const videoInputs = devices.filter(device => device.kind === 'videoinput');
+                const audioOutputs = devices.filter(device => device.kind === 'audiooutput');
                 
-                // Update button
-                if (self.screenShareButton) {
-                    self.screenShareButton.innerHTML = '<i data-feather="monitor" class="h-5 w-5 text-red-500"></i>';
-                    if (typeof feather !== 'undefined') {
-                        feather.replace();
-                    }
-                }
-                
-                // Create a new video element for the screen share
-                var screenVideoContainer = document.createElement('div');
-                screenVideoContainer.className = 'video-container mentor bg-gray-900';
-                screenVideoContainer.id = 'screen-share-container';
-                
-                var screenVideo = document.createElement('video');
-                screenVideo.autoplay = true;
-                screenVideo.playsInline = true;
-                screenVideo.id = 'screen-share-video';
-                screenVideo.srcObject = self.screenStream;
-                
-                var screenLabel = document.createElement('div');
-                screenLabel.className = 'label';
-                screenLabel.textContent = 'Your Screen';
-                
-                screenVideoContainer.appendChild(screenVideo);
-                screenVideoContainer.appendChild(screenLabel);
-                
-                // Add to video grid
-                if (self.videoGrid) {
-                    self.videoGrid.appendChild(screenVideoContainer);
-                    
-                    // Reorganize layout to accommodate screen share
-                    self.videoGrid.className = 'grid grid-cols-2 gap-4 h-full';
-                }
-                
-                // Set flag
-                self.isScreenSharing = true;
-                
-                // Handle stream end
-                self.screenStream.getVideoTracks()[0].addEventListener('ended', function() {
-                    self.stopScreenSharing();
+                // Populate audio input devices
+                audioInputs.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Microphone ${this.elements.audioInput.options.length + 1}`;
+                    this.elements.audioInput.appendChild(option);
                 });
                 
-                // Add a system message
-                self.addSystemMessage("You started sharing your screen.");
+                // Populate video input devices
+                videoInputs.forEach(device => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.text = device.label || `Camera ${this.elements.videoInput.options.length + 1}`;
+                    this.elements.videoInput.appendChild(option);
+                });
                 
-                // Send notification to other participants via signaling
-                if (self.rtc) {
-                    self.rtc.sendSignalingMessage({
-                        type: 'screen_share',
-                        action: 'start'
+                // Populate audio output devices if supported
+                if (this.elements.audioOutput && typeof HTMLMediaElement.prototype.setSinkId === 'function') {
+                    audioOutputs.forEach(device => {
+                        const option = document.createElement('option');
+                        option.value = device.deviceId;
+                        option.text = device.label || `Speaker ${this.elements.audioOutput.options.length + 1}`;
+                        this.elements.audioOutput.appendChild(option);
                     });
+                } else if (this.elements.audioOutput) {
+                    // If setSinkId is not supported
+                    const option = document.createElement('option');
+                    option.value = 'default';
+                    option.text = 'Default speaker (selection not supported in this browser)';
+                    this.elements.audioOutput.appendChild(option);
+                    this.elements.audioOutput.disabled = true;
                 }
-            }).catch(function(error) {
-                console.error('Error starting screen share:', error);
-                self.showErrorMessage('Failed to start screen sharing. ' + error.message);
+            })
+            .catch(err => {
+                console.error('Error enumerating devices', err);
+                
+                // Add placeholder options
+                const audioInputOption = document.createElement('option');
+                audioInputOption.value = 'default';
+                audioInputOption.text = 'Default microphone';
+                this.elements.audioInput.appendChild(audioInputOption);
+                
+                const videoInputOption = document.createElement('option');
+                videoInputOption.value = 'default';
+                videoInputOption.text = 'Default camera';
+                this.elements.videoInput.appendChild(videoInputOption);
+                
+                if (this.elements.audioOutput) {
+                    const audioOutputOption = document.createElement('option');
+                    audioOutputOption.value = 'default';
+                    audioOutputOption.text = 'Default speaker';
+                    this.elements.audioOutput.appendChild(audioOutputOption);
+                }
             });
-        } catch (error) {
-            console.error('Error starting screen share:', error);
-            this.showErrorMessage('Failed to start screen sharing. ' + error.message);
-        }
     }
-
+    
     /**
-     * Stop screen sharing
+     * Set up device selection change handlers
      */
-    stopScreenSharing() {
-        if (!this.isScreenSharing || !this.screenStream) return;
-        
-        // Stop all tracks
-        var tracks = this.screenStream.getTracks();
-        for (var i = 0; i < tracks.length; i++) {
-            tracks[i].stop();
+    setupDeviceSelection() {
+        // This function is mostly implemented in the WebRTC client
+        // See the webrtc_enhanced.js file for implementation details
+        console.log('Device selection is handled by WebRTC client');
+    }
+    
+    /**
+     * Change audio output (speaker) device
+     * 
+     * @param {string} deviceId - The ID of the audio output device
+     * @returns {boolean} - Whether the change was successful
+     */
+    changeAudioOutput(deviceId) {
+        if (!deviceId || typeof HTMLMediaElement.prototype.setSinkId !== 'function') {
+            return false;
         }
         
-        // Update button
-        if (this.screenShareButton) {
-            this.screenShareButton.innerHTML = '<i data-feather="monitor" class="h-5 w-5"></i>';
-            if (typeof feather !== 'undefined') {
-                feather.replace();
+        // Get all video and audio elements to update their output device
+        const mediaElements = document.querySelectorAll('video, audio');
+        
+        mediaElements.forEach(element => {
+            if (element.setSinkId) {
+                element.setSinkId(deviceId)
+                    .then(() => console.log(`Changed audio output to ${deviceId}`))
+                    .catch(err => console.error('Error changing audio output', err));
             }
-        }
+        });
         
-        // Remove video element
-        var screenContainer = document.getElementById('screen-share-container');
-        if (screenContainer && this.videoGrid) {
-            this.videoGrid.removeChild(screenContainer);
-            
-            // Restore original layout
-            this.videoGrid.className = 'grid grid-cols-1 gap-4 h-full';
-        }
-        
-        // Reset variables
-        this.screenStream = null;
-        this.isScreenSharing = false;
-        
-        // Add a system message
-        this.addSystemMessage("You stopped sharing your screen.");
-        
-        // Send notification to other participants via signaling
-        if (this.rtc) {
-            this.rtc.sendSignalingMessage({
-                type: 'screen_share',
-                action: 'stop'
-            });
-        }
+        return true;
     }
-
+    
     /**
-     * Toggle raise hand feature
+     * Toggle display of connection stats
      */
-    toggleRaiseHand() {
-        this.isHandRaised = !this.isHandRaised;
+    toggleConnectionStats() {
+        if (!this.elements.enableStatsSwitch || !this.elements.connectionStats) return;
         
-        // Update button UI
-        if (this.raiseHandButton) {
-            this.raiseHandButton.classList.toggle('bg-yellow-500', this.isHandRaised);
-            this.raiseHandButton.classList.toggle('text-white', this.isHandRaised);
-        }
+        this.statsEnabled = this.elements.enableStatsSwitch.checked;
         
-        // Send notification to participants
-        if (this.rtc) {
-            this.rtc.sendSignalingMessage({
-                type: 'raise_hand',
-                raised: this.isHandRaised
-            });
-        }
-        
-        // Show message in chat
-        if (this.isHandRaised) {
-            this.addSystemMessage("You raised your hand. The mentor will be notified.");
+        if (this.statsEnabled) {
+            this.elements.connectionStats.classList.remove('hidden');
+            this.startStatsUpdate();
         } else {
-            this.addSystemMessage("You lowered your hand.");
+            this.elements.connectionStats.classList.add('hidden');
+            this.stopStatsUpdate();
         }
     }
-
+    
     /**
-     * Handle when a participant raises their hand
+     * Start periodically updating connection stats
      */
-    handleRaiseHand(data) {
-        // Find participant in the list
-        const participantItem = document.querySelector(`[data-user-id="${data.from_user_id}"]`);
-        
-        if (participantItem) {
-            // Add/remove hand icon
-            const handIcon = participantItem.querySelector('.hand-icon');
-            
-            if (data.raised) {
-                if (!handIcon) {
-                    const icon = document.createElement('span');
-                    icon.className = 'hand-icon ml-2 text-yellow-500';
-                    icon.innerHTML = '✋';
-                    participantItem.appendChild(icon);
-                }
+    startStatsUpdate() {
+        // This requires interaction with the WebRTC client
+        // which will be implemented separately
+        if (this.elements.statsContent) {
+            this.elements.statsContent.textContent = 'Stats collection starting...';
+        }
+    }
+    
+    /**
+     * Stop updating connection stats
+     */
+    stopStatsUpdate() {
+        if (this.statsInterval) {
+            clearInterval(this.statsInterval);
+            this.statsInterval = null;
+        }
+    }
+    
+    /**
+     * Confirm and handle ending the call
+     */
+    confirmEndCall() {
+        // Show confirmation dialog
+        if (confirm('Are you sure you want to leave this session?')) {
+            // Redirect to dashboard
+            const dashboardUrl = document.querySelector('meta[name="dashboard-url"]')?.content;
+            if (dashboardUrl) {
+                window.location.href = dashboardUrl;
             } else {
-                if (handIcon) {
-                    handIcon.remove();
-                }
+                window.location.href = this.isMentor ? '/dashboard/mentor/' : '/dashboard/learner/';
             }
         }
+    }
+    
+    /**
+     * Update connection state indicators
+     * 
+     * @param {string} state - The connection state
+     */
+    updateConnectionState(state) {
+        if (!this.elements.connectionStatusBadge || !this.elements.connectionStatus) return;
         
-        // Show notification for raised hands
-        if (data.raised) {
-            this.showNotification(`${data.user_name} raised their hand`);
-            this.addSystemMessage(`${data.user_name} raised their hand.`);
-        } else {
-            this.addSystemMessage(`${data.user_name} lowered their hand.`);
+        this.connectionState = state;
+        
+        // Update status message
+        let statusMessage = 'Connecting...';
+        let statusClass = 'status-connecting';
+        let statusIcon = '<i class="fas fa-sync-alt fa-spin"></i>';
+        
+        switch (state) {
+            case 'connected':
+            case 'completed':
+                statusMessage = 'Connected';
+                statusClass = 'status-connected';
+                statusIcon = '<i class="fas fa-check-circle"></i>';
+                break;
+                
+            case 'disconnected':
+            case 'failed':
+            case 'closed':
+                statusMessage = 'Disconnected';
+                statusClass = 'status-disconnected';
+                statusIcon = '<i class="fas fa-times-circle"></i>';
+                break;
+                
+            case 'checking':
+                statusMessage = 'Checking connection...';
+                statusClass = 'status-connecting';
+                statusIcon = '<i class="fas fa-sync-alt fa-spin"></i>';
+                break;
+                
+            case 'reconnecting':
+                statusMessage = 'Reconnecting...';
+                statusClass = 'status-connecting';
+                statusIcon = '<i class="fas fa-sync-alt fa-spin"></i>';
+                break;
+                
+            default:
+                statusMessage = 'Connecting...';
+                statusClass = 'status-connecting';
+                statusIcon = '<i class="fas fa-sync-alt fa-spin"></i>';
+        }
+        
+        // Update badge
+        this.elements.connectionStatusBadge.className = 'connection-status ' + statusClass;
+        this.elements.connectionStatusBadge.innerHTML = `${statusIcon} <span>${statusMessage}</span>`;
+        
+        // Update status text
+        this.elements.connectionStatus.textContent = statusMessage;
+        
+        // Update main container based on connection state
+        if (state === 'connected' || state === 'completed') {
+            const loadingIndicator = this.elements.mainVideoContainer.querySelector('.loading-spinner')?.parentNode;
+            if (loadingIndicator) {
+                loadingIndicator.remove();
+            }
         }
     }
-
+    
     /**
-     * Initialize whiteboard
+     * Show a notification in the UI
+     * 
+     * @param {string} message - The notification message
+     * @param {string} type - The notification type (info, warning, error, success)
+     * @param {number} duration - The notification duration in ms
      */
-    initWhiteboard() {
-        if (this.whiteboard || !this.whiteboardCanvas) return;
+    showNotification(message, type = 'info', duration = 3000) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas ${type === 'info' ? 'fa-info-circle' : 
+                              type === 'warning' ? 'fa-exclamation-triangle' : 
+                              type === 'error' ? 'fa-exclamation-circle' : 
+                              'fa-check-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
         
-        // Set canvas dimensions
-        const container = this.whiteboardCanvas.parentElement;
-        this.whiteboardCanvas.width = container.offsetWidth;
-        this.whiteboardCanvas.height = container.offsetHeight;
+        // Add to the document
+        document.body.appendChild(notification);
         
-        // Initialize drawing context
-        const ctx = this.whiteboardCanvas.getContext('2d');
+        // Trigger animation
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 10);
         
-        // Configure defaults
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
+        // Remove after duration
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300); // Transition duration
+        }, duration);
+    }
+    
+    /**
+     * Update session information in the UI
+     */
+    updateSessionInfo() {
+        // This method would update any session-related information displayed in the UI
+        // such as elapsed time, remaining time, etc.
+        // Implementation depends on specific requirements
+    }
+    
+    /**
+     * Apply role-specific styling
+     */
+    applyRoleStyling() {
+        const bodyElement = document.body;
         
-        // Drawing state
-        this.isDrawing = false;
-        this.lastX = 0;
-        this.lastY = 0;
-        this.drawingHistory = [];
-        this.currentPath = [];
-        this.currentTool = 'pen';
+        if (this.isMentor) {
+            bodyElement.classList.add('mentor-theme');
+            bodyElement.classList.remove('learner-theme');
+        } else {
+            bodyElement.classList.add('learner-theme');
+            bodyElement.classList.remove('mentor-theme');
+        }
+    }
+    
+    /**
+     * Set up responsive layout
+     */
+    setupResponsiveLayout() {
+        // Initially adjust layout
+        this.adjustLayoutForScreenSize();
         
-        // Event listeners
-        this.whiteboardCanvas.addEventListener('mousedown', this.startDrawing.bind(this));
-        this.whiteboardCanvas.addEventListener('mousemove', this.draw.bind(this));
-        this.whiteboardCanvas.addEventListener('mouseup', this.stopDrawing.bind(this));
-        this.whiteboardCanvas.addEventListener('mouseout', this.stopDrawing.bind(this));
-        
-        // Touch support
-        this.whiteboardCanvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousedown', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            this.whiteboardCanvas.dispatchEvent(mouseEvent);
+        // Listen for window resize
+        window.addEventListener('resize', () => {
+            this.adjustLayoutForScreenSize();
         });
+    }
+    
+    /**
+     * Adjust layout based on screen size
+     */
+    adjustLayoutForScreenSize() {
+        const isMobile = window.innerWidth < 768;
         
-        this.whiteboardCanvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('mousemove', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-            this.whiteboardCanvas.dispatchEvent(mouseEvent);
-        });
+        // Example adjustments for mobile devices
+        if (isMobile) {
+            // Change layout for smaller screens
+            if (this.elements.mainVideoContainer) {
+                this.elements.mainVideoContainer.classList.add('mobile-view');
+            }
+        } else {
+            // Restore desktop layout
+            if (this.elements.mainVideoContainer) {
+                this.elements.mainVideoContainer.classList.remove('mobile-view');
+            }
+        }
+    }
+    
+    /**
+     * Set active participant (main view)
+     * 
+     * @param {string} userId - User ID to set as active
+     */
+    setActiveParticipant(userId) {
+        // Implementation depends on the UI structure
+        // This would typically move a specific participant's video to the main view
+        console.log(`Setting ${userId} as active participant`);
         
-        this.whiteboardCanvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            const mouseEvent = new MouseEvent('mouseup', {});
-            this.whiteboardCanvas.dispatchEvent(mouseEvent);
-        });
+        // This would be implemented based on the specific UI requirements
+    }
+    
+    /**
+     * Apply light or dark theme based on user preference
+     */
+    applyTheme() {
+        // Detect preferred color scheme
+        const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
-        // Set active whiteboard
-        this.whiteboard = {
-            canvas: this.whiteboardCanvas,
-            context: ctx
+        // Apply theme
+        if (prefersDarkMode) {
+            document.body.classList.add('dark-theme');
+        } else {
+            document.body.classList.remove('dark-theme');
+        }
+    }
+    
+    /**
+     * Handle remote user media state changes
+     * 
+     * @param {string} userId - The remote user ID
+     * @param {Object} mediaState - The media state
+     * @param {boolean} mediaState.audio - Whether audio is enabled
+     * @param {boolean} mediaState.video - Whether video is enabled
+     */
+    updateRemoteMediaState(userId, mediaState) {
+        const statusElement = document.getElementById(`remoteVideoStatus-${userId}`);
+        if (statusElement) {
+            statusElement.innerHTML = mediaState.audio 
+                ? '<i class="fas fa-microphone text-green-500"></i>' 
+                : '<i class="fas fa-microphone-slash text-red-500"></i>';
+        }
+    }
+    
+    /**
+     * Set local video stream
+     * 
+     * @param {MediaStream} stream - The local media stream
+     */
+    setLocalStream(stream) {
+        if (!this.elements.localVideo) {
+            // Create video element if it doesn't exist
+            this.createLocalVideoElement();
+        }
+        
+        if (this.elements.localVideo) {
+            this.elements.localVideo.srcObject = stream;
+        }
+    }
+    
+    /**
+     * Set remote video stream
+     * 
+     * @param {string} userId - The remote user ID
+     * @param {string} userName - The remote user's display name
+     * @param {MediaStream} stream - The remote media stream
+     * @param {boolean} isRemoteMentor - Whether the remote user is a mentor
+     */
+    setRemoteStream(userId, userName, stream, isRemoteMentor = false) {
+        // Check if we already have a video element for this user
+        let videoElements = {
+            mainVideo: document.getElementById(`remote-video-${userId}`),
+            thumbnailVideo: document.getElementById(`thumbnail-video-${userId}`)
         };
         
-        // Add welcome message
-        this.addSystemMessage("Whiteboard is active. You can draw and collaborate in real-time.");
-    }
-
-    /**
-     * Start drawing on whiteboard
-     */
-    startDrawing(e) {
-        const ctx = this.whiteboard?.context;
-        if (!ctx) return;
-        
-        this.isDrawing = true;
-        
-        // Get mouse position relative to canvas
-        const rect = this.whiteboardCanvas.getBoundingClientRect();
-        this.lastX = e.clientX - rect.left;
-        this.lastY = e.clientY - rect.top;
-        
-        // Start a new path
-        this.currentPath = [{
-            x: this.lastX,
-            y: this.lastY,
-            color: ctx.strokeStyle,
-            width: ctx.lineWidth,
-            tool: this.currentTool
-        }];
-    }
-
-    /**
-     * Draw on whiteboard
-     */
-    draw(e) {
-        if (!this.isDrawing || !this.whiteboard?.context) return;
-        
-        const ctx = this.whiteboard.context;
-        
-        // Get current mouse position
-        const rect = this.whiteboardCanvas.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
-        
-        // Draw based on selected tool
-        if (this.currentTool === 'pen') {
-            ctx.beginPath();
-            ctx.moveTo(this.lastX, this.lastY);
-            ctx.lineTo(currentX, currentY);
-            ctx.stroke();
-        } else if (this.currentTool === 'eraser') {
-            // For eraser, draw in white with larger width
-            const originalStyle = ctx.strokeStyle;
-            const originalWidth = ctx.lineWidth;
-            
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = originalWidth * 3;
-            
-            ctx.beginPath();
-            ctx.moveTo(this.lastX, this.lastY);
-            ctx.lineTo(currentX, currentY);
-            ctx.stroke();
-            
-            // Restore original style
-            ctx.strokeStyle = originalStyle;
-            ctx.lineWidth = originalWidth;
+        // If not, create new elements
+        if (!videoElements.mainVideo) {
+            videoElements = this.createRemoteVideoElement(userId, userName, isRemoteMentor);
         }
         
-        // Add point to current path
-        this.currentPath.push({
-            x: currentX,
-            y: currentY,
-            color: ctx.strokeStyle,
-            width: ctx.lineWidth,
-            tool: this.currentTool
-        });
-        
-        // Update position
-        this.lastX = currentX;
-        this.lastY = currentY;
-        
-        // Send drawing data to others
-        this.sendWhiteboardData();
-    }
-
-    /**
-     * Stop drawing on whiteboard
-     */
-    stopDrawing() {
-        if (this.isDrawing) {
-            this.isDrawing = false;
-            
-            // Save current path to history for undo
-            this.drawingHistory.push(this.currentPath);
-            this.currentPath = [];
-        }
-    }
-
-    /**
-     * Send whiteboard data to participants
-     */
-    sendWhiteboardData() {
-        if (!this.rtc || this.currentPath.length < 2) return;
-        
-        // Send only the last two points to reduce data volume
-        const dataToSend = this.currentPath.slice(-2);
-        
-        this.rtc.sendSignalingMessage({
-            type: 'whiteboard_data',
-            data: dataToSend
-        });
-    }
-
-    /**
-     * Receive and process whiteboard data from other participants
-     */
-    handleWhiteboardData(data) {
-        if (!this.whiteboard?.context || !data.data || data.data.length < 2) return;
-        
-        const ctx = this.whiteboard.context;
-        const points = data.data;
-        
-        // Draw received data
-        const originalStyle = ctx.strokeStyle;
-        const originalWidth = ctx.lineWidth;
-        
-        ctx.strokeStyle = points[0].color;
-        ctx.lineWidth = points[0].width;
-        
-        if (points[0].tool === 'pen' || points[0].tool === 'eraser') {
-            // For eraser, use white color
-            if (points[0].tool === 'eraser') {
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = points[0].width * 3;
-            }
-            
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            ctx.lineTo(points[1].x, points[1].y);
-            ctx.stroke();
+        // Set the stream
+        if (videoElements.mainVideo) {
+            videoElements.mainVideo.srcObject = stream;
         }
         
-        // Restore original style
-        ctx.strokeStyle = originalStyle;
-        ctx.lineWidth = originalWidth;
-    }
-
-    /**
-     * Set whiteboard color
-     */
-    setWhiteboardColor(color) {
-        if (!this.whiteboard?.context) return;
-        this.whiteboard.context.strokeStyle = color;
-    }
-
-    /**
-     * Set whiteboard tool
-     */
-    setWhiteboardTool(tool) {
-        this.currentTool = tool;
-    }
-
-    /**
-     * Undo last whiteboard action
-     */
-    undoWhiteboard() {
-        if (!this.whiteboard?.context || this.drawingHistory.length === 0) return;
-        
-        // Remove last path from history
-        this.drawingHistory.pop();
-        
-        // Clear canvas
-        this.clearWhiteboard(false);
-        
-        // Redraw all paths in history
-        const ctx = this.whiteboard.context;
-        
-        this.drawingHistory.forEach(path => {
-            if (path.length < 2) return;
-            
-            for (let i = 1; i < path.length; i++) {
-                const p1 = path[i - 1];
-                const p2 = path[i];
-                
-                const originalStyle = ctx.strokeStyle;
-                const originalWidth = ctx.lineWidth;
-                
-                ctx.strokeStyle = p1.color;
-                ctx.lineWidth = p1.width;
-                
-                if (p1.tool === 'pen' || p1.tool === 'eraser') {
-                    // For eraser, use white color
-                    if (p1.tool === 'eraser') {
-                        ctx.strokeStyle = '#FFFFFF';
-                        ctx.lineWidth = p1.width * 3;
-                    }
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(p1.x, p1.y);
-                    ctx.lineTo(p2.x, p2.y);
-                    ctx.stroke();
-                }
-                
-                // Restore original style
-                ctx.strokeStyle = originalStyle;
-                ctx.lineWidth = originalWidth;
-            }
-        });
-        
-        // Notify other participants
-        if (this.rtc) {
-            this.rtc.sendSignalingMessage({
-                type: 'whiteboard_undo'
-            });
+        if (videoElements.thumbnailVideo) {
+            videoElements.thumbnailVideo.srcObject = stream;
         }
-    }
-
-    /**
-     * Clear whiteboard
-     */
-    clearWhiteboard(notify = true) {
-        if (!this.whiteboard?.context) return;
         
-        const ctx = this.whiteboard.context;
-        ctx.clearRect(0, 0, this.whiteboardCanvas.width, this.whiteboardCanvas.height);
-        
-        if (notify) {
-            // Clear history
-            this.drawingHistory = [];
-            
-            // Notify other participants
-            if (this.rtc) {
-                this.rtc.sendSignalingMessage({
-                    type: 'whiteboard_clear'
-                });
-            }
-        }
-    }
-
-    /**
-     * Save whiteboard as image
-     */
-    saveWhiteboard() {
-        if (!this.whiteboardCanvas) return;
-        
-        // Create a temporary link
-        const link = document.createElement('a');
-        link.download = `peerlearn-whiteboard-${new Date().toISOString().slice(0, 10)}.png`;
-        
-        // Convert canvas to data URL
-        link.href = this.whiteboardCanvas.toDataURL('image/png');
-        
-        // Simulate click to trigger download
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        this.showNotification('Whiteboard saved as PNG image');
-    }
-
-    /**
-     * Set whiteboard permissions
-     */
-    setWhiteboardPermissions(allowAll) {
-        if (!this.rtc) return;
-        
-        // Send permission update to all participants
-        this.rtc.sendSignalingMessage({
-            type: 'whiteboard_permissions',
-            allowAll: allowAll
-        });
-        
-        // Add system message
-        const message = allowAll ? 
-            "All participants can now draw on the whiteboard." : 
-            "Drawing on the whiteboard is now disabled for participants.";
-        
-        this.addSystemMessage(message);
-        this.showNotification(message);
+        // Update connection state to show we're successfully connected
+        this.updateConnectionState('connected');
     }
     
     /**
-     * Handle connection state changes and update network quality indicator
+     * Remove a remote video element
+     * 
+     * @param {string} userId - The remote user ID
      */
-    handleConnectionStateChange(data) {
-        console.log(`Connection state changed for ${data.userId}: ${data.state} (was: ${data.previous})`);
+    removeRemoteStream(userId) {
+        // Remove main video container
+        const remoteContainer = document.getElementById(`remote-container-${userId}`);
+        if (remoteContainer) {
+            remoteContainer.remove();
+        }
         
-        // Update network quality indicator based on connection state
-        if (this.networkQualityIndicator) {
-            let qualityLevel = 'good';
-            let qualityText = 'Good';
+        // Remove thumbnail
+        const thumbnailContainer = document.getElementById(`thumbnail-${userId}`);
+        if (thumbnailContainer) {
+            thumbnailContainer.remove();
+        }
+        
+        // If this was the active user, show a message
+        if (this.activeRemoteUser === userId) {
+            this.activeRemoteUser = null;
             
-            // Determine quality based on connection state
-            if (data.state === 'disconnected' || data.state === 'failed' || data.state === 'closed') {
-                qualityLevel = 'poor';
-                qualityText = 'Poor';
-            } else if (data.state === 'connecting' || data.state === 'checking') {
-                qualityLevel = 'medium';
-                qualityText = 'Connecting...';
-            } else if (data.state === 'connected' || data.state === 'completed') {
-                // Connection is good, but we should check stats for a more accurate assessment
-                if (this.rtc && this.rtc.connectionHealth && this.rtc.connectionHealth[data.userId]) {
-                    // Further refine based on connection health if available
-                }
-            }
-            
-            // Update the indicator
-            this.updateNetworkQualityIndicator(qualityLevel, qualityText);
-            
-            // If connection was restored after being poor, show a message
-            if ((data.previous === 'disconnected' || data.previous === 'failed') && 
-                (data.state === 'connected' || data.state === 'completed')) {
-                this.showNotification('Connection restored!');
+            // Show disconnected message in main container
+            if (this.elements.mainVideoContainer) {
+                this.elements.mainVideoContainer.innerHTML = `
+                    <div class="flex items-center justify-center h-full bg-gray-800 text-white">
+                        <div class="text-center">
+                            <i class="fas fa-user-slash text-4xl mb-4"></i>
+                            <p class="text-lg">The other participant has left the session.</p>
+                        </div>
+                    </div>
+                `;
             }
         }
     }
     
     /**
-     * Handle session reconnect notification
+     * Update remote stream quality/status indicators
+     * 
+     * @param {string} userId - The remote user ID
+     * @param {string} quality - The quality indicator (good, fair, poor)
      */
-    handleSessionReconnect() {
-        console.log("Attempting to reconnect to session...");
-        
-        // Show reconnecting message
-        this.showReconnectingMessage();
-        
-        // Update network quality indicator
-        this.updateNetworkQualityIndicator('medium', 'Reconnecting...');
-        
-        // Add system message
-        this.addSystemMessage("Connection lost. Attempting to reconnect...");
-    }
-    
-    /**
-     * Handle successful session rejoin
-     */
-    handleRejoinSuccess() {
-        console.log("Successfully rejoined session");
-        
-        // Hide reconnecting message
-        this.hideReconnectingMessage();
-        
-        // Update network quality indicator
-        this.updateNetworkQualityIndicator('good', 'Good');
-        
-        // Add system message
-        this.addSystemMessage("Reconnected to session successfully.");
-        
-        // Show success notification
-        this.showNotification("Session reconnected");
-    }
-    
-    /**
-     * Handle failed session rejoin
-     */
-    handleRejoinFailure() {
-        console.log("Failed to rejoin session");
-        
-        // Hide reconnecting message
-        this.hideReconnectingMessage();
-        
-        // Update network quality indicator
-        this.updateNetworkQualityIndicator('poor', 'Disconnected');
-        
-        // Add system message
-        this.addSystemMessage("Failed to reconnect to session. Please try refreshing the page.");
-        
-        // Show error message with refresh button
-        this.showErrorMessage("Connection lost. Unable to reconnect to the session. Try refreshing the page.", true);
-    }
-    
-    /**
-     * Show reconnecting message
-     */
-    showReconnectingMessage() {
-        // Create or update reconnecting overlay if not exists
-        let reconnectingOverlay = document.getElementById('reconnecting-overlay');
-        
-        if (!reconnectingOverlay) {
-            reconnectingOverlay = document.createElement('div');
-            reconnectingOverlay.id = 'reconnecting-overlay';
-            reconnectingOverlay.className = 'fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex flex-col items-center justify-center z-50';
-            reconnectingOverlay.innerHTML = `
-                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white mb-4"></div>
-                <p class="text-white text-lg mb-2">Reconnecting to session...</p>
-                <p class="text-gray-300 text-sm max-w-xs text-center">This may take a few moments. Please don't close this page.</p>
-            `;
-            
-            document.body.appendChild(reconnectingOverlay);
-        }
-    }
-    
-    /**
-     * Hide reconnecting message
-     */
-    hideReconnectingMessage() {
-        const reconnectingOverlay = document.getElementById('reconnecting-overlay');
-        if (reconnectingOverlay) {
-            reconnectingOverlay.classList.add('opacity-0');
-            setTimeout(() => {
-                if (reconnectingOverlay.parentNode) {
-                    reconnectingOverlay.parentNode.removeChild(reconnectingOverlay);
-                }
-            }, 300);
-        }
-    }
-    
-    /**
-     * Update the network quality indicator in the UI
-     */
-    updateNetworkQualityIndicator(quality, text) {
-        if (!this.networkQualityIndicator) return;
-        
-        // Remove all quality classes
-        this.networkQualityIndicator.classList.remove('good', 'medium', 'poor');
-        
-        // Add the current quality class
-        this.networkQualityIndicator.classList.add(quality);
-        
-        // Update the text
-        const textElement = this.networkQualityIndicator.querySelector('span');
-        if (textElement) {
-            textElement.textContent = text;
-        }
-    }
-    
-    /**
-     * Start buffering detection for video elements
-     */
-    startBufferingDetection() {
-        if (!this.videoBufferingDetection.enabled) return;
-        
-        // Clear existing interval if any
-        if (this.videoBufferingDetection.checkInterval) {
-            clearInterval(this.videoBufferingDetection.checkInterval);
-        }
-        
-        // Check for video buffering every 1 second
-        this.videoBufferingDetection.checkInterval = setInterval(() => {
-            // Check local video
-            this.checkVideoBuffering(document.getElementById('local-video'), document.querySelector('.video-container.mentor'));
-            
-            // Check remote videos
-            document.querySelectorAll('.video-container:not(.mentor) video').forEach(video => {
-                this.checkVideoBuffering(video, video.closest('.video-container'));
-            });
-        }, 1000);
-    }
-    
-    /**
-     * Check if a video element is currently buffering
-     */
-    checkVideoBuffering(videoElement, container) {
-        if (!videoElement || !container) return;
-        
-        // Check if video is actually playing
-        const isPlaying = !videoElement.paused && videoElement.currentTime > 0 && 
-                         !videoElement.ended && videoElement.readyState > 2;
-                         
-        // Check if video is stalled (buffering)
-        const isStalled = videoElement.readyState < 3 || videoElement.waiting;
-        
-        // Apply buffering UI if video should be playing but is stalled
-        if (!isPlaying && videoElement.srcObject && !videoElement.paused) {
-            container.classList.add('buffering');
-        } else {
-            container.classList.remove('buffering');
-        }
-        
-        // Update network quality if appropriate
-        if (!isPlaying && this.videoBufferingDetection.lastPlayingState) {
-            this.updateNetworkQualityIndicator('medium', 'Slow Connection');
-        } else if (isPlaying && !this.videoBufferingDetection.lastPlayingState) {
-            // Connection recovered, update after a short delay to make sure it's stable
-            setTimeout(() => {
-                this.updateNetworkQualityIndicator('good', 'Good');
-            }, 2000);
-        }
-        
-        // Update last playing state
-        this.videoBufferingDetection.lastPlayingState = isPlaying;
+    updateRemoteStreamQuality(userId, quality) {
+        // Implementation depends on UI requirements
+        // This could update a visual indicator of connection quality
+        console.log(`Remote stream quality for ${userId}: ${quality}`);
     }
 }

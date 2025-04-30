@@ -1,1271 +1,1212 @@
 /**
- * Enhanced WebRTC connection handling for PeerLearn
- * Provides robust error handling, connection state monitoring,
- * and fallback mechanisms for real-time video sessions.
+ * Enhanced WebRTC Client for PeerLearn
+ * 
+ * Features:
+ * - Improved error handling with detailed user feedback
+ * - Multi-level fallback for devices and connection issues
+ * - Persistent reconnection attempts with exponential backoff
+ * - Comprehensive device handling
+ * - Role-based permissions
+ * - Development mode support
  */
 
-// Configuration constants
-const RETRY_DELAY = 3000;  // 3 seconds between retry attempts
-const MAX_RECONNECT_ATTEMPTS = 5;  // Maximum number of reconnection attempts
-const ICE_SERVERS = [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-];
-
-// Add TURN servers if configured in environment
-if (window.TURN_SERVER_URL) {
-    ICE_SERVERS.push({
-        urls: window.TURN_SERVER_URL,
-        username: window.TURN_SERVER_USERNAME || '',
-        credential: window.TURN_SERVER_CREDENTIAL || ''
-    });
-}
-
-class EnhancedWebRTCHandler {
-    constructor(options) {
-        // Basic configuration
-        this.userId = options.userId;
-        this.userName = options.userName;
-        this.isMentor = options.isMentor || false;
-        this.sessionId = options.sessionId;
-        this.websocketUrl = options.websocketUrl;
+class EnhancedWebRTC {
+    /**
+     * Create a new instance of the EnhancedWebRTC client
+     * 
+     * @param {Object} config - Configuration options
+     * @param {number} config.sessionId - The session ID
+     * @param {number} config.userId - The current user's ID
+     * @param {string} config.userName - The current user's display name
+     * @param {boolean} config.isMentor - Whether the current user is a mentor
+     * @param {boolean} config.devMode - Whether development mode is enabled
+     * @param {Function} config.onLocalStream - Callback for when local stream is ready
+     * @param {Function} config.onRemoteStream - Callback for when a remote stream is received
+     * @param {Function} config.onConnectionStateChange - Callback for connection state changes
+     * @param {Function} config.onChatMessage - Callback for chat messages
+     * @param {Function} config.onError - Callback for errors
+     */
+    constructor(config) {
+        // Store configuration
+        this.sessionId = config.sessionId;
+        this.userId = config.userId;
+        this.userName = config.userName;
+        this.isMentor = config.isMentor;
+        this.devMode = config.devMode || false;
         
-        // WebRTC configuration
-        this.peerConnections = {};  // Store multiple peer connections
-        this.localStream = null;
-        this.remoteStreams = {};
-        this.dataChannels = {};
+        // Callbacks
+        this.onLocalStream = config.onLocalStream || (() => {});
+        this.onRemoteStream = config.onRemoteStream || (() => {});
+        this.onConnectionStateChange = config.onConnectionStateChange || (() => {});
+        this.onChatMessage = config.onChatMessage || (() => {});
+        this.onError = config.onError || ((error) => console.error('WebRTC Error:', error));
         
         // WebSocket connection
         this.socket = null;
+        
+        // WebRTC connection
+        this.peerConnection = null;
+        this.localStream = null;
+        this.remoteStreams = new Map(); // userId -> stream
+        this.dataChannel = null;
+        this.isScreenSharing = false;
+        this.originalVideoTrack = null;
+        
+        // Connection state
+        this.isInitialized = false;
+        this.isConnecting = false;
         this.isConnected = false;
         this.reconnectAttempts = 0;
-        this.pingInterval = null;
-        this.lastPingTime = null;
+        this.maxReconnectAttempts = 5;
+        this.reconnectDelay = 2000; // Start with 2 seconds
         
-        // Callbacks
-        this.onRemoteStreamAdded = options.onRemoteStreamAdded || ((userId, stream) => console.log(`Remote stream added for user ${userId}`));
-        this.onRemoteStreamRemoved = options.onRemoteStreamRemoved || ((userId) => console.log(`Remote stream removed for user ${userId}`));
-        this.onChatMessage = options.onChatMessage || ((message) => console.log(`Chat message: ${message}`));
-        this.onConnectionStateChange = options.onConnectionStateChange || ((state) => console.log(`Connection state: ${state}`));
-        this.onError = options.onError || ((error) => console.error(`WebRTC error: ${error}`));
+        // ICE server configuration
+        this.iceServers = [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+        ];
         
-        // State management
-        this.isReconnecting = false;
-        this.hasInitializedMedia = false;
-        this.usersInSession = new Set();
-        this.deviceErrorState = null;
+        // Check for custom TURN servers from environment
+        if (window.TURN_SERVERS) {
+            try {
+                const customServers = JSON.parse(window.TURN_SERVERS);
+                if (Array.isArray(customServers) && customServers.length > 0) {
+                    this.iceServers = [...this.iceServers, ...customServers];
+                    console.log('Added custom TURN servers:', customServers);
+                }
+            } catch (e) {
+                console.error('Error parsing custom TURN servers:', e);
+            }
+        }
         
-        // Device constraints - start with default then can be updated
+        // Media constraints
         this.mediaConstraints = {
             audio: true,
             video: {
                 width: { ideal: 1280 },
                 height: { ideal: 720 },
-                frameRate: { ideal: 30 }
+                facingMode: 'user'
             }
         };
         
-        // Audio-only fallback constraints
-        this.audioOnlyConstraints = {
-            audio: true,
-            video: false
-        };
+        // Set log level based on devMode
+        this.logLevel = this.devMode ? 'debug' : 'info';
         
-        // Low-quality fallback constraints
-        this.lowQualityConstraints = {
-            audio: true,
-            video: {
-                width: { ideal: 320 },
-                height: { ideal: 240 },
-                frameRate: { ideal: 15 }
-            }
-        };
+        // Bind methods to maintain 'this' context
+        this.log = this.log.bind(this);
+        this.initialize = this.initialize.bind(this);
+        this.setupWebSocket = this.setupWebSocket.bind(this);
+        this.setupPeerConnection = this.setupPeerConnection.bind(this);
+        this.handleWebSocketMessage = this.handleWebSocketMessage.bind(this);
+        this.setupMediaDevices = this.setupMediaDevices.bind(this);
+        this.handleIceCandidate = this.handleIceCandidate.bind(this);
+        this.handleRemoteTrack = this.handleRemoteTrack.bind(this);
+        this.createOffer = this.createOffer.bind(this);
+        this.handleOffer = this.handleOffer.bind(this);
+        this.createAnswer = this.createAnswer.bind(this);
+        this.handleAnswer = this.handleAnswer.bind(this);
+        this.handleICECandidate = this.handleICECandidate.bind(this);
+        this.sendChatMessage = this.sendChatMessage.bind(this);
+        this.reconnect = this.reconnect.bind(this);
+        this.cleanupResources = this.cleanupResources.bind(this);
     }
     
     /**
-     * Initialize the WebRTC connection including media devices and WebSocket
+     * Logging with level control 
+     */
+    log(level, ...args) {
+        const levels = {
+            'error': 0,
+            'warn': 1,
+            'info': 2,
+            'debug': 3
+        };
+        
+        if (levels[level] <= levels[this.logLevel]) {
+            const prefix = `[WebRTC-${this.userId}] `;
+            console[level](prefix, ...args);
+        }
+    }
+    
+    /**
+     * Initialize the WebRTC client
      */
     async initialize() {
+        if (this.isInitialized) {
+            this.log('warn', 'WebRTC client already initialized');
+            return;
+        }
+        
+        this.log('info', 'Initializing WebRTC client', {
+            sessionId: this.sessionId,
+            userId: this.userId,
+            isMentor: this.isMentor,
+            devMode: this.devMode
+        });
+        
+        this.isInitialized = true;
+        
         try {
-            console.log('Initializing WebRTC connection...');
-            
-            // Get user media with appropriate error handling
+            // Set up media devices first
             await this.setupMediaDevices();
             
-            // Connect WebSocket with reconnection capability
-            await this.connectWebSocket();
+            // Then set up WebSocket connection
+            await this.setupWebSocket();
             
-            // Start monitoring connection quality
-            this.startConnectionMonitoring();
+            // Finally set up peer connection
+            await this.setupPeerConnection();
             
-            // Signal successful initialization
-            this.onConnectionStateChange('initialized');
-            return true;
-            
-        } catch (error) {
-            this.onError(`Initialization error: ${error.message}`);
-            return false;
-        }
-    }
-    
-    /**
-     * Set up media devices with fallback mechanisms
-     */
-    async setupMediaDevices() {
-        // First try with ideal quality
-        try {
-            this.localStream = await navigator.mediaDevices.getUserMedia(this.mediaConstraints);
-            this.hasInitializedMedia = true;
-            console.log('Media devices initialized with ideal quality');
-            return;
-        } catch (error) {
-            console.warn('Failed to get ideal quality media, trying fallbacks:', error);
-            
-            // Parse the error to provide appropriate user feedback
-            this.handleMediaDeviceError(error);
-            
-            // Try fallback options in sequence
-            try {
-                // Try with lower quality
-                console.log('Attempting lower quality fallback...');
-                this.localStream = await navigator.mediaDevices.getUserMedia(this.lowQualityConstraints);
-                this.hasInitializedMedia = true;
-                console.log('Media devices initialized with lower quality');
-                return;
-            } catch (error2) {
-                console.warn('Failed with lower quality, trying audio only:', error2);
-                
-                // Try audio only as last resort
-                try {
-                    console.log('Attempting audio-only fallback...');
-                    this.localStream = await navigator.mediaDevices.getUserMedia(this.audioOnlyConstraints);
-                    this.hasInitializedMedia = true;
-                    console.log('Media devices initialized with audio only');
-                    
-                    // Notify about video restrictions
-                    this.onError({
-                        type: 'media-fallback',
-                        message: 'Unable to access video. Session will continue with audio only.',
-                        details: error.message
-                    });
-                    return;
-                } catch (error3) {
-                    // At this point all attempts failed
-                    console.error('All media initialization attempts failed:', error3);
-                    this.deviceErrorState = 'all-failed';
-                    
-                    throw new Error('Unable to access audio or video devices. Please check your device permissions.');
-                }
-            }
-        }
-    }
-    
-    /**
-     * Parse device errors to provide meaningful user feedback
-     */
-    handleMediaDeviceError(error) {
-        // Map common getUserMedia errors to user-friendly messages
-        let errorInfo = {
-            type: 'unknown',
-            message: 'An unknown error occurred while accessing media devices.',
-            details: error.message
-        };
-        
-        // NotFoundError: The device you're trying to access doesn't exist or is unreachable
-        if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-            this.deviceErrorState = 'not-found';
-            errorInfo = {
-                type: 'device-not-found',
-                message: 'Camera or microphone not found. Please connect a device and try again.',
-                details: error.message
-            };
-        }
-        // NotAllowedError: User has denied permission
-        else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-            this.deviceErrorState = 'permission-denied';
-            errorInfo = {
-                type: 'permission-denied',
-                message: 'Camera or microphone access denied. Please allow access in your browser settings.',
-                details: error.message
-            };
-        }
-        // NotReadableError: Hardware or OS level error
-        else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-            this.deviceErrorState = 'in-use';
-            errorInfo = {
-                type: 'device-in-use',
-                message: 'Camera or microphone is already in use by another application.',
-                details: error.message
-            };
-        }
-        // OverconstrainedError: Constraints can't be met
-        else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
-            this.deviceErrorState = 'overconstrained';
-            errorInfo = {
-                type: 'device-capabilities',
-                message: 'Your camera doesn\'t support the required quality settings.',
-                details: error.message
-            };
-        }
-        // AbortError: Some issue has occurred which prevented device access
-        else if (error.name === 'AbortError') {
-            this.deviceErrorState = 'aborted';
-            errorInfo = {
-                type: 'device-error',
-                message: 'Hardware error occurred when accessing your camera or microphone.',
-                details: error.message
-            };
-        }
-        // SecurityError: Insecure context or permissions policy issue
-        else if (error.name === 'SecurityError') {
-            this.deviceErrorState = 'security';
-            errorInfo = {
-                type: 'security-error',
-                message: 'Security error accessing media devices. Please use HTTPS.',
-                details: error.message
-            };
-        }
-        
-        // Notify about the error
-        this.onError(errorInfo);
-        return errorInfo;
-    }
-    
-    /**
-     * Connect to the WebSocket server with reconnection logic
-     */
-    async connectWebSocket() {
-        return new Promise((resolve, reject) => {
-            try {
-                // Close existing socket if any
-                if (this.socket) {
-                    this.socket.close();
-                    this.socket = null;
-                }
-                
-                console.log(`Connecting to WebSocket server: ${this.websocketUrl}`);
-                
-                this.socket = new WebSocket(this.websocketUrl);
-                
-                this.socket.onopen = () => {
-                    console.log('WebSocket connection established');
-                    this.isConnected = true;
-                    this.reconnectAttempts = 0;
-                    
-                    // Send join message to identify client
-                    this.sendJoinMessage();
-                    
-                    // Setup ping interval for connection monitoring
-                    this.setupPingInterval();
-                    
-                    resolve();
-                };
-                
-                this.socket.onclose = (event) => {
-                    console.log(`WebSocket connection closed: ${event.code} - ${event.reason}`);
-                    this.isConnected = false;
-                    
-                    // Clear ping interval
-                    if (this.pingInterval) {
-                        clearInterval(this.pingInterval);
-                        this.pingInterval = null;
-                    }
-                    
-                    // Try to reconnect unless specifically closed by the application
-                    if (!this.isReconnecting && event.code !== 1000) {
-                        this.attemptReconnection();
-                    }
-                };
-                
-                this.socket.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    if (!this.isConnected) {
-                        reject(new Error('Failed to connect to WebSocket server'));
-                    } else {
-                        this.onError({
-                            type: 'websocket-error',
-                            message: 'Connection error with the server. Attempting to reconnect...',
-                            details: 'WebSocket connection issue'
-                        });
-                    }
-                };
-                
-                // Handle incoming WebSocket messages
-                this.socket.onmessage = (event) => {
-                    this.handleWebSocketMessage(event);
-                };
-                
-            } catch (error) {
-                console.error('Error connecting to WebSocket:', error);
-                reject(error);
-            }
-        });
-    }
-    
-    /**
-     * Send a join message to the WebSocket server
-     */
-    sendJoinMessage() {
-        if (!this.isConnected) return;
-        
-        const joinMessage = {
-            type: 'join',
-            user_id: this.userId, 
-            user_name: this.userName,
-            client_info: {
-                browser: navigator.userAgent,
-                time: new Date().toISOString(),
-                is_rejoining: this.isReconnecting,
-                device_type: this.getDeviceType(),
-                screen_width: window.innerWidth,
-                screen_height: window.innerHeight
-            }
-        };
-        
-        this.sendWebSocketMessage(joinMessage);
-    }
-    
-    /**
-     * Get device type information
-     */
-    getDeviceType() {
-        const ua = navigator.userAgent;
-        if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
-            return 'tablet';
-        }
-        if (/Mobile|Android|iP(hone|od)|IEMobile|BlackBerry|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(ua)) {
-            return 'mobile';
-        }
-        return 'desktop';
-    }
-    
-    /**
-     * Set up periodic ping to keep WebSocket connection alive
-     */
-    setupPingInterval() {
-        if (this.pingInterval) {
-            clearInterval(this.pingInterval);
-        }
-        
-        // Send ping every 30 seconds
-        this.pingInterval = setInterval(() => {
-            if (this.isConnected) {
-                this.lastPingTime = Date.now();
-                
-                const heartbeat = {
-                    type: 'heartbeat',
-                    timestamp: this.lastPingTime
-                };
-                
-                this.sendWebSocketMessage(heartbeat);
-            }
-        }, 30000);
-    }
-    
-    /**
-     * Handle incoming WebSocket messages
-     */
-    handleWebSocketMessage(event) {
-        try {
-            const data = JSON.parse(event.data);
-            // console.log('Received WebSocket message:', data);
-            
-            // Handle different message types
-            switch (data.type) {
-                case 'user_join':
-                    this.handleUserJoin(data);
-                    break;
-                    
-                case 'user_leave':
-                    this.handleUserLeave(data);
-                    break;
-                    
-                case 'user_rejoin':
-                    this.handleUserRejoin(data);
-                    break;
-                
-                case 'user_disconnected':
-                    this.handleUserTemporaryDisconnect(data);
-                    break;
-                    
-                case 'offer':
-                    this.handleOffer(data);
-                    break;
-                    
-                case 'answer':
-                    this.handleAnswer(data);
-                    break;
-                    
-                case 'candidate':
-                    this.handleCandidate(data);
-                    break;
-                    
-                case 'chat_message':
-                    this.handleChatMessage(data);
-                    break;
-                    
-                case 'error':
-                    this.handleErrorMessage(data);
-                    break;
-                    
-                case 'pong':
-                    this.handlePong(data);
-                    break;
-                    
-                case 'connection_error':
-                    this.handleConnectionError(data);
-                    break;
-                    
-                case 'join_ack':
-                    console.log('Join acknowledged by server');
-                    // Optionally request current room state
-                    this.requestRoomState();
-                    break;
-                    
-                case 'room_state':
-                    this.handleRoomState(data);
-                    break;
-                    
-                default:
-                    console.log('Unhandled message type:', data.type);
-            }
+            this.reconnectAttempts = 0;
+            this.log('info', 'WebRTC client initialized successfully');
             
         } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            this.isInitialized = false;
+            this.log('error', 'Failed to initialize WebRTC client', error);
+            
+            // Different error handling based on the error
+            let userFriendlyError = {
+                title: 'Connection Error',
+                message: 'An error occurred while setting up the connection.'
+            };
+            
+            if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                userFriendlyError = {
+                    title: 'Camera or Microphone Not Found',
+                    message: 'We couldn\'t find a camera or microphone on your device. Please connect a device and try again.'
+                };
+            } else if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                userFriendlyError = {
+                    title: 'Permission Denied',
+                    message: 'You need to allow access to your camera and microphone to join the session. Please check your browser permissions and try again.'
+                };
+            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+                userFriendlyError = {
+                    title: 'Device In Use',
+                    message: 'Your camera or microphone is being used by another application. Please close other applications and try again.'
+                };
+            } else if (error.name === 'WebSocketError') {
+                userFriendlyError = {
+                    title: 'Connection Failed',
+                    message: 'Could not connect to the session server. Please check your internet connection and try again.'
+                };
+            }
+            
+            this.onError(userFriendlyError);
+            
+            // Try to reconnect if it was a WebSocket error
+            if (error.name === 'WebSocketError' && this.reconnectAttempts < this.maxReconnectAttempts) {
+                this.scheduleReconnect();
+            }
         }
     }
     
     /**
-     * Request current room state when reconnecting
+     * Schedule a reconnection attempt with exponential backoff
      */
-    requestRoomState() {
-        this.sendWebSocketMessage({
-            type: 'get_room_state'
-        });
-    }
-    
-    /**
-     * Send a WebSocket message
-     */
-    sendWebSocketMessage(message) {
-        if (!this.isConnected || !this.socket) {
-            console.warn('Cannot send message, WebSocket not connected');
-            return false;
-        }
+    scheduleReconnect() {
+        const delay = this.reconnectDelay * Math.pow(1.5, this.reconnectAttempts);
+        this.log('info', `Scheduling reconnect attempt ${this.reconnectAttempts + 1} in ${delay}ms`);
         
-        try {
-            this.socket.send(JSON.stringify(message));
-            return true;
-        } catch (error) {
-            console.error('Error sending WebSocket message:', error);
-            return false;
-        }
+        setTimeout(() => {
+            this.reconnect();
+        }, delay);
     }
     
     /**
-     * Attempt to reconnect to the WebSocket server
+     * Attempt to reconnect
      */
-    attemptReconnection() {
-        if (this.isReconnecting || this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            return;
-        }
+    async reconnect() {
+        if (this.isConnecting) return;
         
-        this.isReconnecting = true;
+        this.isConnecting = true;
         this.reconnectAttempts++;
         
-        console.log(`Attempting to reconnect (${this.reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
-        
+        this.log('info', `Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`);
         this.onConnectionStateChange('reconnecting');
         
-        // Attempt reconnection after delay
-        setTimeout(async () => {
-            try {
-                await this.connectWebSocket();
-                this.isReconnecting = false;
-                this.onConnectionStateChange('reconnected');
-                
-                // Re-establish all peer connections
-                this.reestablishPeerConnections();
-                
-            } catch (error) {
-                this.isReconnecting = false;
-                console.error('Reconnection attempt failed:', error);
-                
-                if (this.reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
-                    this.attemptReconnection();
-                } else {
-                    this.onConnectionStateChange('failed');
-                    this.onError({
-                        type: 'reconnection-failed',
-                        message: 'Unable to reconnect to the session after multiple attempts.',
-                        details: error.message
-                    });
-                }
-            }
-        }, RETRY_DELAY);
-    }
-    
-    /**
-     * Re-establish peer connections after a reconnection
-     */
-    reestablishPeerConnections() {
-        console.log('Re-establishing peer connections...');
+        // Clean up existing resources
+        this.cleanupResources();
         
-        // Close all existing peer connections
-        for (const userId in this.peerConnections) {
-            this.closePeerConnection(userId);
-        }
-        
-        // Clear peer connections
-        this.peerConnections = {};
-        
-        // Request room state which will trigger the creation of new peer connections
-        this.requestRoomState();
-    }
-    
-    /**
-     * Handle a new user joining the session
-     */
-    handleUserJoin(data) {
-        console.log(`User joined: ${data.user_name} (${data.user_id})`);
-        
-        // Add to users in session
-        this.usersInSession.add(data.user_id);
-        
-        // If we're the mentor, initiate the connection to the new user
-        if (this.isMentor && data.user_id !== this.userId) {
-            setTimeout(() => {
-                this.createPeerConnection(data.user_id, data.user_name, true);
-            }, 1000);  // Small delay to ensure both sides are ready
-        }
-    }
-    
-    /**
-     * Handle a user leaving the session
-     */
-    handleUserLeave(data) {
-        console.log(`User left: ${data.user_name} (${data.user_id})`);
-        
-        // Remove from users in session
-        this.usersInSession.delete(data.user_id);
-        
-        // Close the peer connection
-        this.closePeerConnection(data.user_id);
-        
-        // Notify about remote stream removal
-        this.onRemoteStreamRemoved(data.user_id);
-    }
-    
-    /**
-     * Handle a user temporarily disconnecting
-     */
-    handleUserTemporaryDisconnect(data) {
-        console.log(`User temporarily disconnected: ${data.user_name} (${data.user_id})`);
-        
-        // For now, we keep the connection open and wait for potential reconnection
-        // If the user doesn't reconnect within a time frame, 'user_leave' will be triggered
-    }
-    
-    /**
-     * Handle a user rejoining after a temporary disconnection
-     */
-    handleUserRejoin(data) {
-        console.log(`User rejoined: ${data.user_name} (${data.user_id})`);
-        
-        // If the peer connection is dead, recreate it
-        const pc = this.peerConnections[data.user_id];
-        if (!pc || pc.connectionState === 'closed' || pc.connectionState === 'failed') {
-            // If we're the mentor, initiate a new connection
-            if (this.isMentor) {
-                setTimeout(() => {
-                    this.createPeerConnection(data.user_id, data.user_name, true);
-                }, 1000);
-            }
-        }
-    }
-    
-    /**
-     * Create a new peer connection for a user
-     */
-    createPeerConnection(userId, userName, createOffer = false) {
-        // If connection already exists, close it first
-        if (this.peerConnections[userId]) {
-            this.closePeerConnection(userId);
-        }
-        
-        console.log(`Creating peer connection to ${userName} (${userId})`);
-        
-        // Create a new RTCPeerConnection
-        const pc = new RTCPeerConnection({
-            iceServers: ICE_SERVERS,
-            iceCandidatePoolSize: 10
-        });
-        
-        this.peerConnections[userId] = pc;
-        
-        // Set up event handlers
-        pc.onicecandidate = (event) => {
-            if (event.candidate) {
-                this.sendCandidate(userId, event.candidate);
-            }
-        };
-        
-        pc.oniceconnectionstatechange = () => {
-            console.log(`ICE connection state change for ${userId}: ${pc.iceConnectionState}`);
+        try {
+            // Reinitialize everything
+            this.isInitialized = false;
+            await this.initialize();
             
-            if (pc.iceConnectionState === 'failed') {
-                // Try to restart ICE
-                pc.restartIce();
-                
-                // Notify about ICE failure
+            this.isConnecting = false;
+            this.log('info', 'Reconnection successful');
+            this.onConnectionStateChange('connected');
+            
+        } catch (error) {
+            this.isConnecting = false;
+            this.log('error', 'Reconnection failed', error);
+            
+            if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                this.scheduleReconnect();
+            } else {
+                this.log('error', 'Maximum reconnection attempts reached');
+                this.onConnectionStateChange('failed');
                 this.onError({
-                    type: 'ice-connection-failed',
-                    message: 'Network connection issues detected. Attempting to recover connection...',
-                    details: `ICE connection failed for user ${userId}`
+                    title: 'Connection Lost',
+                    message: 'We couldn\'t reconnect to the session after multiple attempts. Please try refreshing the page.'
                 });
             }
-        };
-        
-        pc.onconnectionstatechange = () => {
-            console.log(`Connection state change for ${userId}: ${pc.connectionState}`);
-            
-            if (pc.connectionState === 'failed') {
-                // Connection completely failed, try to recreate
-                this.handleConnectionFailure(userId, userName);
-            }
-        };
-        
-        pc.ontrack = (event) => {
-            console.log(`Remote track added from ${userId}`);
-            
-            // Store remote stream
-            this.remoteStreams[userId] = event.streams[0];
-            
-            // Notify about new remote stream
-            this.onRemoteStreamAdded(userId, event.streams[0]);
-        };
-        
-        // Add local tracks to the connection
-        if (this.localStream) {
-            this.localStream.getTracks().forEach(track => {
-                pc.addTrack(track, this.localStream);
-            });
-        } else {
-            console.warn('No local stream available when creating peer connection');
         }
-        
-        // Create data channel
-        try {
-            const dataChannel = pc.createDataChannel('chat');
-            
-            dataChannel.onopen = () => {
-                console.log(`Data channel opened with ${userId}`);
-            };
-            
-            dataChannel.onclose = () => {
-                console.log(`Data channel closed with ${userId}`);
-            };
-            
-            dataChannel.onmessage = (event) => {
-                console.log(`Data channel message from ${userId}:`, event.data);
-                this.handleDataChannelMessage(userId, event.data);
-            };
-            
-            this.dataChannels[userId] = dataChannel;
-        } catch (error) {
-            console.error('Error creating data channel:', error);
-        }
-        
-        // If this side should create the offer, do so
-        if (createOffer) {
-            this.createOffer(userId);
-        }
-        
-        return pc;
     }
     
     /**
-     * Close a peer connection
+     * Clean up resources for reconnection or shutdown
      */
-    closePeerConnection(userId) {
-        const pc = this.peerConnections[userId];
-        if (!pc) return;
+    cleanupResources() {
+        this.log('info', 'Cleaning up resources');
         
-        console.log(`Closing peer connection to ${userId}`);
-        
-        // Close data channel if it exists
-        if (this.dataChannels[userId]) {
-            this.dataChannels[userId].close();
-            delete this.dataChannels[userId];
+        // Close data channel
+        if (this.dataChannel) {
+            this.dataChannel.close();
+            this.dataChannel = null;
         }
         
         // Close peer connection
-        pc.close();
-        delete this.peerConnections[userId];
+        if (this.peerConnection) {
+            this.peerConnection.close();
+            this.peerConnection = null;
+        }
         
-        // Clean up remote stream
-        delete this.remoteStreams[userId];
+        // Close WebSocket
+        if (this.socket && this.socket.readyState !== WebSocket.CLOSED) {
+            this.socket.close();
+            this.socket = null;
+        }
+        
+        // Clear remote streams
+        this.remoteStreams.clear();
+        
+        // Don't stop local stream here to avoid having to request permissions again
+    }
+    
+    /**
+     * Set up media devices (camera and microphone)
+     */
+    async setupMediaDevices() {
+        this.log('info', 'Setting up media devices with constraints:', this.mediaConstraints);
+        this.onConnectionStateChange('getting_user_media');
+        
+        try {
+            // First try with both audio and video
+            this.localStream = await navigator.mediaDevices.getUserMedia(this.mediaConstraints);
+            this.log('info', 'Successfully acquired camera and microphone access');
+            
+        } catch (error) {
+            this.log('warn', 'Failed to get access to both camera and microphone', error);
+            
+            // Try with audio only as fallback
+            try {
+                this.log('info', 'Attempting to get audio only as fallback');
+                this.localStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: true, 
+                    video: false 
+                });
+                this.log('info', 'Successfully acquired microphone access (camera failed)');
+                
+                // Let the user know we're in audio-only mode
+                this.onError({
+                    title: 'Video Unavailable',
+                    message: 'We couldn\'t access your camera, but you can still join with audio only. You might want to check your camera settings.',
+                    severity: 'warning'
+                });
+                
+            } catch (audioError) {
+                this.log('error', 'Failed to get access to microphone as fallback', audioError);
+                // Let the original error bubble up since we couldn't even get audio
+                throw error;
+            }
+        }
+        
+        // Provide the local stream to the UI
+        this.onLocalStream(this.localStream);
+        this.onConnectionStateChange('got_user_media');
+        return this.localStream;
+    }
+    
+    /**
+     * Set up WebSocket connection
+     */
+    async setupWebSocket() {
+        return new Promise((resolve, reject) => {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`;
+            
+            this.log('info', 'Connecting to WebSocket:', wsUrl);
+            this.onConnectionStateChange('connecting');
+            
+            try {
+                this.socket = new WebSocket(wsUrl);
+            } catch (error) {
+                this.log('error', 'Failed to create WebSocket', error);
+                const wsError = new Error('Failed to create WebSocket connection');
+                wsError.name = 'WebSocketError';
+                reject(wsError);
+                return;
+            }
+            
+            this.socket.onopen = () => {
+                this.log('info', 'WebSocket connection established');
+                this.onConnectionStateChange('websocket_connected');
+                
+                // Send join message
+                const joinMessage = {
+                    type: 'join',
+                    sessionId: this.sessionId,
+                    userId: this.userId,
+                    userName: this.userName,
+                    isMentor: this.isMentor
+                };
+                
+                this.socket.send(JSON.stringify(joinMessage));
+                resolve();
+            };
+            
+            this.socket.onclose = (event) => {
+                if (this.isConnected) {
+                    this.log('warn', 'WebSocket connection closed', event);
+                    this.isConnected = false;
+                    this.onConnectionStateChange('disconnected');
+                    
+                    // Try to reconnect if not deliberately closed
+                    if (!event.wasClean && this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.scheduleReconnect();
+                    }
+                } else {
+                    this.log('info', 'WebSocket connection closed before fully connected', event);
+                }
+            };
+            
+            this.socket.onerror = (error) => {
+                this.log('error', 'WebSocket error', error);
+                
+                // Reject the promise if we're still setting up
+                if (!this.isConnected) {
+                    const wsError = new Error('WebSocket connection error');
+                    wsError.name = 'WebSocketError';
+                    reject(wsError);
+                } else {
+                    // Otherwise try to reconnect
+                    this.isConnected = false;
+                    this.onConnectionStateChange('error');
+                    
+                    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                        this.scheduleReconnect();
+                    } else {
+                        this.onError({
+                            title: 'Connection Error',
+                            message: 'The connection to the session server was lost and could not be restored.'
+                        });
+                    }
+                }
+            };
+            
+            this.socket.onmessage = (event) => {
+                this.handleWebSocketMessage(event);
+            };
+            
+            // Set a timeout in case the connection hangs
+            setTimeout(() => {
+                if (!this.isConnected && this.socket && this.socket.readyState !== WebSocket.OPEN) {
+                    this.log('warn', 'WebSocket connection timed out');
+                    const wsError = new Error('WebSocket connection timed out');
+                    wsError.name = 'WebSocketError';
+                    reject(wsError);
+                }
+            }, 10000); // 10 second timeout
+        });
+    }
+    
+    /**
+     * Process WebSocket messages
+     * 
+     * @param {MessageEvent} event - The WebSocket message event
+     */
+    handleWebSocketMessage(event) {
+        try {
+            const message = JSON.parse(event.data);
+            this.log('debug', 'Received WebSocket message:', message);
+            
+            switch (message.type) {
+                case 'join_ack':
+                    this.log('info', 'Join acknowledged by server');
+                    this.isConnected = true;
+                    this.onConnectionStateChange('joined');
+                    break;
+                    
+                case 'user_joined':
+                    this.log('info', 'New user joined the session', message);
+                    // If we're the mentor or if they're the mentor, start the connection
+                    if (this.isMentor || message.isMentor) {
+                        this.createOffer();
+                    }
+                    
+                    // Display system message in chat
+                    this.onChatMessage({
+                        userId: 'system',
+                        userName: 'System',
+                        message: `${message.userName} has joined the session.`,
+                        timestamp: new Date().toISOString(),
+                        isSystem: true
+                    });
+                    break;
+                    
+                case 'user_left':
+                    this.log('info', 'User left the session', message);
+                    
+                    // Remove their stream if we have it
+                    if (this.remoteStreams.has(message.userId)) {
+                        this.remoteStreams.delete(message.userId);
+                    }
+                    
+                    // Display system message in chat
+                    this.onChatMessage({
+                        userId: 'system',
+                        userName: 'System',
+                        message: `${message.userName} has left the session.`,
+                        timestamp: new Date().toISOString(),
+                        isSystem: true
+                    });
+                    break;
+                    
+                case 'offer':
+                    this.log('info', 'Received offer from remote peer');
+                    this.handleOffer(message);
+                    break;
+                    
+                case 'answer':
+                    this.log('info', 'Received answer from remote peer');
+                    this.handleAnswer(message);
+                    break;
+                    
+                case 'ice_candidate':
+                    this.log('debug', 'Received ICE candidate from remote peer');
+                    this.handleICECandidate(message);
+                    break;
+                    
+                case 'chat_message':
+                    this.log('debug', 'Received chat message');
+                    this.onChatMessage({
+                        userId: message.userId,
+                        userName: message.userName,
+                        message: message.message,
+                        timestamp: message.timestamp || new Date().toISOString(),
+                        isSystem: false
+                    });
+                    break;
+                    
+                case 'error':
+                    this.log('error', 'Received error from server', message);
+                    this.onError({
+                        title: 'Server Error',
+                        message: message.message || 'An error occurred on the server.'
+                    });
+                    break;
+                    
+                default:
+                    this.log('warn', 'Unknown message type:', message.type);
+            }
+            
+        } catch (error) {
+            this.log('error', 'Error handling WebSocket message', error, event.data);
+        }
+    }
+    
+    /**
+     * Set up the WebRTC peer connection
+     */
+    async setupPeerConnection() {
+        this.log('info', 'Setting up peer connection with ICE servers:', this.iceServers);
+        
+        const configuration = {
+            iceServers: this.iceServers,
+            iceCandidatePoolSize: 10
+        };
+        
+        this.peerConnection = new RTCPeerConnection(configuration);
+        
+        // Set up data channel for chat
+        this.setupDataChannel();
+        
+        // Add local tracks to the connection
+        this.localStream.getTracks().forEach(track => {
+            this.log('debug', 'Adding local track to peer connection:', track.kind);
+            this.peerConnection.addTrack(track, this.localStream);
+        });
+        
+        // Listen for ICE candidates
+        this.peerConnection.onicecandidate = this.handleIceCandidate;
+        
+        // Listen for ICE connection state changes
+        this.peerConnection.oniceconnectionstatechange = () => {
+            this.log('info', 'ICE connection state changed:', this.peerConnection.iceConnectionState);
+            this.onConnectionStateChange(this.peerConnection.iceConnectionState);
+            
+            // Handle disconnection
+            if (this.peerConnection.iceConnectionState === 'disconnected' || 
+                this.peerConnection.iceConnectionState === 'failed') {
+                this.log('warn', 'ICE connection failed or disconnected');
+                
+                // Try to reconnect if we've not reached the maximum attempts
+                if (this.reconnectAttempts < this.maxReconnectAttempts) {
+                    this.scheduleReconnect();
+                } else {
+                    this.onError({
+                        title: 'Connection Lost',
+                        message: 'The connection to the other participant was lost. Please try refreshing the page.'
+                    });
+                }
+            }
+        };
+        
+        // Listen for signaling state changes
+        this.peerConnection.onsignalingstatechange = () => {
+            this.log('info', 'Signaling state changed:', this.peerConnection.signalingState);
+        };
+        
+        // Listen for new remote tracks
+        this.peerConnection.ontrack = this.handleRemoteTrack;
+    }
+    
+    /**
+     * Set up the data channel for chat
+     */
+    setupDataChannel() {
+        if (this.isMentor) {
+            // Mentor creates the data channel
+            this.log('info', 'Creating data channel for chat');
+            this.dataChannel = this.peerConnection.createDataChannel('chat', {
+                ordered: true
+            });
+            this.setupDataChannelEvents();
+        } else {
+            // Learner waits for the data channel
+            this.peerConnection.ondatachannel = (event) => {
+                this.log('info', 'Received data channel from mentor');
+                this.dataChannel = event.channel;
+                this.setupDataChannelEvents();
+            };
+        }
+    }
+    
+    /**
+     * Set up event listeners for the data channel
+     */
+    setupDataChannelEvents() {
+        this.dataChannel.onopen = () => {
+            this.log('info', 'Data channel opened');
+        };
+        
+        this.dataChannel.onclose = () => {
+            this.log('info', 'Data channel closed');
+        };
+        
+        this.dataChannel.onerror = (error) => {
+            this.log('error', 'Data channel error', error);
+        };
+        
+        this.dataChannel.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                this.log('debug', 'Received data channel message:', message);
+                
+                if (message.type === 'chat') {
+                    this.onChatMessage({
+                        userId: message.userId,
+                        userName: message.userName,
+                        message: message.message,
+                        timestamp: message.timestamp || new Date().toISOString(),
+                        isSystem: false
+                    });
+                }
+            } catch (error) {
+                this.log('error', 'Error handling data channel message', error);
+            }
+        };
+    }
+    
+    /**
+     * Handle ICE candidates
+     * 
+     * @param {RTCPeerConnectionIceEvent} event - The ICE candidate event
+     */
+    handleIceCandidate(event) {
+        if (event.candidate) {
+            this.log('debug', 'Generated ICE candidate for remote peer');
+            
+            // Send the candidate to the remote peer
+            const message = {
+                type: 'ice_candidate',
+                candidate: event.candidate,
+                sessionId: this.sessionId,
+                userId: this.userId
+            };
+            
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify(message));
+            } else {
+                this.log('warn', 'Cannot send ICE candidate: WebSocket not open');
+            }
+        } else {
+            this.log('info', 'All ICE candidates gathered');
+        }
+    }
+    
+    /**
+     * Handle remote media tracks
+     * 
+     * @param {RTCTrackEvent} event - The track event
+     */
+    handleRemoteTrack(event) {
+        this.log('info', 'Received remote track', event.track.kind);
+        
+        // Get the remote stream
+        const remoteStream = event.streams[0];
+        
+        // Find the user ID associated with this stream
+        // This is a simplification - in a real implementation you'd need
+        // to identify the sender based on signaling metadata
+        const remoteUserId = this.isMentor ? 'learner' : 'mentor'; // Simplified
+        const remoteUserName = this.isMentor ? 'Learner' : 'Mentor'; // Simplified
+        
+        // Store the stream
+        this.remoteStreams.set(remoteUserId, remoteStream);
+        
+        // Notify the UI
+        this.onRemoteStream(remoteUserId, remoteUserName, remoteStream, !this.isMentor);
     }
     
     /**
      * Create and send an offer
      */
-    async createOffer(userId) {
-        const pc = this.peerConnections[userId];
-        if (!pc) return;
+    async createOffer() {
+        if (!this.peerConnection) {
+            this.log('error', 'Cannot create offer: no peer connection');
+            return;
+        }
+        
+        this.log('info', 'Creating offer');
         
         try {
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
+            const offer = await this.peerConnection.createOffer({
+                offerToReceiveAudio: true,
+                offerToReceiveVideo: true
+            });
             
-            console.log(`Created and set local offer for ${userId}`);
+            this.log('debug', 'Created offer', offer);
             
-            // Send the offer
-            this.sendOffer(userId, pc.localDescription);
+            await this.peerConnection.setLocalDescription(offer);
+            
+            this.log('info', 'Set local description (offer)');
+            
+            // Send the offer to the remote peer
+            const message = {
+                type: 'offer',
+                offer: offer,
+                sessionId: this.sessionId,
+                userId: this.userId,
+                isMentor: this.isMentor
+            };
+            
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify(message));
+                this.log('info', 'Sent offer to remote peer');
+            } else {
+                this.log('error', 'Cannot send offer: WebSocket not open');
+                throw new Error('WebSocket connection not open');
+            }
             
         } catch (error) {
-            console.error('Error creating offer:', error);
+            this.log('error', 'Error creating or sending offer', error);
             this.onError({
-                type: 'create-offer-failed',
-                message: 'Failed to initiate connection with the other participant.',
-                details: error.message
+                title: 'Connection Error',
+                message: 'An error occurred while setting up the connection. Please try refreshing the page.'
             });
         }
-    }
-    
-    /**
-     * Send an offer
-     */
-    sendOffer(userId, offer) {
-        const message = {
-            type: 'offer',
-            offer: offer,
-            to_user_id: userId
-        };
-        
-        this.sendWebSocketMessage(message);
     }
     
     /**
      * Handle an incoming offer
+     * 
+     * @param {Object} message - The offer message
      */
-    async handleOffer(data) {
-        const fromUserId = data.from_user_id;
-        console.log(`Received offer from ${fromUserId}`);
+    async handleOffer(message) {
+        if (!this.peerConnection) {
+            this.log('error', 'Cannot handle offer: no peer connection');
+            return;
+        }
         
-        if (fromUserId === this.userId) return;  // Ignore offers from ourselves
+        this.log('info', 'Handling offer from remote peer');
         
         try {
-            // Create peer connection if it doesn't exist
-            if (!this.peerConnections[fromUserId]) {
-                this.createPeerConnection(fromUserId, 'Remote User');
-            }
+            const remoteOffer = message.offer;
             
-            const pc = this.peerConnections[fromUserId];
+            // Set the remote description
+            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(remoteOffer));
             
-            // Set remote description
-            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            this.log('info', 'Set remote description (offer)');
             
-            // Create answer
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            
-            console.log(`Created and set local answer for ${fromUserId}`);
-            
-            // Send the answer
-            this.sendAnswer(fromUserId, pc.localDescription);
+            // Create and send an answer
+            await this.createAnswer();
             
         } catch (error) {
-            console.error('Error handling offer:', error);
+            this.log('error', 'Error handling offer', error);
             this.onError({
-                type: 'handle-offer-failed',
-                message: 'Failed to process connection request from the other participant.',
-                details: error.message
+                title: 'Connection Error',
+                message: 'An error occurred while processing the connection. Please try refreshing the page.'
             });
         }
     }
     
     /**
-     * Send an answer
+     * Create and send an answer
      */
-    sendAnswer(userId, answer) {
-        const message = {
-            type: 'answer',
-            answer: answer,
-            to_user_id: userId
-        };
+    async createAnswer() {
+        if (!this.peerConnection) {
+            this.log('error', 'Cannot create answer: no peer connection');
+            return;
+        }
         
-        this.sendWebSocketMessage(message);
+        this.log('info', 'Creating answer');
+        
+        try {
+            const answer = await this.peerConnection.createAnswer();
+            
+            this.log('debug', 'Created answer', answer);
+            
+            await this.peerConnection.setLocalDescription(answer);
+            
+            this.log('info', 'Set local description (answer)');
+            
+            // Send the answer to the remote peer
+            const message = {
+                type: 'answer',
+                answer: answer,
+                sessionId: this.sessionId,
+                userId: this.userId,
+                isMentor: this.isMentor
+            };
+            
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                this.socket.send(JSON.stringify(message));
+                this.log('info', 'Sent answer to remote peer');
+            } else {
+                this.log('error', 'Cannot send answer: WebSocket not open');
+                throw new Error('WebSocket connection not open');
+            }
+            
+        } catch (error) {
+            this.log('error', 'Error creating or sending answer', error);
+            this.onError({
+                title: 'Connection Error',
+                message: 'An error occurred while connecting. Please try refreshing the page.'
+            });
+        }
     }
     
     /**
      * Handle an incoming answer
+     * 
+     * @param {Object} message - The answer message
      */
-    async handleAnswer(data) {
-        const fromUserId = data.from_user_id;
-        console.log(`Received answer from ${fromUserId}`);
+    async handleAnswer(message) {
+        if (!this.peerConnection) {
+            this.log('error', 'Cannot handle answer: no peer connection');
+            return;
+        }
         
-        if (fromUserId === this.userId) return;  // Ignore answers from ourselves
+        this.log('info', 'Handling answer from remote peer');
         
         try {
-            const pc = this.peerConnections[fromUserId];
-            if (!pc) {
-                console.warn(`No peer connection for ${fromUserId}`);
-                return;
-            }
+            const remoteAnswer = message.answer;
             
-            // Set remote description
-            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-            console.log(`Set remote answer for ${fromUserId}`);
+            // Set the remote description
+            await this.peerConnection.setRemoteDescription(new RTCSessionDescription(remoteAnswer));
+            
+            this.log('info', 'Set remote description (answer)');
             
         } catch (error) {
-            console.error('Error handling answer:', error);
+            this.log('error', 'Error handling answer', error);
             this.onError({
-                type: 'handle-answer-failed',
-                message: 'Failed to establish connection with the other participant.',
-                details: error.message
+                title: 'Connection Error',
+                message: 'An error occurred while finalizing the connection. Please try refreshing the page.'
             });
         }
-    }
-    
-    /**
-     * Send an ICE candidate
-     */
-    sendCandidate(userId, candidate) {
-        const message = {
-            type: 'candidate',
-            candidate: candidate,
-            to_user_id: userId
-        };
-        
-        this.sendWebSocketMessage(message);
     }
     
     /**
      * Handle an incoming ICE candidate
+     * 
+     * @param {Object} message - The ICE candidate message
      */
-    async handleCandidate(data) {
-        const fromUserId = data.from_user_id;
+    async handleICECandidate(message) {
+        if (!this.peerConnection) {
+            this.log('error', 'Cannot handle ICE candidate: no peer connection');
+            return;
+        }
         
-        if (fromUserId === this.userId) return;  // Ignore candidates from ourselves
+        this.log('debug', 'Handling ICE candidate from remote peer');
         
         try {
-            const pc = this.peerConnections[fromUserId];
-            if (!pc) {
-                console.warn(`No peer connection for ${fromUserId}`);
-                return;
-            }
+            const candidate = message.candidate;
             
-            // Add ICE candidate
-            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-            // console.log(`Added ICE candidate from ${fromUserId}`);
+            // Add the ICE candidate to the peer connection
+            await this.peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+            
+            this.log('debug', 'Added ICE candidate');
             
         } catch (error) {
-            console.error('Error handling ICE candidate:', error);
+            this.log('error', 'Error handling ICE candidate', error);
         }
-    }
-    
-    /**
-     * Handle an incoming chat message
-     */
-    handleChatMessage(data) {
-        console.log(`Chat message from ${data.from_user_name}: ${data.message}`);
-        
-        // Notify about new chat message
-        this.onChatMessage({
-            userId: data.from_user_id,
-            userName: data.from_user_name,
-            message: data.message,
-            timestamp: data.timestamp
-        });
-    }
-    
-    /**
-     * Handle a data channel message
-     */
-    handleDataChannelMessage(userId, data) {
-        try {
-            const message = JSON.parse(data);
-            
-            if (message.type === 'chat') {
-                this.onChatMessage({
-                    userId: userId,
-                    userName: 'Remote User',  // We don't know the name from data channel
-                    message: message.message,
-                    timestamp: message.timestamp || new Date().toISOString()
-                });
-            }
-            
-        } catch (error) {
-            console.error('Error parsing data channel message:', error);
-        }
-    }
-    
-    /**
-     * Handle an error message from the server
-     */
-    handleErrorMessage(data) {
-        console.error('Error message from server:', data.message);
-        
-        this.onError({
-            type: 'server-error',
-            message: data.message,
-            details: data.details || 'No details provided'
-        });
-    }
-    
-    /**
-     * Handle pong response from server
-     */
-    handlePong(data) {
-        if (!this.lastPingTime) return;
-        
-        const latency = Date.now() - this.lastPingTime;
-        
-        if (latency > 1000) {
-            console.warn(`High server latency detected: ${latency}ms`);
-        }
-    }
-    
-    /**
-     * Handle connection error message
-     */
-    handleConnectionError(data) {
-        console.error(`Connection error reported by ${data.user_name}:`, data.error);
-        
-        // If this error is for us, handle it
-        if (data.to_user_id === this.userId) {
-            this.onError({
-                type: 'peer-connection-error',
-                message: `${data.user_name} is having trouble connecting to you. They reported: ${data.error}`,
-                details: data.error
-            });
-            
-            // Try to recreate the connection
-            setTimeout(() => {
-                this.createPeerConnection(data.user_id, data.user_name, this.isMentor);
-            }, 2000);
-        }
-    }
-    
-    /**
-     * Handle room state
-     */
-    handleRoomState(data) {
-        console.log('Received room state:', data);
-        
-        // Process current participants
-        if (data.participants) {
-            data.participants.forEach(participant => {
-                if (participant.user_id !== this.userId) {
-                    this.usersInSession.add(participant.user_id);
-                    
-                    // Create peer connection if needed (mentor initiates)
-                    if (this.isMentor && !this.peerConnections[participant.user_id]) {
-                        setTimeout(() => {
-                            this.createPeerConnection(participant.user_id, participant.user_name, true);
-                        }, 1000);
-                    }
-                }
-            });
-        }
-    }
-    
-    /**
-     * Handle connection failure
-     */
-    handleConnectionFailure(userId, userName) {
-        console.log(`Connection failed with ${userName} (${userId}), attempting recovery...`);
-        
-        // Notify about failure
-        this.onError({
-            type: 'connection-failed',
-            message: `Connection with ${userName || 'another participant'} has failed. Attempting to reconnect...`,
-            details: `WebRTC connection failed for user ${userId}`
-        });
-        
-        // Report error to the server so the other side knows about it
-        this.sendWebSocketMessage({
-            type: 'connection_error',
-            error: 'WebRTC connection failed, attempting to recreate',
-            to_user_id: userId
-        });
-        
-        // Close and recreate the connection
-        this.closePeerConnection(userId);
-        
-        // Wait a moment before recreating
-        setTimeout(() => {
-            this.createPeerConnection(userId, userName, this.isMentor);
-        }, 2000);
-    }
-    
-    /**
-     * Start monitoring connection quality
-     */
-    startConnectionMonitoring() {
-        // Monitor every 10 seconds
-        setInterval(() => {
-            // Check peer connections health
-            for (const userId in this.peerConnections) {
-                const pc = this.peerConnections[userId];
-                
-                // Get connection stats to monitor quality
-                pc.getStats().then(stats => {
-                    stats.forEach(report => {
-                        if (report.type === 'transport') {
-                            const bytesReceived = report.bytesReceived;
-                            const bytesSent = report.bytesSent;
-                            
-                            // Log if there's a significant issue (disabled in production)
-                            // console.log(`Connection with ${userId}: Bytes received=${bytesReceived}, Bytes sent=${bytesSent}`);
-                        }
-                        
-                        // Monitor for packet loss and other issues
-                        if (report.type === 'inbound-rtp' && report.kind === 'video') {
-                            if (report.packetsLost > 100 && report.packetsReceived > 0) {
-                                const lossRate = report.packetsLost / (report.packetsLost + report.packetsReceived);
-                                
-                                if (lossRate > 0.1) {  // More than 10% packet loss
-                                    console.warn(`High packet loss detected in connection with ${userId}: ${(lossRate * 100).toFixed(2)}%`);
-                                    
-                                    // Only notify if significant and persistent
-                                    if (lossRate > 0.3) {  // More than 30% packet loss
-                                        this.onError({
-                                            type: 'high-packet-loss',
-                                            message: 'Network quality issues detected. Video may be unstable.',
-                                            details: `Packet loss rate: ${(lossRate * 100).toFixed(2)}%`
-                                        });
-                                    }
-                                }
-                            }
-                        }
-                    });
-                }).catch(error => {
-                    console.error('Error getting stats:', error);
-                });
-            }
-        }, 10000);
     }
     
     /**
      * Send a chat message
+     * 
+     * @param {string} message - The message to send
      */
     sendChatMessage(message) {
-        if (!message || message.trim() === '') return false;
+        if (!message || message.trim() === '') {
+            return;
+        }
         
-        // Send via WebSocket for server logging and guaranteed delivery
+        this.log('debug', 'Sending chat message:', message);
+        
         const chatMessage = {
             type: 'chat',
-            message: message.trim()
+            userId: this.userId,
+            userName: this.userName,
+            message: message,
+            timestamp: new Date().toISOString()
         };
         
-        return this.sendWebSocketMessage(chatMessage);
+        // First try to send via data channel
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify(chatMessage));
+            
+            // Also show the message locally
+            this.onChatMessage({
+                userId: this.userId,
+                userName: this.userName,
+                message: message,
+                timestamp: chatMessage.timestamp,
+                isSystem: false,
+                isLocal: true
+            });
+            
+        } else {
+            // Fall back to WebSocket
+            this.log('debug', 'Data channel not available, sending chat via WebSocket');
+            
+            if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+                const wsMessage = {
+                    type: 'chat_message',
+                    message: message,
+                    sessionId: this.sessionId,
+                    userId: this.userId,
+                    userName: this.userName
+                };
+                
+                this.socket.send(JSON.stringify(wsMessage));
+                
+                // Also show the message locally
+                this.onChatMessage({
+                    userId: this.userId,
+                    userName: this.userName,
+                    message: message,
+                    timestamp: chatMessage.timestamp,
+                    isSystem: false,
+                    isLocal: true
+                });
+                
+            } else {
+                this.log('error', 'Cannot send chat message: no open connection');
+                this.onError({
+                    title: 'Message Not Sent',
+                    message: 'Your message could not be sent because you are not connected to the session.',
+                    severity: 'warning'
+                });
+            }
+        }
     }
     
     /**
-     * Toggle microphone
+     * Toggle microphone mute state
      */
-    toggleMicrophone(enabled) {
-        if (!this.localStream) return false;
+    toggleMicrophone() {
+        if (!this.localStream) return;
         
         const audioTracks = this.localStream.getAudioTracks();
-        if (audioTracks.length === 0) return false;
-        
         for (const track of audioTracks) {
-            track.enabled = enabled;
+            track.enabled = !track.enabled;
+            this.log('info', `Microphone ${track.enabled ? 'unmuted' : 'muted'}`);
         }
         
-        return true;
+        return audioTracks.length > 0 ? audioTracks[0].enabled : false;
     }
     
     /**
-     * Toggle camera
+     * Toggle camera on/off state
      */
-    toggleCamera(enabled) {
-        if (!this.localStream) return false;
+    toggleCamera() {
+        if (!this.localStream) return;
         
         const videoTracks = this.localStream.getVideoTracks();
-        if (videoTracks.length === 0) return false;
-        
         for (const track of videoTracks) {
-            track.enabled = enabled;
+            track.enabled = !track.enabled;
+            this.log('info', `Camera ${track.enabled ? 'enabled' : 'disabled'}`);
         }
         
-        return true;
+        return videoTracks.length > 0 ? videoTracks[0].enabled : false;
     }
     
     /**
-     * Switch audio device
+     * Toggle screen sharing
      */
-    async switchAudioDevice(deviceId) {
-        if (!this.localStream) return false;
+    async toggleScreenShare() {
+        if (!this.peerConnection) return;
+        
+        if (!this.isScreenSharing) {
+            // Start screen sharing
+            try {
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+                    video: true,
+                    audio: false  // Screen sharing audio often causes echo
+                });
+                
+                // Save the original video track to restore later
+                const videoTracks = this.localStream.getVideoTracks();
+                if (videoTracks.length > 0) {
+                    this.originalVideoTrack = videoTracks[0];
+                }
+                
+                // Replace the video track with the screen sharing track
+                const screenTrack = screenStream.getVideoTracks()[0];
+                
+                if (screenTrack) {
+                    // Get the sender for the video track
+                    const senders = this.peerConnection.getSenders();
+                    const videoSender = senders.find(sender => 
+                        sender.track && sender.track.kind === 'video'
+                    );
+                    
+                    if (videoSender) {
+                        await videoSender.replaceTrack(screenTrack);
+                        
+                        // Also replace the track in the local stream for the UI
+                        if (this.originalVideoTrack) {
+                            this.localStream.removeTrack(this.originalVideoTrack);
+                        }
+                        this.localStream.addTrack(screenTrack);
+                        
+                        this.isScreenSharing = true;
+                        this.log('info', 'Screen sharing started');
+                        
+                        // Handle the screen sharing being stopped by the browser UI
+                        screenTrack.onended = () => {
+                            this.stopScreenSharing();
+                        };
+                        
+                        return true;
+                    }
+                }
+            } catch (error) {
+                this.log('error', 'Error starting screen sharing', error);
+                this.onError({
+                    title: 'Screen Sharing Failed',
+                    message: 'Could not start screen sharing. Please check your permissions and try again.',
+                    severity: 'warning'
+                });
+            }
+        } else {
+            // Stop screen sharing
+            return this.stopScreenSharing();
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Stop screen sharing and restore camera
+     */
+    async stopScreenSharing() {
+        if (!this.isScreenSharing || !this.peerConnection || !this.originalVideoTrack) {
+            return false;
+        }
         
         try {
-            // Get current constraints
-            const constraints = {
-                audio: { deviceId: { exact: deviceId } },
-                video: this.localStream.getVideoTracks().length > 0
-            };
+            // Get the sender for the current video track (screen sharing)
+            const senders = this.peerConnection.getSenders();
+            const videoSender = senders.find(sender => 
+                sender.track && sender.track.kind === 'video'
+            );
             
-            // If we have video, keep it
-            if (constraints.video) {
-                const videoTrack = this.localStream.getVideoTracks()[0];
-                const videoConstraints = videoTrack.getConstraints();
-                constraints.video = {
-                    ...videoConstraints,
-                    deviceId: undefined  // Keep current video device
-                };
-            }
-            
-            // Get new media stream
-            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-            
-            // Replace audio track in all peer connections
-            const audioTrack = newStream.getAudioTracks()[0];
-            
-            for (const userId in this.peerConnections) {
-                const pc = this.peerConnections[userId];
+            if (videoSender) {
+                // Replace the screen sharing track with the original camera track
+                await videoSender.replaceTrack(this.originalVideoTrack);
                 
-                const senders = pc.getSenders();
-                const audioSender = senders.find(sender => sender.track && sender.track.kind === 'audio');
+                // Also replace the track in the local stream for the UI
+                const screenTracks = this.localStream.getVideoTracks();
+                for (const track of screenTracks) {
+                    this.localStream.removeTrack(track);
+                    track.stop(); // Stop the screen sharing track
+                }
+                this.localStream.addTrack(this.originalVideoTrack);
+                
+                this.isScreenSharing = false;
+                this.log('info', 'Screen sharing stopped');
+                
+                return true;
+            }
+        } catch (error) {
+            this.log('error', 'Error stopping screen sharing', error);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Change audio input device
+     * 
+     * @param {string} deviceId - The ID of the audio input device
+     */
+    async changeAudioInput(deviceId) {
+        if (!deviceId) return false;
+        
+        try {
+            // Get a stream with the new audio device
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: { deviceId: { exact: deviceId } },
+                video: false
+            });
+            
+            // Get the new audio track
+            const newAudioTrack = newStream.getAudioTracks()[0];
+            
+            if (newAudioTrack) {
+                // Get the sender for the audio track
+                const senders = this.peerConnection.getSenders();
+                const audioSender = senders.find(sender => 
+                    sender.track && sender.track.kind === 'audio'
+                );
                 
                 if (audioSender) {
-                    await audioSender.replaceTrack(audioTrack);
+                    // Replace the audio track
+                    await audioSender.replaceTrack(newAudioTrack);
+                    
+                    // Also replace the track in the local stream
+                    const audioTracks = this.localStream.getAudioTracks();
+                    for (const track of audioTracks) {
+                        this.localStream.removeTrack(track);
+                        track.stop();
+                    }
+                    this.localStream.addTrack(newAudioTrack);
+                    
+                    this.log('info', 'Audio input device changed');
+                    return true;
                 }
             }
-            
-            // Replace audio track in local stream
-            const oldAudioTrack = this.localStream.getAudioTracks()[0];
-            if (oldAudioTrack) {
-                oldAudioTrack.stop();
-                this.localStream.removeTrack(oldAudioTrack);
-            }
-            
-            this.localStream.addTrack(audioTrack);
-            
-            return true;
-            
         } catch (error) {
-            console.error('Error switching audio device:', error);
+            this.log('error', 'Error changing audio input device', error);
             this.onError({
-                type: 'device-switch-failed',
-                message: 'Failed to switch audio device. Please try again.',
-                details: error.message
+                title: 'Device Change Failed',
+                message: 'Could not switch to the selected microphone. Please try another device.',
+                severity: 'warning'
             });
-            return false;
         }
+        
+        return false;
     }
     
     /**
-     * Switch video device
+     * Change video input device
+     * 
+     * @param {string} deviceId - The ID of the video input device
      */
-    async switchVideoDevice(deviceId) {
-        if (!this.localStream) return false;
+    async changeVideoInput(deviceId) {
+        if (!deviceId || this.isScreenSharing) return false;
         
         try {
-            // Get current constraints
-            const constraints = {
-                audio: this.localStream.getAudioTracks().length > 0,
+            // Get a stream with the new video device
+            const newStream = await navigator.mediaDevices.getUserMedia({
+                audio: false,
                 video: { deviceId: { exact: deviceId } }
-            };
+            });
             
-            // If we have audio, keep it
-            if (constraints.audio) {
-                const audioTrack = this.localStream.getAudioTracks()[0];
-                const audioConstraints = audioTrack.getConstraints();
-                constraints.audio = {
-                    ...audioConstraints,
-                    deviceId: undefined  // Keep current audio device
-                };
-            }
+            // Get the new video track
+            const newVideoTrack = newStream.getVideoTracks()[0];
             
-            // Get new media stream
-            const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-            
-            // Replace video track in all peer connections
-            const videoTrack = newStream.getVideoTracks()[0];
-            
-            for (const userId in this.peerConnections) {
-                const pc = this.peerConnections[userId];
+            if (newVideoTrack) {
+                // Save this as the original video track (for screen sharing)
+                this.originalVideoTrack = newVideoTrack;
                 
-                const senders = pc.getSenders();
-                const videoSender = senders.find(sender => sender.track && sender.track.kind === 'video');
+                // Get the sender for the video track
+                const senders = this.peerConnection.getSenders();
+                const videoSender = senders.find(sender => 
+                    sender.track && sender.track.kind === 'video'
+                );
                 
                 if (videoSender) {
-                    await videoSender.replaceTrack(videoTrack);
+                    // Replace the video track
+                    await videoSender.replaceTrack(newVideoTrack);
+                    
+                    // Also replace the track in the local stream
+                    const videoTracks = this.localStream.getVideoTracks();
+                    for (const track of videoTracks) {
+                        this.localStream.removeTrack(track);
+                        track.stop();
+                    }
+                    this.localStream.addTrack(newVideoTrack);
+                    
+                    this.log('info', 'Video input device changed');
+                    return true;
                 }
             }
-            
-            // Replace video track in local stream
-            const oldVideoTrack = this.localStream.getVideoTracks()[0];
-            if (oldVideoTrack) {
-                oldVideoTrack.stop();
-                this.localStream.removeTrack(oldVideoTrack);
-            }
-            
-            this.localStream.addTrack(videoTrack);
-            
-            return true;
-            
         } catch (error) {
-            console.error('Error switching video device:', error);
+            this.log('error', 'Error changing video input device', error);
             this.onError({
-                type: 'device-switch-failed',
-                message: 'Failed to switch video device. Please try again.',
-                details: error.message
+                title: 'Device Change Failed',
+                message: 'Could not switch to the selected camera. Please try another device.',
+                severity: 'warning'
             });
-            return false;
         }
+        
+        return false;
     }
     
     /**
-     * Clean up and close all connections
+     * End the call and clean up resources
      */
-    cleanup() {
-        console.log('Cleaning up WebRTC connections');
+    endCall() {
+        this.log('info', 'Ending call and cleaning up resources');
         
-        // Clear ping interval
-        if (this.pingInterval) {
-            clearInterval(this.pingInterval);
-            this.pingInterval = null;
+        // Send a message that we're leaving
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+            const message = {
+                type: 'leave',
+                sessionId: this.sessionId,
+                userId: this.userId,
+                userName: this.userName
+            };
+            
+            this.socket.send(JSON.stringify(message));
         }
         
-        // Close all peer connections
-        for (const userId in this.peerConnections) {
-            this.closePeerConnection(userId);
-        }
-        
-        // Close WebSocket
-        if (this.socket) {
-            this.socket.close(1000, 'User left session');
-            this.socket = null;
-        }
-        
-        // Stop local stream
+        // Stop all tracks
         if (this.localStream) {
-            this.localStream.getTracks().forEach(track => {
-                track.stop();
-            });
-            this.localStream = null;
+            this.localStream.getTracks().forEach(track => track.stop());
         }
         
-        this.isConnected = false;
-    }
-    
-    /**
-     * Handle page unload to clean up properly
-     */
-    registerPageUnloadHandler() {
-        window.addEventListener('beforeunload', () => {
-            this.cleanup();
-        });
+        // Clean up resources
+        this.cleanupResources();
+        
+        this.log('info', 'Call ended and resources cleaned up');
+        this.onConnectionStateChange('closed');
     }
 }
-
-// Export for usage
-window.EnhancedWebRTCHandler = EnhancedWebRTCHandler;

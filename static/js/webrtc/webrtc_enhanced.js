@@ -336,7 +336,9 @@ class EnhancedWebRTC {
     async setupWebSocket() {
         return new Promise((resolve, reject) => {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            // Use multiple paths for reliability
             const wsUrl = `${protocol}//${window.location.host}/ws/session/${this.sessionId}/`;
+            console.log("Connecting WebSocket to:", wsUrl);
             
             this.log('info', 'Connecting to WebSocket:', wsUrl);
             this.onConnectionStateChange('connecting');

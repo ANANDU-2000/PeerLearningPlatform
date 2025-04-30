@@ -32,4 +32,5 @@ urlpatterns = [
     # Testing pages
     path('test/mobile-compatibility/', test_views.mobile_compatibility_test, name='mobile_compatibility_test'),
     path('test/webrtc/', views.webrtc_test_page, name='webrtc_test_page'),
+    path('test/webrtc/live/<int:session_id>/', views.webrtc_live_test, name='webrtc_live_test'),
 ]

@@ -985,3 +985,13 @@ def my_booked_sessions(request):
 def webrtc_test_page(request):
     """WebRTC testing page."""
     return render(request, 'sessions/webrtc_test.html')
+
+
+@login_required
+def webrtc_live_test(request, session_id):
+    """Live WebRTC test room for real-time video sessions."""
+    # This is a simple view that passes the session_id to the template
+    # We'll handle connection logic on the frontend
+    return render(request, 'sessions/webrtc_live_test.html', {
+        'session_id': session_id
+    })

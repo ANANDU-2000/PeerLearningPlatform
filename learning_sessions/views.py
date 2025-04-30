@@ -712,6 +712,18 @@ def session_room(request, session_id):
             print(f"Error loading participants: {str(e)}")
             participants = []
         
+        # Add booking to context for feedback link
+        booking = None
+        if request.user.role == 'learner':
+            try:
+                booking = Booking.objects.get(
+                    session=session,
+                    learner=request.user,
+                    status='confirmed'
+                )
+            except Exception as e:
+                print(f"Error finding booking for feedback link: {str(e)}")
+        
         context = {
             'session': session,
             'is_mentor': is_mentor_allowed,
@@ -721,6 +733,7 @@ def session_room(request, session_id):
             'turn_servers': turn_servers,
             'turn_username': turn_username,
             'turn_credential': turn_credential,
+            'booking': booking,  # Add booking to context
         }
         
         return render(request, 'sessions/session_room.html', context)

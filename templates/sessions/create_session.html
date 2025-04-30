@@ -563,9 +563,10 @@
             initSmartSuggestions();
         }
         
-        // Initialize notifications
-        if (typeof initNotifications === 'function') {
-            initNotifications();
+        // Initialize notification system through the global object
+        if (window.NotificationSystem) {
+            // The notification system auto-initializes itself
+            console.log('Notification system available');
         }
         
         // Step navigation

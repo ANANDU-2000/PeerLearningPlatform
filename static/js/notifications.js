@@ -87,7 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
         connectWebSocket(user) {
             // Determine WebSocket URI based on current protocol
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/notifications/${user.id}/`;
+            // Using the correct path without user ID since the server handles that
+            const wsUrl = `${protocol}//${window.location.host}/ws/notifications/`;
             
             try {
                 this.socket = new WebSocket(wsUrl);

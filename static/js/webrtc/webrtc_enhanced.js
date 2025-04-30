@@ -373,33 +373,81 @@ class PeerLearnRTC {
             } catch (mediaError) {
                 console.error("Error accessing media devices:", mediaError);
                 
-                // Handle permission denial
+                // Enhanced permission denial handling with specific error messages
                 if (mediaError.name === 'NotAllowedError' || mediaError.name === 'PermissionDeniedError') {
-                    this.onError("Permission to use camera and microphone was denied. Please allow access to participate in the session.");
+                    this.onError("Permission to use camera and microphone was denied. Please click the camera icon in your browser's address bar and allow access.");
+                    // Check if this is a https connection
+                    if (window.location.protocol !== 'https:') {
+                        this.onError("Camera access requires a secure connection. Please use HTTPS instead of HTTP.");
+                    }
                     return;
+                } else if (mediaError.name === 'NotFoundError' || mediaError.name === 'DevicesNotFoundError') {
+                    this.onError("No camera or microphone detected. Please check if your devices are connected properly.");
+                } else if (mediaError.name === 'NotReadableError' || mediaError.name === 'TrackStartError') {
+                    this.onError("Cannot access your camera or microphone. It may be in use by another application.");
+                } else if (mediaError.name === 'OverconstrainedError') {
+                    this.onError("Your camera doesn't support the required settings. Trying with minimal requirements...");
+                } else {
+                    this.onError(`Media access error: ${mediaError.message}`);
                 }
                 
-                // Try fallback constraints (common compatibility issues)
+                // Try fallback constraints with more detailed logging and error recovery
                 try {
-                    console.log("Trying fallback: video only");
+                    console.log("Trying fallback: video only with minimal constraints");
                     this.localStream = await navigator.mediaDevices.getUserMedia({
-                        video: true,
+                        video: {
+                            width: { ideal: 320 },
+                            height: { ideal: 240 },
+                            frameRate: { ideal: 10 }
+                        },
                         audio: false
                     });
-                    this.onError("Microphone access failed. You are in view-only mode and cannot speak.");
+                    console.log("Video-only access succeeded with minimal quality");
+                    this.onError("Microphone access failed. You can be seen but not heard.");
+                    
+                    // Try to add audio later if possible
+                    setTimeout(async () => {
+                        try {
+                            const audioStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+                            const audioTrack = audioStream.getAudioTracks()[0];
+                            this.localStream.addTrack(audioTrack);
+                            console.log("Successfully added audio track after initial failure");
+                            this.onError("Audio recovered. You can now be heard.");
+                        } catch (e) {
+                            console.log("Delayed audio acquisition still failed:", e);
+                        }
+                    }, 3000);
                 } catch (videoOnlyError) {
                     console.error("Video only fallback failed:", videoOnlyError);
                     
                     try {
-                        console.log("Trying fallback: audio only");
+                        console.log("Trying fallback: audio only with enhanced compatibility");
                         this.localStream = await navigator.mediaDevices.getUserMedia({
                             video: false,
-                            audio: true
+                            audio: {
+                                echoCancellation: true,
+                                noiseSuppression: true,
+                                autoGainControl: true
+                            }
                         });
+                        console.log("Audio-only access succeeded");
                         this.onError("Camera access failed. You are in audio-only mode.");
                     } catch (audioOnlyError) {
                         console.error("Audio only fallback failed:", audioOnlyError);
-                        throw new Error("Could not access any media devices. Please check your camera and microphone settings.");
+                        
+                        // One final attempt with absolute minimal constraints
+                        try {
+                            console.log("Final attempt with bare minimum constraints");
+                            this.localStream = await navigator.mediaDevices.getUserMedia({
+                                video: false,
+                                audio: true
+                            });
+                            console.log("Basic audio access succeeded");
+                            this.onError("You're in audio-only mode with limited quality.");
+                        } catch (finalError) {
+                            console.error("All media access attempts failed:", finalError);
+                            throw new Error("Could not access any media devices. Please check your browser settings and device connections.");
+                        }
                     }
                 }
             }

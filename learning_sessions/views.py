@@ -526,94 +526,90 @@ def session_room(request, session_id):
             messages.error(request, _('Please log in to access the session room.'))
             return redirect('login')
         
-        # FOR DEVELOPMENT ONLY:
-        # Always allow access to the session room for testing purposes
-        print(f"DEVELOPMENT MODE: Allowing user {request.user.id} to join session {session_id}")
-        dev_mode = True
-        
         # Default permission settings
         is_learner_allowed = False
         is_mentor_allowed = False
         
+        # DEVELOPMENT MODE - Always allow direct access for testing
+        # This bypasses normal access control for easier testing
+        print(f"DEVELOPMENT MODE: Allowing user {request.user.id} to join session {session_id}")
+        
+        # Set development mode flag (always True for now)
+        dev_mode = True
+        
+        # AUTO-CREATE BOOKING LOGIC
         if dev_mode:
-            # Development mode access check (lenient)
+            # If user is a learner, ensure they have a confirmed booking
             if request.user.role == 'learner':
-                # Check if there's a pending booking that needs payment
-                has_unpaid = Booking.objects.filter(
+                # Try to find an existing booking
+                booking = Booking.objects.filter(
                     session=session,
-                    learner=request.user,
-                    payment_complete=False
-                ).exists()
+                    learner=request.user
+                ).first()
                 
-                if has_unpaid:
-                    # Auto-redirect to cart for any unpaid bookings
-                    messages.info(request, _('Redirecting to payment page for your session booking.'))
-                    return redirect('cart')
-                
-                # Check if they already have a confirmed booking
-                has_confirmed = Booking.objects.filter(
-                    session=session,
-                    learner=request.user,
-                    status='confirmed'
-                ).exists()
-                
-                # For dev mode, auto-create a CONFIRMED booking with payment
-                if not has_confirmed and not has_unpaid:
-                    print(f"DEVELOPMENT MODE: Auto-creating CONFIRMED booking for user {request.user.id}")
-                    # Create a pre-approved booking
-                    new_booking = Booking(
+                # If no booking exists at all, create one that's confirmed and paid
+                if not booking:
+                    print(f"AUTO-CREATING new confirmed booking for learner {request.user.id}")
+                    booking = Booking(
                         session=session,
                         learner=request.user,
                         status='confirmed',
-                        payment_complete=True
+                        payment_complete=True,
+                        final_price=session.price or 0
                     )
-                    new_booking.save()
+                    booking.save()
                     
-                    # Create transaction record for tracking
+                    # Create payment record
                     from payments.models import Transaction
                     Transaction.objects.create(
-                        booking=new_booking,
+                        booking=booking,
                         amount=session.price or 0,
                         currency='INR',
                         status='completed',
                         payment_method='free_dev_mode',
-                        metadata={
-                            'dev_mode': True,
-                            'auto_created': True
-                        }
+                        metadata={'dev_mode': True}
                     )
                     
-                    messages.success(request, _('DEV MODE: Auto-confirmed your booking for this session.'))
-                    # Continue to session room instead of redirecting
+                    messages.success(request, _('DEV MODE: Auto-created booking for testing.'))
+                    
+                # If booking exists but isn't confirmed/paid, update it
+                elif not booking.payment_complete or booking.status != 'confirmed':
+                    print(f"UPDATING existing booking to confirmed for learner {request.user.id}")
+                    booking.status = 'confirmed'
+                    booking.payment_complete = True
+                    booking.save()
+                    
+                    # Make sure there's a transaction record
+                    from payments.models import Transaction
+                    if not Transaction.objects.filter(booking=booking).exists():
+                        Transaction.objects.create(
+                            booking=booking,
+                            amount=session.price or 0,
+                            currency='INR',
+                            status='completed',
+                            payment_method='free_dev_mode',
+                            metadata={'dev_mode': True, 'auto_updated': True}
+                        )
+                    
+                    messages.success(request, _('DEV MODE: Updated booking to confirmed status.'))
             
-            # In development mode, always allow the mentor who created the session
-            # and any test mentors/learners to join
-            is_dev_user = ('test' in request.user.email.lower() or 
-                         'learner' in request.user.email.lower() or
-                         'mentor' in request.user.email.lower())
-            
-            is_session_creator = (
-                request.user.role == 'mentor' and 
-                session.mentor and 
-                session.mentor.user_id == request.user.id
-            )
-            
-            # Always grant access in development mode
-            if is_dev_user or is_session_creator:
-                # Set appropriate permission based on user role
-                if request.user.role == 'learner':
-                    is_learner_allowed = True
-                    is_mentor_allowed = False
-                else:  # Mentor role
-                    is_mentor_allowed = True
-                    is_learner_allowed = False
-            else:
-                messages.warning(request, _('Development mode: Auto-creating session access.'))
-                # Set permissions for generic users in dev mode
-                if request.user.role == 'learner':
-                    is_learner_allowed = True
-                else:
-                    is_mentor_allowed = True
+            # Set permissions based on role for development mode
+            if request.user.role == 'learner':
+                is_learner_allowed = True
+                is_mentor_allowed = False
+            elif request.user.role == 'mentor':
+                is_mentor_allowed = True
+                is_learner_allowed = False
+                
+                # If this mentor isn't assigned to the session, assign them now
+                if not session.mentor or session.mentor.user_id != request.user.id:
+                    from users.models import MentorProfile
+                    mentor_profile = MentorProfile.objects.filter(user=request.user).first()
+                    if mentor_profile:
+                        session.mentor = mentor_profile
+                        session.save()
+                        print(f"AUTO-ASSIGNED mentor {request.user.id} to session {session_id}")
+                        messages.success(request, _('DEV MODE: Auto-assigned you as the mentor for this session.'))
         else:
             # PRODUCTION MODE CHECKS (more strict)
             if request.user.role == 'learner':
@@ -659,23 +655,28 @@ def session_room(request, session_id):
         # Check session timing to prevent access to past or far-future sessions
         now = timezone.now()
         
-        # Check if session has ended
-        if session.end_time < now:
-            messages.error(request, _('This session has already ended.'))
-            return redirect('dashboard')
-        
-        # Check if session is too far in the future (more than 1 hour before start)
-        if session.start_time > now + timezone.timedelta(hours=1):
-            time_until = session.start_time - now
-            hours = time_until.seconds // 3600
-            minutes = (time_until.seconds % 3600) // 60
+        # Only check timing in production mode, skip in dev mode
+        if not dev_mode:
+            # Check if session has ended
+            if session.end_time < now:
+                messages.error(request, _('This session has already ended.'))
+                return redirect('dashboard')
             
-            if time_until.days > 0:
-                messages.error(request, _(f'This session starts in {time_until.days} days and {hours} hours. You can join up to 1 hour before the start time.'))
-            else:
-                messages.error(request, _(f'This session starts in {hours} hours and {minutes} minutes. You can join up to 1 hour before the start time.'))
-            
-            return redirect('session_detail', session_id=session_id)
+            # Check if session is too far in the future (more than 1 hour before start)
+            if session.start_time > now + timezone.timedelta(hours=1):
+                time_until = session.start_time - now
+                hours = time_until.seconds // 3600
+                minutes = (time_until.seconds % 3600) // 60
+                
+                if time_until.days > 0:
+                    messages.error(request, _(f'This session starts in {time_until.days} days and {hours} hours. You can join up to 1 hour before the start time.'))
+                else:
+                    messages.error(request, _(f'This session starts in {hours} hours and {minutes} minutes. You can join up to 1 hour before the start time.'))
+                
+                return redirect('session_detail', session_id=session_id)
+        else:
+            # In development mode, allow access regardless of timing
+            print("DEV MODE: Bypassing time restrictions for session room access")
         
         # Update session status if it's starting
         if session.status == 'scheduled' and session.start_time <= now:

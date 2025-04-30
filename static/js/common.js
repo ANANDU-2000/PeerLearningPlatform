@@ -169,18 +169,18 @@ function initDropdowns() {
                                 console.error('Error closing other dropdown:', err);
                             }
                         }
-                    
-                    // Toggle current dropdown
-                    this.setAttribute('aria-expanded', !isExpanded);
-                    content.classList.toggle('hidden');
-                    
-                    // Add focus trap for keyboard users
-                    if (content.classList && !content.classList.contains('hidden')) {
-                        const focusableElements = content.querySelectorAll('a, button');
-                        if (focusableElements.length) {
-                            setTimeout(function() { focusableElements[0].focus(); }, 100);
+                        
+                        // Toggle current dropdown
+                        this.setAttribute('aria-expanded', !isExpanded);
+                        content.classList.toggle('hidden');
+                        
+                        // Add focus trap for keyboard users
+                        if (content.classList && !content.classList.contains('hidden')) {
+                            const focusableElements = content.querySelectorAll('a, button');
+                            if (focusableElements.length) {
+                                setTimeout(function() { focusableElements[0].focus(); }, 100);
+                            }
                         }
-                    }
                 } catch (err) {
                     console.error('Error in dropdown click handler:', err);
                 }

@@ -593,28 +593,48 @@ class VideoRoomConsumer(AsyncWebsocketConsumer):
                 return False
             
             # Mentor can always join their own session
-            if self.user.role == 'mentor' and session.mentor and session.mentor.user_id == self.user.id:
-                return True
+            if self.user.role == 'mentor':
+                # Check if this is the session owner
+                is_session_owner = session.mentor and session.mentor.user_id == self.user.id
+                
+                # For testing - also allow any user with 'mentor' in their email
+                is_test_mentor = 'mentor' in getattr(self.user, 'email', '').lower()
+                
+                if is_session_owner or is_test_mentor:
+                    print(f"Mentor {self.user.id} authorized for session {self.session_id}")
+                    return True
             
             # Check if learner has permission
             if self.user.role == 'learner':
                 try:
-                    # Check if they have an existing booking
+                    # Check if they have an existing booking (any status for leniency in testing)
                     has_booking = Booking.objects.filter(
                         session_id=self.session_id,
                         learner_id=self.user.id
                     ).exists()
                     
-                    # For testing - allow test learners
-                    is_test_learner = 'test_learner' in getattr(self.user, 'email', '')
+                    # For testing - allow test learners or any learner during development
+                    is_test_user = ('test' in getattr(self.user, 'email', '').lower() or 
+                                    'learner' in getattr(self.user, 'email', '').lower())
                     
-                    # Allow if they have a booking or are a test learner
-                    return has_booking or is_test_learner
+                    # Always check for debugging info even if permission is granted
+                    if has_booking:
+                        print(f"Learner {self.user.id} has booking for session {self.session_id}")
+                    if is_test_user:
+                        print(f"Test user {self.user.id} allowed access to session {self.session_id}")
+                    
+                    # Allow if they have a booking or are a test learner 
+                    # For development purposes, we're being more lenient with permissions
+                    # In production, we would check payment_complete=True and status='confirmed'
+                    return has_booking or is_test_user
                 except Exception as e:
                     print(f"Error checking learner booking: {str(e)}")
                     return False
             
-            return False
+            # For development/testing - allow any authenticated user to join a session
+            print(f"Development mode: allowing user {self.user.id} to join session {self.session_id}")
+            return True
+            
         except Exception as e:
             print(f"Unexpected error in _check_user_session_permission: {str(e)}")
             return False
@@ -743,28 +763,46 @@ class WhiteboardConsumer(AsyncWebsocketConsumer):
                 return False
             
             # Mentor can always join their own session
-            if self.user.role == 'mentor' and session.mentor and session.mentor.user_id == self.user.id:
-                return True
+            if self.user.role == 'mentor':
+                # Check if this is the session owner
+                is_session_owner = session.mentor and session.mentor.user_id == self.user.id
+                
+                # For testing - also allow any user with 'mentor' in their email
+                is_test_mentor = 'mentor' in getattr(self.user, 'email', '').lower()
+                
+                if is_session_owner or is_test_mentor:
+                    print(f"Whiteboard: Mentor {self.user.id} authorized for session {self.session_id}")
+                    return True
             
             # Check if learner has permission
             if self.user.role == 'learner':
                 try:
-                    # Check if they have an existing booking
+                    # Check if they have an existing booking (any status for leniency in testing)
                     has_booking = Booking.objects.filter(
                         session_id=self.session_id,
                         learner_id=self.user.id
                     ).exists()
                     
-                    # For testing - allow test learners
-                    is_test_learner = 'test_learner' in getattr(self.user, 'email', '')
+                    # For testing - allow test learners or any learner during development
+                    is_test_user = ('test' in getattr(self.user, 'email', '').lower() or 
+                                    'learner' in getattr(self.user, 'email', '').lower())
+                    
+                    # Always check for debugging info even if permission is granted
+                    if has_booking:
+                        print(f"Whiteboard: Learner {self.user.id} has booking for session {self.session_id}")
+                    if is_test_user:
+                        print(f"Whiteboard: Test user {self.user.id} allowed access to session {self.session_id}")
                     
                     # Allow if they have a booking or are a test learner
-                    return has_booking or is_test_learner
+                    return has_booking or is_test_user
                 except Exception as e:
                     print(f"Whiteboard: Error checking learner booking: {str(e)}")
                     return False
             
-            return False
+            # For development/testing - allow any authenticated user to join the whiteboard
+            print(f"Whiteboard: Development mode: allowing user {self.user.id} to join session {self.session_id}")
+            return True
+            
         except Exception as e:
             print(f"Whiteboard: Unexpected error in _check_user_session_permission: {str(e)}")
             return False

@@ -1333,7 +1333,7 @@ footer a, footer a:hover {
   flex-direction: column-reverse;
   gap: 2rem;
   overflow: visible;
-  background: #FFFFFF;
+  background: linear-gradient(to bottom right, #F9F5FF, #FFFFFF);
   background-size: cover;
   background-position: center;
   min-height: 550px;
@@ -1416,7 +1416,9 @@ footer a, footer a:hover {
   width: 100%;
   height: auto;
   margin: 0 auto;
-  filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03)) drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08));
+  filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.05)) drop-shadow(0 8px 5px rgba(0, 0, 0, 0.1));
+  object-fit: contain;
+  max-height: 400px;
 }
 
 .hero-overlay {
@@ -1589,7 +1591,7 @@ footer a, footer a:hover {
   
   .hero-section {
     min-height: auto;
-    background: #FFFFFF;
+    background: linear-gradient(to bottom right, #F9F5FF, #FFFFFF);
     padding: 2rem 0 3rem;
   }
   

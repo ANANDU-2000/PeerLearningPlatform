@@ -181,12 +181,6 @@ LOGGING = {
         },
     },
     'handlers': {
-        'admin_security_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': ADMIN_SECURITY_LOG_FILE,
-            'formatter': 'verbose',
-        },
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
@@ -195,13 +189,17 @@ LOGGING = {
     },
     'loggers': {
         'admin_security': {
-            'handlers': ['admin_security_file', 'console'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
     },
 }
-
 # Rate limiting
 RATELIMIT_ENABLE = True
 RATELIMIT_USE_CACHE = 'default'

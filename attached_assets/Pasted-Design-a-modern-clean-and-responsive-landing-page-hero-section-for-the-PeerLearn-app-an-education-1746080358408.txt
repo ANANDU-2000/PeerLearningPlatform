@@ -1,0 +1,90 @@
+Design a modern, clean, and responsive landing page hero section for the PeerLearn app, an educational platform connecting users with mentors for live sessions. The design must be optimized for web, mobile, and all devices, with a focus on UI/UX, spacing, and a cohesive design system.
+
+Navigation Bar:
+
+Items:
+Logo: "PeerLearn" with an education-themed icon (e.g., a book or graduation cap) on the left, using a bold font like "Poppins" in #007BFF (blue).
+Navigation Links (in order):
+"Home"
+"Sessions" (on hover/click, show a dropdown with categories like Finance, Tech, Biology, etc.; under Tech, show subcategories like Software Development, Machine Learning, AI, etc.)
+"Mentors" (on hover/click, show a horizontal dropdown with categories like Finance, Tech, Biology, etc.)
+"About"
+"Support"
+"Login" (styled as a text link)
+"Join Now" (styled as a button with #007BFF background, white text, rounded corners, padding: 8px 16px)
+Style:
+Font: "Poppins" or "Roboto," 16px, #1A1A1A (dark gray).
+Spacing: Evenly spaced with 20px between items.
+Dropdown: On hover, show a dropdown with a subtle shadow (box-shadow: 0 4px 8px rgba(0,0,0,0.1)); categories in the dropdown should be clickable and lead to subcategories.
+Alignment: Vertically centered within the nav bar (height: 60px).
+Responsiveness:
+On mobile, collapse into a hamburger menu (icon on the right), with the logo on the left. Dropdowns should expand vertically on click.
+Hero Section:
+
+Layout:
+Two-column layout on desktop (50% left, 50% right).
+On mobile, stack vertically (text above visual).
+Use CSS Flexbox (display: flex) for layout.
+Left Column (Text and CTA):
+Headline:
+Content: Dynamic text from the database (e.g., "Join Live Learning Sessions with Top Mentors").
+Typography: "Poppins" or "Roboto," bold, 36px (desktop), 24px (mobile), #1A1A1A.
+Emphasis: Highlight "Anytime, Anywhere" in the headline (if included) with #007BFF.
+Subheadline:
+Content: Dynamic text from the database (e.g., "Explore expert-led courses in Finance, Tech, Biology, and more").
+Typography: "Poppins" or "Roboto," regular, 18px (desktop), 14px (mobile), #4A4A4A.
+Button:
+Text: "Join Now."
+Style: Rounded rectangle, padding: 12px 24px, background: #007BFF, text: #FFFFFF, font: "Poppins," 16px.
+Hover: Darken background to #0056b3, add subtle shadow.
+Margin: 20px top margin from subheadline.
+Right Column (Visual):
+Content: A clean, cropped visual (e.g., an abstract illustration of learning, like books or a laptop, without too many floating elements).
+Style: Fit within the column, maintain aspect ratio, with a subtle background gradient (e.g., #E6F0FA to #FFFFFF).
+Spacing: Ensure the visual balances the text column, with equal padding (40px on desktop, 20px on mobile).
+Spacing and Alignment:
+Padding: 40px on desktop, 20px on mobile.
+Margin: 20px between elements (headline, subheadline, button).
+Alignment: Text centered vertically in the left column.
+Design System:
+
+Color Palette:
+Primary: #007BFF (blue for trust).
+Secondary: #28A745 (green for growth).
+Neutral: #FFFFFF (background), #1A1A1A (primary text), #4A4A4A (secondary text), #E6F0FA (subtle accents).
+Typography:
+Font Family: "Poppins" or "Roboto."
+Sizes: Headline (36px desktop, 24px mobile), Subheadline (18px desktop, 14px mobile), Button (16px), Nav (16px).
+Weights: Bold for headlines, regular for subheadlines and body.
+Spacing:
+Base unit: 20px (padding, margins).
+Ensure consistent spacing between elements for a clean look.
+Interactivity:
+Smooth transitions for button hovers (0.3s ease) and dropdowns.
+Dropdowns should have a subtle shadow and slight delay on hover (0.2s).
+Responsiveness:
+
+Use media queries (e.g., @media (max-width: 768px)) to stack the hero section vertically on mobile.
+Adjust font sizes, padding, and image size dynamically using relative units (vw, rem).
+Ensure the navigation collapses into a hamburger menu on mobile, with dropdowns expanding vertically.
+Dynamic Data:
+
+The headline and subheadline must pull real-time data from the PeerLearn database (e.g., via JavaScript fetching API data) to display current session or course information.
+Goal:
+Create a clean, professional, and engaging hero section for PeerLearn that encourages users to join live sessions, with a cohesive design system, proper spacing, and full responsiveness across devices.
+
+How This Prompt Solves the Issues
+Navigation Fixes:
+Corrected nav items and added dropdown functionality for "Sessions" and "Mentors."
+Specified spacing, alignment, and responsiveness (hamburger menu on mobile).
+Hero Section Fixes:
+Ensured dynamic text from the database.
+Fixed typography hierarchy and emphasis ("Anytime, Anywhere").
+Removed the extra button ("Become a Mentor") and corrected the CTA to "Join Now."
+Specified a cleaner visual with proper fit and balance.
+Spacing and Layout:
+Added clear padding, margins, and alignment rules.
+Ensured responsiveness with media queries.
+Design System:
+Defined a cohesive color palette, typography, and spacing system.
+Added interactivity for a polished UX.

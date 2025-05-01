@@ -1333,11 +1333,7 @@ footer a, footer a:hover {
   flex-direction: column-reverse;
   gap: 2rem;
   overflow: hidden;
-  background: linear-gradient(to right, 
-              #FFFFFF 0%, 
-              #FFFFFF 55%, 
-              #FF5734 55%, 
-              #7C3AED 100%);
+  background: #FFFFFF;
   background-size: cover;
   background-position: center;
   min-height: 550px;
@@ -1434,11 +1430,7 @@ footer a, footer a:hover {
 
 /* Dark mode support */
 .dark-mode .hero-section {
-  background: linear-gradient(to right, 
-              #121212 0%, 
-              #121212 55%, 
-              rgba(255,87,52,0.8) 55%, 
-              rgba(124,58,237,0.8) 100%);
+  background: #121212;
   background-size: cover;
 }
 
@@ -1539,11 +1531,7 @@ footer a, footer a:hover {
   
   .hero-section {
     min-height: auto;
-    background: linear-gradient(to bottom, 
-                #FFFFFF 0%, 
-                #FFFFFF 65%, 
-                #FF5734 65%, 
-                #7C3AED 100%);
+    background: #FFFFFF;
     padding: 2rem 0 3rem;
   }
   

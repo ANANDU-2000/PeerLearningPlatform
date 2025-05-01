@@ -1,116 +1,81 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="800px" height="600px" viewBox="0 0 800 600" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <title>PeerLearn Ed-Circle Hero Illustration</title>
-    <defs>
-        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-1">
-            <stop stop-color="#FFFFFF" offset="0%"></stop>
-            <stop stop-color="#F8F9FA" offset="100%"></stop>
-        </linearGradient>
-        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-2">
-            <stop stop-color="#FF5734" stop-opacity="0.2" offset="0%"></stop>
-            <stop stop-color="#7C3AED" stop-opacity="0.1" offset="100%"></stop>
-        </linearGradient>
-        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-3">
-            <stop stop-color="#FF5734" stop-opacity="0.8" offset="0%"></stop>
-            <stop stop-color="#FF5734" stop-opacity="1" offset="100%"></stop>
-        </linearGradient>
-        <linearGradient x1="50%" y1="0%" x2="50%" y2="100%" id="linearGradient-4">
-            <stop stop-color="#7C3AED" stop-opacity="0.8" offset="0%"></stop>
-            <stop stop-color="#7C3AED" offset="100%"></stop>
-        </linearGradient>
-    </defs>
-    <g id="PeerLearn-Hero" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <!-- Background elements -->
-        <circle cx="400" cy="300" r="250" fill="url(#linearGradient-1)"></circle>
-        
-        <!-- Desk with Person -->
-        <g id="desk-setup" transform="translate(200, 150)">
-            <!-- Desk -->
-            <rect x="50" y="230" width="320" height="20" rx="5" fill="#D1D5DB"></rect>
-            <rect x="70" y="250" width="280" height="10" rx="2" fill="#9CA3AF"></rect>
-            
-            <!-- Laptop -->
-            <g id="laptop">
-                <rect x="150" y="170" width="120" height="80" rx="5" fill="#E5E7EB"></rect>
-                <rect x="155" y="175" width="110" height="70" rx="3" fill="#111827"></rect>
-                <rect x="160" y="180" width="100" height="60" rx="2" fill="#4B5563"></rect>
-                <rect x="140" y="250" width="140" height="8" rx="4" fill="#9CA3AF"></rect>
-                <path d="M150,250 L270,250 L280,258 L140,258 Z" fill="#6B7280"></path>
-            </g>
-            
-            <!-- Person -->
-            <g id="person" transform="translate(210, 140)">
-                <!-- Head -->
-                <circle cx="40" cy="40" r="25" fill="#F59E0B"></circle>
-                
-                <!-- Face -->
-                <circle cx="30" cy="35" r="3" fill="#111827"></circle>
-                <circle cx="50" cy="35" r="3" fill="#111827"></circle>
-                <path d="M30,50 Q40,60 50,50" stroke="#111827" stroke-width="2" fill="none"></path>
-                
-                <!-- Body -->
-                <rect x="25" y="65" width="30" height="40" rx="10" fill="#FCD34D"></rect>
-                
-                <!-- Arms -->
-                <rect x="0" y="70" width="25" height="10" rx="5" fill="#FCD34D"></rect>
-                <rect x="55" y="70" width="25" height="10" rx="5" fill="#FCD34D"></rect>
-                
-                <!-- Hands on Keyboard -->
-                <circle cx="160" cy="215" r="5" fill="#F59E0B" transform="rotate(-45, 180, 200)"></circle>
-                <circle cx="190" cy="215" r="5" fill="#F59E0B" transform="rotate(-45, 180, 200)"></circle>
-            </g>
-            
-            <!-- Plant -->
-            <g id="plant" transform="translate(40, 100)">
-                <rect x="10" y="100" width="30" height="30" rx="2" fill="#E5E7EB"></rect>
-                <path d="M25,100 C25,70 10,85 10,60 C10,50 25,55 30,45 C35,55 50,50 50,60 C50,85 35,70 35,100 Z" fill="#10B981"></path>
-                <circle cx="20" cy="65" r="5" fill="#059669"></circle>
-                <circle cx="30" cy="55" r="4" fill="#059669"></circle>
-                <circle cx="40" cy="70" r="6" fill="#059669"></circle>
-            </g>
-            
-            <!-- Books Stack -->
-            <g id="books" transform="translate(330, 150)">
-                <rect x="0" y="50" width="40" height="10" rx="1" fill="#FF5734" fill-opacity="0.3"></rect>
-                <rect x="-5" y="60" width="40" height="10" rx="1" fill="#7C3AED" fill-opacity="0.3"></rect>
-                <rect x="-2" y="70" width="40" height="10" rx="1" fill="#FF5734" fill-opacity="0.4"></rect>
-            </g>
-            
-            <!-- Desk Items -->
-            <g id="desk-items">
-                <circle cx="120" cy="210" r="10" fill="#FF5734" fill-opacity="0.2"></circle>
-                <rect x="300" y="210" width="20" height="20" rx="2" fill="#7C3AED" fill-opacity="0.2"></rect>
-                <rect x="110" y="205" width="25" height="5" rx="1" fill="#9CA3AF"></rect>
-            </g>
-        </g>
-        
-        <!-- Floating Elements -->
-        <g id="floating-elements">
-            <circle cx="600" cy="150" r="15" fill="#FF5734" fill-opacity="0.2"></circle>
-            <circle cx="650" cy="200" r="10" fill="#7C3AED" fill-opacity="0.3"></circle>
-            <circle cx="200" cy="100" r="12" fill="#FF5734" fill-opacity="0.15"></circle>
-            <circle cx="250" cy="50" r="8" fill="#7C3AED" fill-opacity="0.2"></circle>
-            
-            <!-- Education Icons -->
-            <g id="graduation-cap" transform="translate(550, 120)">
-                <path d="M25,5 L45,15 L25,25 L5,15 Z" fill="#7C3AED" opacity="0.7"></path>
-                <path d="M15,23 V34 L25,40 L35,34 V23 L25,30 Z" fill="#7C3AED" opacity="0.8"></path>
-                <rect x="40" y="15" width="2" height="10" fill="#7C3AED"></rect>
-            </g>
-        </g>
-        
-        <!-- Learning Icons Floating -->
-        <g id="learning-icons">
-            <g id="video-icon" transform="translate(150, 80)">
-                <rect x="0" y="0" width="30" height="20" rx="3" fill="#FF5734"></rect>
-                <polygon points="10,5 20,10 10,15" fill="white"></polygon>
-            </g>
-            
-            <g id="book-icon" transform="translate(650, 350)">
-                <path d="M5,0 H35 V30 H5 Z" fill="#7C3AED" fill-opacity="0.2"></path>
-                <path d="M0,5 H30 V35 H0 Z" fill="#FF5734" fill-opacity="0.3"></path>
-                <path d="M15,10 H20 V15 H15 Z" fill="white"></path>
-            </g>
-        </g>
-    </g>
+<svg width="600" height="500" viewBox="0 0 600 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="300" cy="250" r="200" fill="#F8F0FF" opacity="0.8" />
+  
+  <!-- Desk -->
+  <rect x="150" y="300" width="300" height="20" rx="5" fill="#D4B0FF" />
+  <rect x="170" y="320" width="260" height="10" rx="2" fill="#C492FF" />
+  
+  <!-- Chair -->
+  <rect x="250" y="330" width="100" height="15" rx="5" fill="#9F69FA" />
+  <rect x="260" y="345" width="80" height="60" rx="5" fill="#7C3AED" />
+  <rect x="270" y="405" width="60" height="10" rx="2" fill="#6D28D9" />
+  
+  <!-- Person -->
+  <!-- Body -->
+  <rect x="260" y="250" width="80" height="100" rx="40" fill="#B36BFA" />
+  
+  <!-- Head -->
+  <circle cx="300" cy="210" r="40" fill="#FFD6CC" />
+  <path d="M280 200 Q300 220 320 200" stroke="#333" stroke-width="2" fill="none" />
+  <circle cx="285" cy="190" r="5" fill="#333" />
+  <circle cx="315" cy="190" r="5" fill="#333" />
+  
+  <!-- Hair -->
+  <path d="M270 180 Q300 150 330 180 L330 210 Q300 230 270 210 Z" fill="#333" />
+  
+  <!-- Arms -->
+  <rect x="250" y="260" width="20" height="60" rx="10" fill="#B36BFA" />
+  <rect x="330" y="260" width="20" height="60" rx="10" fill="#B36BFA" />
+  
+  <!-- Hands -->
+  <circle cx="250" cy="320" r="10" fill="#FFD6CC" />
+  <circle cx="350" cy="320" r="10" fill="#FFD6CC" />
+  
+  <!-- Laptop -->
+  <rect x="200" y="250" width="100" height="5" rx="2" fill="#E0E0E0" />
+  <rect x="200" y="255" width="100" height="70" rx="2" fill="#F0F0F0" />
+  <rect x="210" y="260" width="80" height="50" rx="2" fill="#99C2FF" />
+  
+  <!-- Screen Content -->
+  <rect x="220" y="265" width="30" height="10" rx="2" fill="#FF9B8F" />
+  <rect x="255" y="265" width="25" height="10" rx="2" fill="#B2FF8F" />
+  <rect x="220" y="280" width="50" height="5" rx="2" fill="#FFFFFF" />
+  <rect x="220" y="290" width="60" height="5" rx="2" fill="#FFFFFF" />
+  <rect x="220" y="300" width="40" height="5" rx="2" fill="#FFFFFF" />
+  
+  <!-- Coffee cup -->
+  <rect x="320" y="270" width="20" height="25" rx="2" fill="white" />
+  <path d="M320 275 L315 275 L315 290 L320 290" stroke="#E0E0E0" stroke-width="2" />
+  <rect x="320" y="270" width="20" height="5" rx="1" fill="#FF9B8F" />
+  
+  <!-- Plant -->
+  <rect x="380" y="250" width="30" height="50" rx="2" fill="#A8FFC2" opacity="0.7" />
+  <rect x="390" y="200" width="10" height="50" rx="5" fill="#64D486" />
+  <circle cx="395" cy="190" r="15" fill="#A8FFC2" />
+  
+  <!-- Shelf -->
+  <rect x="450" y="150" width="100" height="10" rx="2" fill="#D4B0FF" />
+  
+  <!-- Items on shelf -->
+  <rect x="460" y="120" width="15" height="30" rx="2" fill="#FFB6A8" />
+  <rect x="480" y="100" width="20" height="50" rx="2" fill="#C492FF" />
+  <circle cx="520" cy="130" r="15" fill="#99E5FF" />
+  
+  <!-- Router -->
+  <rect x="390" y="300" width="30" height="15" rx="2" fill="white" />
+  <circle cx="395" cy="305" r="2" fill="#7C3AED" opacity="0.7" />
+  <circle cx="405" cy="305" r="2" fill="#7C3AED" opacity="0.7" />
+  <circle cx="415" cy="305" r="2" fill="#7C3AED" opacity="0.7" />
+  
+  <!-- Floating elements -->
+  <circle cx="150" cy="120" r="20" fill="#FF9B8F" opacity="0.2" />
+  <circle cx="450" cy="80" r="15" fill="#B36BFA" opacity="0.2" />
+  <circle cx="180" cy="400" r="25" fill="#99E5FF" opacity="0.2" />
+  <circle cx="460" cy="350" r="30" fill="#A8FFC2" opacity="0.2" />
+  
+  <!-- Books -->
+  <rect x="110" y="320" width="30" height="40" rx="2" transform="rotate(-10 110 320)" fill="#FF9B8F" opacity="0.8" />
+  <rect x="115" y="318" width="30" height="40" rx="2" transform="rotate(-5 115 318)" fill="#B36BFA" opacity="0.8" />
+  <rect x="120" y="315" width="30" height="40" rx="2" fill="#99E5FF" opacity="0.8" />
 </svg>

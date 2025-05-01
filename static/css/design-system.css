@@ -1328,16 +1328,15 @@ footer a, footer a:hover {
 /* ========== HERO SECTION ========== */
 .hero-section {
   position: relative;
-  padding: 3rem 0 5rem;
+  padding: 2rem 0 5rem;
   display: flex;
   flex-direction: column-reverse;
   gap: 2rem;
-  overflow: hidden;
+  overflow: visible;
   background: #FFFFFF;
   background-size: cover;
   background-position: center;
   min-height: 550px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .hero-content {
@@ -1394,27 +1393,30 @@ footer a, footer a:hover {
   padding: 0 1.5rem;
   position: relative;
   z-index: 1;
-  text-align: center;
   min-height: 300px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transform: scale(0.95);
-  transition: transform 0.5s ease-out;
 }
 
-.hero-visual:hover {
+.hero-illustration-container {
+  width: 100%;
+  max-width: 550px;
+  position: relative;
+  transform: scale(0.95);
+  transition: transform 0.5s ease-out;
+  z-index: 5;
+}
+
+.hero-illustration-container:hover {
   transform: scale(1);
 }
 
 .hero-image {
   width: 100%;
-  max-width: 550px;
   height: auto;
   margin: 0 auto;
-  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.04)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1));
-  -webkit-mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 90%, transparent 100%);
+  filter: drop-shadow(0 20px 13px rgba(0, 0, 0, 0.03)) drop-shadow(0 8px 5px rgba(0, 0, 0, 0.08));
 }
 
 .hero-overlay {
@@ -1592,13 +1594,13 @@ footer a, footer a:hover {
   }
   
   .hero-content {
-    padding: var(--spacing-lg);
+    padding: 1rem 1.5rem;
     width: 100%;
     text-align: center;
   }
   
   .hero-heading {
-    font-size: 2rem;
+    font-size: 2.25rem;
     line-height: 1.2;
   }
   
@@ -1608,20 +1610,63 @@ footer a, footer a:hover {
   }
   
   .hero-visual {
-    min-height: 200px;
+    min-height: 250px;
     margin-top: 1rem;
+    padding: 0;
+  }
+  
+  .hero-illustration-container {
+    max-width: 400px;
+    margin: 0 auto;
   }
   
   .hero-cta {
     flex-direction: column;
-    margin: 0 auto;
+    align-items: center;
     width: 100%;
     max-width: 300px;
+    margin: 0 auto 2rem;
+    gap: 1rem;
   }
   
-  .hero-cta .btn {
+  .btn-get-started,
+  .btn-become-mentor {
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
+    text-align: center;
+    margin: 0;
+  }
+  
+  .float-element {
+    transform: scale(0.8);
+  }
+  
+  .float-element.books {
+    top: 0;
+    right: 0;
+  }
+  
+  .float-element.cap {
+    bottom: 5%;
+    left: 5%;
+  }
+  
+  .float-element.heart {
+    top: 10%;
+    left: 10%;
+  }
+  
+  .float-element.note {
+    bottom: 10%;
+    right: 5%;
+  }
+  
+  .platform-partners {
+    padding-top: 1rem;
+  }
+  
+  .platform-partners .flex {
+    justify-content: center;
+    gap: 1rem;
+    font-size: 0.875rem;
   }
 }

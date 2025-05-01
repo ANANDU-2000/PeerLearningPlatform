@@ -5,7 +5,7 @@
 {% block title %}PeerLearn - Connect with Expert Mentors{% endblock %}
 
 {% block content %}
-<!-- Modern Hero Section - Inspired by Ed-Circle -->
+<!-- Modern Hero Section - Ed-Circle Inspired with 3D Illustration -->
 <section class="hero-section">
     <div class="hero-content">
         <h1 class="hero-heading">
@@ -19,17 +19,17 @@
         </p>
         
         <div class="hero-cta">
-            <a href="{% url 'session_list' %}" class="btn btn-primary btn-lg">
+            <a href="{% url 'session_list' %}" class="btn-get-started px-6 py-3 bg-primary hover:bg-primary-dark text-white font-medium rounded transition-all duration-300 inline-block">
                 {% trans "Get Started" %}
             </a>
-            <a href="{% url 'role_selection' %}" class="btn btn-outline btn-lg">
+            <a href="{% url 'role_selection' %}" class="btn-become-mentor px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded ml-4 hover:bg-gray-50 transition-all duration-300 inline-block">
                 {% trans "Become a Mentor" %}
             </a>
         </div>
         
-        <div class="platform-partners mt-10">
-            <div class="text-sm text-gray-500 mb-3">{% trans "Trusted by professionals from" %}</div>
-            <div class="flex flex-wrap items-center gap-6">
+        <div class="platform-partners mt-12">
+            <div class="text-sm text-gray-500 mb-4">{% trans "Trusted by professionals from" %}</div>
+            <div class="flex flex-wrap items-center gap-8">
                 <span class="text-gray-700 font-semibold">Udemy</span>
                 <span class="text-gray-700 font-semibold">UDACITY</span>
                 <span class="text-gray-700 font-semibold">coursera</span>
@@ -39,35 +39,55 @@
     </div>
     
     <div class="hero-visual">
-        <div class="hero-overlay"></div>
-        <img src="{% static 'images/hero-illustration.svg' %}" 
-             onerror="this.onerror=null; this.src='https://placehold.co/600x400/f8f9fa/FF5734?text=PeerLearn&font=poppins';" 
-             alt="{% trans 'Online Learning Illustration' %}" class="hero-image">
-        
-        <div class="floating-elements">
-            <div class="float-element books">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M10 8H30V32H10V8Z" fill="#FF5734" fill-opacity="0.2" />
-                    <path d="M8 10H28V34H8V10Z" fill="#7C3AED" fill-opacity="0.2" />
-                    <path d="M6 12H26V36H6V12Z" fill="#FF5734" fill-opacity="0.2" />
-                </svg>
-            </div>
-            <div class="float-element cap">
-                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 5L32 12L20 19L8 12L20 5Z" fill="#7C3AED" />
-                    <path d="M15 22V29L20 32L25 29V22L20 25L15 22Z" fill="#7C3AED" />
-                    <rect x="30" y="12" width="2" height="10" fill="#7C3AED" />
-                </svg>
-            </div>
-            <div class="float-element heart">
-                <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 26.25L13.05 24.4875C7.2 19.2375 3.5 15.9 3.5 11.875C3.5 8.55 6.18 5.875 9.5 5.875C11.34 5.875 13.11 6.7625 14.25 8.1125C15.39 6.7625 17.16 5.875 19 5.875C22.32 5.875 25 8.55 25 11.875C25 15.9 21.3 19.2375 15.45 24.5L15 26.25Z" fill="#FF5734" fill-opacity="0.8" />
-                </svg>
-            </div>
-            <div class="float-element note">
-                <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 5.625C16.5188 5.625 17.75 6.85625 17.75 8.375C17.75 9.89375 16.5188 11.125 15 11.125C13.4812 11.125 12.25 9.89375 12.25 8.375C12.25 6.85625 13.4812 5.625 15 5.625ZM15 20.625C19.3438 20.625 24.25 22.7938 24.25 23.75V25.625H5.75V23.75C5.75 22.7938 10.6562 20.625 15 20.625ZM15 3.125C12.1 3.125 9.75 5.475 9.75 8.375C9.75 11.275 12.1 13.625 15 13.625C17.9 13.625 20.25 11.275 20.25 8.375C20.25 5.475 17.9 3.125 15 3.125ZM15 18.125C10.4938 18.125 3.25 20.3938 3.25 23.75V28.125H26.75V23.75C26.75 20.3938 19.5062 18.125 15 18.125Z" fill="#7C3AED" />
-                </svg>
+        <div class="hero-illustration-container relative">
+            <img src="{% static 'images/hero-illustration.svg' %}" 
+                 onerror="this.onerror=null; this.src='https://placehold.co/600x400/f8f9fa/FF5734?text=PeerLearn&font=poppins';" 
+                 alt="{% trans 'Online Learning Illustration' %}" class="hero-image relative z-10">
+            
+            <!-- Decorative circles -->
+            <div class="absolute top-1/4 -right-10 w-20 h-20 rounded-full bg-primary opacity-5 z-0"></div>
+            <div class="absolute bottom-1/4 -left-5 w-16 h-16 rounded-full bg-accent opacity-10 z-0"></div>
+            
+            <!-- Floating elements -->
+            <div class="floating-elements absolute inset-0 z-20 pointer-events-none">
+                <!-- Graduation cap -->
+                <div class="float-element cap absolute top-0 right-0 transform -translate-y-1/2 translate-x-1/3">
+                    <svg width="50" height="50" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M25 5L40 15L25 25L10 15L25 5Z" fill="#7C3AED" opacity="0.9" />
+                        <path d="M18 22V34L25 38L32 34V22L25 28L18 22Z" fill="#7C3AED" opacity="0.8" />
+                        <rect x="38" y="15" width="3" height="12" fill="#7C3AED" />
+                    </svg>
+                </div>
+                
+                <!-- Books stack -->
+                <div class="float-element books absolute top-1/4 -left-12">
+                    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 12H45V48H15V12Z" fill="#FF5734" fill-opacity="0.2" />
+                        <path d="M12 15H42V51H12V15Z" fill="#7C3AED" fill-opacity="0.2" />
+                        <path d="M9 18H39V54H9V18Z" fill="#FF5734" fill-opacity="0.2" />
+                    </svg>
+                </div>
+                
+                <!-- Heart icon -->
+                <div class="float-element heart absolute -top-8 left-1/3">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 26.25L13.05 24.4875C7.2 19.2375 3.5 15.9 3.5 11.875C3.5 8.55 6.18 5.875 9.5 5.875C11.34 5.875 13.11 6.7625 14.25 8.1125C15.39 6.7625 17.16 5.875 19 5.875C22.32 5.875 25 8.55 25 11.875C25 15.9 21.3 19.2375 15.45 24.5L15 26.25Z" fill="#FF5734" fill-opacity="0.8" />
+                    </svg>
+                </div>
+                
+                <!-- Music note -->
+                <div class="float-element note absolute bottom-1/4 right-0">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20,6 L20,16 C20,18.2091 18.2091,20 16,20 C13.7909,20 12,18.2091 12,16 C12,13.7909 13.7909,12 16,12 C16.7,12 17.3,12.2 17.8,12.5 L17.8,3 L20,3 L20,6 Z" fill="#7C3AED" />
+                    </svg>
+                </div>
+                
+                <!-- Star icon -->
+                <div class="float-element star absolute bottom-10 -left-8">
+                    <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15,3.5 L18.5,10.7 L26.5,11.9 L20.7,17.6 L22.2,25.5 L15,21.8 L7.8,25.5 L9.3,17.6 L3.5,11.9 L11.5,10.7 L15,3.5 Z" fill="#FF5734" fill-opacity="0.7" />
+                    </svg>
+                </div>
             </div>
         </div>
     </div>

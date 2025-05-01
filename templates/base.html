@@ -142,8 +142,8 @@
     <meta name="user-role" content="{{ user.role }}">
     {% endif %}
     
-    <!-- Top Navigation -->
-    <nav class="bg-white shadow-md z-50 relative transition-all duration-300">
+    <!-- Top Navigation - Ed-Circle Inspired -->
+    <nav class="bg-white z-50 relative transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex">
@@ -154,46 +154,23 @@
                         </a>
                     </div>
                     
-                    <!-- Main Navigation (Desktop) -->
+                    <!-- Main Navigation (Desktop) - Ed-Circle style -->
                     <div class="hidden sm:ml-8 sm:flex sm:space-x-6">
-                        {% if user.is_authenticated %}
-                            <!-- Show dashboard as home for logged in users -->
-                            <a href="{{ user.get_dashboard_url }}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                {% trans "Dashboard" %}
-                            </a>
-                        {% else %}
-                            <!-- Show landing page as home for non-logged in users -->
-                            <a href="{% url 'landing_page' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                {% trans "Home" %}
-                            </a>
-                        {% endif %}
-                        
-                        <!-- Navigation items based on user role -->
-                        {% if user.is_authenticated and user.role == 'mentor' %}
-                            <a href="{% url 'mentor_sessions' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                {% trans "My Sessions" %}
-                            </a>
-                        {% else %}
-                            <a href="{% url 'session_list' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                {% trans "Find Sessions" %}
-                            </a>
-                        {% endif %}
-                        
-                        <!-- Role-specific navigation items -->
-                        {% if user.is_authenticated %}
-                            {% if user.role == 'mentor' %}
-                                <a href="{% url 'create_session' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                    {% trans "Create Session" %}
-                                </a>
-                                <a href="{% url 'withdrawal_request' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                    {% trans "Earnings" %}
-                                </a>
-                            {% elif user.role == 'learner' %}
-                                <a href="{% url 'cart' %}" class="border-transparent text-gray-600 hover:text-primary hover:border-primary inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                                    {% trans "My Cart" %}
-                                </a>
-                            {% endif %}
-                        {% endif %}
+                        <a href="{% url 'landing_page' %}" class="text-gray-800 hover:text-primary inline-flex items-center px-2 py-1 text-sm font-medium transition-colors">
+                            {% trans "Home" %}
+                        </a>
+                            
+                        <a href="{% url 'session_list' %}" class="text-gray-800 hover:text-primary inline-flex items-center px-2 py-1 text-sm font-medium transition-colors">
+                            {% trans "Find Sessions" %}
+                        </a>
+                            
+                        <a href="#about" class="text-gray-800 hover:text-primary inline-flex items-center px-2 py-1 text-sm font-medium transition-colors">
+                            {% trans "About Us" %}
+                        </a>
+                            
+                        <a href="#contact" class="text-gray-800 hover:text-primary inline-flex items-center px-2 py-1 text-sm font-medium transition-colors">
+                            {% trans "Contact" %}
+                        </a>
                     </div>
                 </div>
                 
@@ -266,11 +243,11 @@
                                 </div>
                             </div>
                         {% else %}
-                            <div class="space-x-1">
-                                <a href="{% url 'login' %}" class="btn btn-outline inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors shadow-sm">
+                            <div class="space-x-2">
+                                <a href="{% url 'login' %}" class="px-4 py-2 text-sm font-medium text-gray-800 hover:text-primary transition-colors">
                                     {% trans "Log in" %}
                                 </a>
-                                <a href="{% url 'role_selection' %}" class="btn btn-primary inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white shadow-sm">
+                                <a href="{% url 'role_selection' %}" class="px-4 py-2 bg-primary hover:bg-primary-dark text-white text-sm font-medium rounded transition-colors">
                                     {% trans "Sign up" %}
                                 </a>
                             </div>
